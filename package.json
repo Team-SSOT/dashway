@@ -1,13 +1,11 @@
 {
   "name": "dashway",
   "private": true,
-  "workspaces": [
-    "apps/*"
-  ],
+  "packageManager": "pnpm@10.0.0",
   "scripts": {
-    "dev": "npm run dev --workspace @dashway/landing",
-    "build": "npm run build --workspace @dashway/landing",
-    "start": "npm run start --workspace @dashway/landing",
-    "lint": "npm run lint --workspace @dashway/landing"
+    "dev": "pnpm --filter @dashway/landing dev",
+    "build": "pnpm --filter @dashway/landing build",
+    "start": "pnpm --filter @dashway/landing start",
+    "lint": "pnpm --filter @dashway/landing lint"
   }
 }
