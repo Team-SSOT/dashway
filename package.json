@@ -1,0 +1,13 @@
+{
+  "name": "dashway",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @dashway/landing",
+    "build": "npm run build --workspace @dashway/landing",
+    "start": "npm run start --workspace @dashway/landing",
+    "lint": "npm run lint --workspace @dashway/landing"
+  }
+}
