@@ -49,6 +49,7 @@ Thumbs.db
 .vercel
 
 # ── Electron ────────────────────────────────
+.vite/
 release/
 *.dmg
 *.AppImage

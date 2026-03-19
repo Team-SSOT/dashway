@@ -1,8 +1,11 @@
 import { join } from 'node:path'
-import { is } from '@electron-toolkit/utils'
 import { BrowserWindow, shell } from 'electron'
 import { IPC } from './ipc/channels'
 import { windowManager } from './window-manager'
+
+// Declared by @electron-forge/plugin-vite
+declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined
+declare const MAIN_WINDOW_VITE_NAME: string
 
 export function createMainWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -16,7 +19,7 @@ export function createMainWindow(): BrowserWindow {
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 12, y: 12 },
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, 'index.js'),
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
@@ -40,10 +43,10 @@ export function createMainWindow(): BrowserWindow {
     return { action: 'deny' }
   })
 
-  if (is.dev && process.env.ELECTRON_RENDERER_URL) {
-    win.loadURL(process.env.ELECTRON_RENDERER_URL)
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    win.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL)
   } else {
-    win.loadFile(join(__dirname, '../renderer/index.html'))
+    win.loadFile(join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`))
   }
 
   windowManager.setMainWindow(win)

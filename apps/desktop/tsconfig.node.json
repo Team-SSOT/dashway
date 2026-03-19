@@ -12,5 +12,11 @@
     "composite": true,
     "types": ["node"]
   },
-  "include": ["electron/**/*.ts"]
+  "include": [
+    "electron/**/*.ts",
+    "forge.config.ts",
+    "vite.main.config.ts",
+    "vite.preload.config.ts",
+    "vite.renderer.config.ts"
+  ]
 }
