@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@import "@dashway/design-tokens/css/tokens.css";
+@import "@dashway/design-tokens/css/shadcn-bridge.css";
+@import "@dashway/design-tokens/css/tailwind-theme.css";
+
+@source "../../../../packages/ui/src/**/*.{ts,tsx}";

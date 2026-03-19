@@ -1,0 +1,7 @@
+{
+  "src": "./renderer/src",
+  "schema": "./renderer/schema.graphql",
+  "language": "typescript",
+  "eagerEsModules": true,
+  "artifactDirectory": "./renderer/src/__generated__"
+}
