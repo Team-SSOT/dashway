@@ -1,0 +1,60 @@
+/*
+ * Bridge: @dashway/design-tokens → shadcn/ui CSS variable contract
+ * Import AFTER tokens.css in every app's global stylesheet.
+ */
+:root {
+  /* Core */
+  --background: var(--bg);
+  --foreground: var(--fg);
+
+  /* Card / Popover surfaces */
+  --card: var(--bg-e);
+  --card-foreground: var(--fg);
+  --popover: var(--bg-e);
+  --popover-foreground: var(--fg);
+
+  /* Primary = brand indigo */
+  --primary: var(--indigo);
+  --primary-foreground: #ffffff;
+
+  /* Secondary = surface2 */
+  --secondary: var(--s2);
+  --secondary-foreground: var(--fg);
+
+  /* Muted */
+  --muted: var(--s1);
+  --muted-foreground: var(--fg-2);
+
+  /* Accent */
+  --accent: var(--indigo-dim);
+  --accent-foreground: var(--fg);
+
+  /* Destructive */
+  --destructive: var(--red);
+  --destructive-foreground: #ffffff;
+
+  /* Border / Input / Ring */
+  --border: var(--l1);
+  --input: var(--l2);
+  --ring: var(--indigo);
+
+  /* Radius */
+  --radius: 12px;
+
+  /* Sidebar */
+  --sidebar: var(--bg-e);
+  --sidebar-foreground: var(--fg);
+  --sidebar-primary: var(--indigo);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--indigo-dim);
+  --sidebar-accent-foreground: var(--fg);
+  --sidebar-border: var(--l1);
+  --sidebar-ring: var(--indigo);
+
+  /* Chart */
+  --chart-1: var(--indigo);
+  --chart-2: var(--blue);
+  --chart-3: var(--violet);
+  --chart-4: var(--green);
+  --chart-5: var(--amber);
+}
