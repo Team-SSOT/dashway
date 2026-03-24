@@ -1,0 +1,36 @@
+type Query {
+  members(page: Int!, size: Int!): MemberPage!
+  member(id: Long!): Member
+}
+
+type Mutation {
+  registerMember(input: MemberInput!): MemberPayload!
+  updateMember(id: Long!, input: MemberInput!): MemberPayload!
+}
+
+type Member {
+  id: Long!
+  name: String!
+  email: String!
+  admin: Boolean!
+  isEnabled: Boolean!
+  createdDatetime: DateTime!
+}
+
+type MemberPage {
+  items: [Member!]!
+  pageInfo: [PageInfo!]!
+}
+
+type MemberPayload {
+  member: Member
+  errors: [MutationError!]!
+}
+
+input MemberInput {
+  name: String!
+  email: String!
+  password: String!
+  admin: Boolean = false
+  isEnabled: Boolean = true
+}

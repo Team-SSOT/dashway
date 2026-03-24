@@ -1,0 +1,29 @@
+extend type Query {
+  me: Member
+}
+
+extend type Mutation {
+  login(input: LoginInput!): LoginPayload!
+  logout: LogoutPayload!
+}
+
+type AuthTokenPair {
+  accessToken: String!
+  refreshToken: String!
+}
+
+type LoginPayload {
+  member: Member
+  tokens: AuthTokenPair
+  errors: [MutationError!]!
+}
+
+type LogoutPayload {
+  loggedOut: Boolean!
+  errors: [MutationError!]!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}

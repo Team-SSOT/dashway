@@ -23,18 +23,33 @@ repositories {
 extra["netflixDgsVersion"] = "11.0.0"
 
 dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-data-neo4j")
-    implementation("org.springframework.boot:spring-boot-starter-webmvc")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("tools.jackson.module:jackson-module-kotlin")
+
+    implementation("io.github.oshai:kotlin-logging-jvm:5.1.4")
+
+    implementation("io.jsonwebtoken:jjwt-api:0.12.6")
+    implementation("io.jsonwebtoken:jjwt-impl:0.12.6")
+    implementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
+
     runtimeOnly("org.postgresql:postgresql")
+
+    testImplementation(platform("org.testcontainers:testcontainers-bom:1.21.3"))
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-starter-data-neo4j-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:postgresql")
+    testImplementation("org.testcontainers:testcontainers")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

@@ -1,0 +1,40 @@
+extend type Query {
+  apps(page: Int!, size: Int!): AppPage!
+  app(id: String!): App
+}
+
+extend type Mutation {
+  registerApp(input: RegisterAppInput!): RegisterAppPayload!
+  deactivateApp(input: DeactivateAppInput!): DeactivateAppPayload!
+}
+
+type App {
+  id: String!
+  name: String!
+  enabled: Boolean!
+  createdAt: DateTime!
+}
+
+type AppPage {
+  items: [App!]!
+  pageInfo: [PageInfo!]!
+}
+
+type RegisterAppPayload {
+  app: App
+  errors: [MutationError!]!
+}
+
+type DeactivateAppPayload {
+  app: App
+  errors: [MutationError!]!
+}
+
+input RegisterAppInput {
+  name: String!
+  enabled: Boolean = true
+}
+
+input DeactivateAppInput {
+  id: String!
+}

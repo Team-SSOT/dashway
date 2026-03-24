@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:18.3
+    container_name: context-api-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: context_api
+      POSTGRES_USER: context_api
+      POSTGRES_PASSWORD: context_api
+    ports:
+      - "5432:5432"
+    volumes:
+      - context-api-postgres-storage:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U context_api -d context_api"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8.2
+    container_name: context-api-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - context-api-redis-storage:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  context-api-postgres-storage:
+  context-api-redis-storage:

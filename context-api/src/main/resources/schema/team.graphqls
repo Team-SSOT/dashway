@@ -1,0 +1,55 @@
+extend type Query {
+  teams(page: Int!, size: Int!): TeamPage!
+  team(id: Long!): Team
+}
+
+extend type Mutation {
+  createTeam(input: CreateTeamInput!): TeamPayload!
+  updateTeam(input: UpdateTeamInput!): TeamPayload!
+  deleteTeam(id: Long!): TeamPayload!
+
+  addTeamMember(input: AddTeamMemberInput!): TeamMemberPayload!
+  removeTeamMember(input: RemoveTeamMemberInput!): TeamMemberPayload!
+}
+
+type Team {
+  id: Long!
+  name: String!
+  createdAt: DateTime!
+  members : [Member!]!
+}
+
+type TeamPage {
+  items: [Team!]!
+  pageInfo: [PageInfo!]!
+}
+
+type TeamPayload {
+  team: Team
+  errors: [MutationError!]!
+}
+
+type TeamMemberPayload {
+  team: Team
+  member: Member
+  errors: [MutationError!]!
+}
+
+input CreateTeamInput {
+  name: String!
+}
+
+input UpdateTeamInput {
+  id: Long!
+  name: String!
+}
+
+input AddTeamMemberInput {
+  id: Long!
+  memberIds: [Long!]!
+}
+
+input RemoveTeamMemberInput {
+  id: Long!
+  memberIds: [Long!]!
+}

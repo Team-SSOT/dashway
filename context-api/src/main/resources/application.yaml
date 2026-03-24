@@ -1,3 +1,14 @@
 spring:
   application:
     name: context-api
+
+
+token:
+  expiration:
+    access: 14400
+    refresh: 144000
+  secret: "context-api-token-secret"
+
+redis:
+  host: localhost
+  port: 6390
