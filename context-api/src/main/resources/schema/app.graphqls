@@ -4,30 +4,20 @@ extend type Query {
 }
 
 extend type Mutation {
-  registerApp(input: RegisterAppInput!): RegisterAppPayload!
-  deactivateApp(input: DeactivateAppInput!): DeactivateAppPayload!
+  registerApp(input: RegisterAppInput!): App
+  deactivateApp(input: DeactivateAppInput!): App
 }
 
 type App {
   id: String!
   name: String!
   enabled: Boolean!
-  createdAt: DateTime!
+  createdDatetime: DateTime!
 }
 
 type AppPage {
-  items: [App!]!
-  pageInfo: [PageInfo!]!
-}
-
-type RegisterAppPayload {
-  app: App
-  errors: [MutationError!]!
-}
-
-type DeactivateAppPayload {
-  app: App
-  errors: [MutationError!]!
+  apps: [App!]!
+  pageInfo: PageInfo!
 }
 
 input RegisterAppInput {

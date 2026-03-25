@@ -8,5 +8,5 @@ interface TeamMemberSummaryProjection {
     val email: String
     val admin: Boolean
     val enabled: Boolean
-    val createdAt: LocalDateTime
+    val createdDatetime: LocalDateTime
 }

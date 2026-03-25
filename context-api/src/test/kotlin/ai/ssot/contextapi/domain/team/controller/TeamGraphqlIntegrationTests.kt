@@ -30,9 +30,6 @@ class TeamGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
                 member {
                   id
                 }
-                errors {
-                  code
-                }
               }
             }
             """.trimIndent(),
@@ -41,7 +38,7 @@ class TeamGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.data.addTeamMember.team.id").value(teamId.toInt()))
             .andExpect(jsonPath("$.data.addTeamMember.member.id").value(memberId.toInt()))
-            .andExpect(jsonPath("$.data.addTeamMember.errors").isEmpty())
+            .andExpect(jsonPath("$.errors").doesNotExist())
 
         val teamResponse = executeGraphqlAndRead(
             """
@@ -50,7 +47,9 @@ class TeamGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
                 id
                 name
                 members(page: 0, size: 10) {
-                  totalElements
+                  pageInfo {
+                    totalElements
+                  }
                   items {
                     id
                     email
@@ -64,7 +63,7 @@ class TeamGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
 
         assertEquals(teamId, teamResponse.longAt("/data/team/id"))
         assertEquals("Platform", teamResponse.textAt("/data/team/name"))
-        assertEquals(1, teamResponse.at("/data/team/members/totalElements").asInt())
+        assertEquals(1, teamResponse.at("/data/team/members/pageInfo/totalElements").asInt())
         assertEquals("bob@example.com", teamResponse.textAt("/data/team/members/items/0/email"))
 
         executeGraphql(
@@ -80,33 +79,25 @@ class TeamGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
                 member {
                   id
                 }
-                errors {
-                  code
-                }
               }
             }
             """.trimIndent(),
             admin.accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.removeTeamMember.errors").isEmpty())
+            .andExpect(jsonPath("$.errors").doesNotExist())
 
         executeGraphql(
             """
             mutation {
-              deleteTeam(input: { id: $teamId }) {
-                deleted
-                errors {
-                  code
-                }
-              }
+              deleteTeam(input: { id: $teamId })
             }
             """.trimIndent(),
             admin.accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.deleteTeam.deleted").value(true))
-            .andExpect(jsonPath("$.data.deleteTeam.errors").isEmpty())
+            .andExpect(jsonPath("$.data.deleteTeam").value(true))
+            .andExpect(jsonPath("$.errors").doesNotExist())
     }
 
     @Test
@@ -119,23 +110,18 @@ class TeamGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
         executeGraphql(
             """
             mutation {
-              deleteTeam(input: { id: $teamId }) {
-                deleted
-                errors {
-                  code
-                }
-              }
+              deleteTeam(input: { id: $teamId })
             }
             """.trimIndent(),
             admin.accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.deleteTeam.deleted").value(false))
-            .andExpect(jsonPath("$.data.deleteTeam.errors[0].code").value("TEAM_NOT_EMPTY"))
+            .andExpect(jsonPath("$.data.deleteTeam").doesNotExist())
+            .andExpect(jsonPath("$.errors[0].extensions.code").value("TEAM_NOT_EMPTY"))
     }
 
     @Test
-    fun `returns membership errors through the shared mutation handler`() {
+    fun `returns membership errors through the shared graphql handler`() {
         val admin = bootstrapAdmin()
         val memberId = registerMember("Dana", "dana@example.com", "dana-password", admin.accessToken)
         val teamId = createTeam("Platform", admin.accessToken)
@@ -152,17 +138,14 @@ class TeamGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
                 member {
                   id
                 }
-                errors {
-                  code
-                }
               }
             }
             """.trimIndent(),
             admin.accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.addTeamMember.member").doesNotExist())
-            .andExpect(jsonPath("$.data.addTeamMember.errors[0].code").value("MEMBERSHIP_ALREADY_EXISTS"))
+            .andExpect(jsonPath("$.data.addTeamMember").doesNotExist())
+            .andExpect(jsonPath("$.errors[0].extensions.code").value("MEMBERSHIP_ALREADY_EXISTS"))
 
         executeGraphql(
             """
@@ -174,17 +157,14 @@ class TeamGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
                 member {
                   id
                 }
-                errors {
-                  code
-                }
               }
             }
             """.trimIndent(),
             admin.accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.removeTeamMember.member").doesNotExist())
-            .andExpect(jsonPath("$.data.removeTeamMember.errors[0].code").value("NOT_FOUND"))
+            .andExpect(jsonPath("$.data.removeTeamMember").doesNotExist())
+            .andExpect(jsonPath("$.errors[0].extensions.code").value("NOT_FOUND"))
     }
 
     private fun createTeam(name: String, accessToken: String): Long =
@@ -192,17 +172,12 @@ class TeamGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
             """
             mutation {
               createTeam(input: { name: "$name" }) {
-                team {
-                  id
-                }
-                errors {
-                  code
-                }
+                id
               }
             }
             """.trimIndent(),
             accessToken,
-        ).longAt("/data/createTeam/team/id")
+        ).longAt("/data/createTeam/id")
 
     private fun addTeamMember(teamId: Long, memberId: Long, accessToken: String) {
         executeGraphql(
@@ -212,8 +187,8 @@ class TeamGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
                 teamId: $teamId
                 memberId: $memberId
               }) {
-                errors {
-                  code
+                member {
+                  id
                 }
               }
             }
@@ -221,6 +196,6 @@ class TeamGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
             accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.addTeamMember.errors").isEmpty())
+            .andExpect(jsonPath("$.errors").doesNotExist())
     }
 }

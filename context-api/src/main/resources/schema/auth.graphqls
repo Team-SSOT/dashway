@@ -3,27 +3,31 @@ extend type Query {
 }
 
 extend type Mutation {
-  login(input: LoginInput!): LoginPayload!
-  logout: LogoutPayload!
+  login(input: LoginInput!): LoginPayload
+  logout(input: LogoutInput!): Boolean
 }
 
 type AuthTokenPair {
   accessToken: String!
   refreshToken: String!
+  accessTokenExpiresAt: DateTime!
+  refreshTokenExpiresAt: DateTime!
 }
 
 type LoginPayload {
-  member: Member
-  tokens: AuthTokenPair
-  errors: [MutationError!]!
-}
-
-type LogoutPayload {
-  loggedOut: Boolean!
-  errors: [MutationError!]!
+  member: Member!
+  tokens: AuthTokenPair!
 }
 
 input LoginInput {
   email: String!
   password: String!
+}
+
+input RefreshTokenInput {
+  refreshToken: String!
+}
+
+input LogoutInput {
+  refreshToken: String!
 }

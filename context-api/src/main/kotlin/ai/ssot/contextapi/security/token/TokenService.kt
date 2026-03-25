@@ -9,7 +9,6 @@ import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.MalformedJwtException
 import io.jsonwebtoken.security.Keys
-import io.jsonwebtoken.security.SignatureException
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.token.Sha512DigestUtils
 import org.springframework.stereotype.Service
@@ -37,22 +36,21 @@ class TokenService {
 
 
     @Transactional
-    fun generateTokens(userId: Long, userRole: String): Pair<String, String> {
-        return generateAccessToken(userId, userRole) to generateRefreshToken(userId, userRole)
+    fun generateTokens(userId: Long, isAdmin: Boolean): Pair<String, String> {
+        return generateAccessToken(userId, isAdmin) to generateRefreshToken(userId, isAdmin)
     }
 
+    fun generateAccessToken(userId: Long, isAdmin: Boolean): String =
+        generateToken(userId, isAdmin, ACCESS_TOKEN_EXPIRATION)
 
-    private fun generateAccessToken(userId: Long, userRole: String) =
-        generateToken(userId, userRole, ACCESS_TOKEN_EXPIRATION)
-
-    private fun generateRefreshToken(userId: Long, userRole: String) =
-        generateToken(userId, userRole, REFRESH_TOKEN_EXPIRATION)
-
+    private fun generateRefreshToken(userId: Long, isAdmin: Boolean) =
+        generateToken(userId, isAdmin, REFRESH_TOKEN_EXPIRATION)
 
 
-    private fun generateToken(userId: Long, userRole: String, tokenExpirationTime: Long): String {
 
-        val claims = createClaims(userId, userRole)
+    private fun generateToken(userId: Long, isAdmin: Boolean, tokenExpirationTime: Long): String {
+
+        val claims = createClaims(userId, isAdmin)
 
         val now = Date()
         val expiredDate = Date(now.time + (tokenExpirationTime * 1000))
@@ -66,11 +64,11 @@ class TokenService {
     }
 
 
-    private fun createClaims(userId: Long, userRole: String) =
+    private fun createClaims(userId: Long, isAdmin: Boolean) =
         Jwts.claims()
             .id(userId.toString())
             .also {
-                it.add("role", userRole)
+                it.add("isAdmin", isAdmin)
             }.build()
 
     private fun getSecretKey() = Keys.hmacShaKeyFor(
@@ -102,8 +100,8 @@ class TokenService {
         return (getClaims(tokenWithoutPrefix).payload  as Claims).id
     }
 
-    fun getUserRole(tokenWithoutPrefix: String): String {
-        return (getClaims(tokenWithoutPrefix).payload  as Claims)["role"] as String
+    fun isAdmin(tokenWithoutPrefix: String): Boolean {
+        return (getClaims(tokenWithoutPrefix).payload  as Claims)["isAdmin"] as Boolean
     }
 
     private fun getClaims(token: String) = Jwts.parser().verifyWith(getSecretKey()).build().parse(token)

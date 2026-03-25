@@ -1,14 +1,18 @@
 package ai.ssot.contextapi.domain.member.exception
 
 import ai.ssot.contextapi.shared.exception.CustomException
-import ai.ssot.contextapi.shared.graphql.MutationErrorCode
+import ai.ssot.contextapi.shared.exception.ErrorCategory
+import ai.ssot.contextapi.shared.exception.ErrorCode
 
 class MemberNotFoundException(memberId: Long) : CustomException(
-    code = MutationErrorCode.NOT_FOUND,
+    code = ErrorCode.NOT_FOUND,
+    category = ErrorCategory.NOT_FOUND,
     message = "Member not found.",
 )
 
 class DuplicateMemberEmailException(email: String) : CustomException(
-    code = MutationErrorCode.DUPLICATE_MEMBER_EMAIL,
+    code = ErrorCode.DUPLICATE_MEMBER_EMAIL,
+    category = ErrorCategory.CONFLICT,
     message = "Member email already exists.",
+    field = "email",
 )

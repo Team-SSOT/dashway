@@ -12,7 +12,7 @@ data class MemberLookup(
     val email: String,
     val admin: Boolean,
     val enabled: Boolean,
-    val createdAt: LocalDateTime,
+    val createdDatetime: LocalDateTime,
 )
 
 data class MemberAuthLookup(
@@ -22,7 +22,7 @@ data class MemberAuthLookup(
     val passwordHash: String?,
     val admin: Boolean,
     val enabled: Boolean,
-    val createdAt: LocalDateTime,
+    val createdDatetime: LocalDateTime,
 )
 
 interface MemberLookupService {
@@ -58,7 +58,7 @@ class DefaultMemberLookupService(
             email = email,
             admin = admin,
             enabled = enabled,
-            createdAt = createdDatetime,
+            createdDatetime = createdDatetime,
         )
 
     private fun Member.toAuthLookup(): MemberAuthLookup =
@@ -69,6 +69,6 @@ class DefaultMemberLookupService(
             passwordHash = passwordHash,
             admin = admin,
             enabled = enabled,
-            createdAt = createdDatetime,
+            createdDatetime = createdDatetime,
         )
 }

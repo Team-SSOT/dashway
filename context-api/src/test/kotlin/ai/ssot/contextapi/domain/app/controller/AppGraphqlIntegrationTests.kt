@@ -6,7 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import java.util.UUID
+import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -14,29 +14,24 @@ import kotlin.test.assertTrue
 @AutoConfigureMockMvc
 class AppGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
     @Test
-    fun `returns validation errors in the mutation payload for blank app names`() {
+    fun `returns top level validation errors for blank app names`() {
         val admin = bootstrapAdmin()
 
-        val response = executeGraphqlAndRead(
+        val response = executeGraphqlAndReadAllowErrors(
             """
             mutation {
               registerApp(input: { name: "   " }) {
-                app {
-                  id
-                }
-                errors {
-                  code
-                  message
-                }
+                id
               }
             }
             """.trimIndent(),
             admin.accessToken,
         )
 
-        assertTrue(response.at("/data/registerApp/app").isNull)
-        assertEquals("VALIDATION_ERROR", response.textAt("/data/registerApp/errors/0/code"))
-        assertEquals("name is required.", response.textAt("/data/registerApp/errors/0/message"))
+        assertTrue(response.at("/data/registerApp").isNull)
+        assertEquals("VALIDATION_ERROR", response.textAt("/errors/0/extensions/code"))
+        assertEquals("name", response.textAt("/errors/0/extensions/violations/0/field"))
+        assertEquals("name is required.", response.textAt("/errors/0/extensions/violations/0/message"))
     }
 
     @Test
@@ -48,88 +43,68 @@ class AppGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
             """
             mutation {
               deactivateApp(input: { id: "$appId" }) {
-                app {
-                  id
-                  enabled
-                }
-                errors {
-                  code
-                }
+                id
+                enabled
               }
             }
             """.trimIndent(),
             admin.accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.deactivateApp.app.id").value(appId))
-            .andExpect(jsonPath("$.data.deactivateApp.app.enabled").value(false))
-            .andExpect(jsonPath("$.data.deactivateApp.errors").isEmpty())
+            .andExpect(jsonPath("$.data.deactivateApp.id").value(appId))
+            .andExpect(jsonPath("$.data.deactivateApp.enabled").value(false))
+            .andExpect(jsonPath("$.errors").doesNotExist())
 
         executeGraphql(
             """
             mutation {
               deactivateApp(input: { id: "$appId" }) {
-                app {
-                  id
-                }
-                errors {
-                  code
-                }
+                id
               }
             }
             """.trimIndent(),
             admin.accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.deactivateApp.errors[0].code").value("APP_ALREADY_DISABLED"))
+            .andExpect(jsonPath("$.data.deactivateApp").doesNotExist())
+            .andExpect(jsonPath("$.errors[0].extensions.code").value("APP_ALREADY_DISABLED"))
     }
 
     @Test
-    fun `validates app ids and reports missing apps through payload errors`() {
+    fun `validates app ids and reports missing apps through top level errors`() {
         val admin = bootstrapAdmin()
 
         executeGraphql(
             """
             mutation {
               deactivateApp(input: { id: "not-a-uuid" }) {
-                app {
-                  id
-                }
-                errors {
-                  code
-                  message
-                }
+                id
               }
             }
             """.trimIndent(),
             admin.accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.deactivateApp.app").doesNotExist())
-            .andExpect(jsonPath("$.data.deactivateApp.errors[0].code").value("VALIDATION_ERROR"))
-            .andExpect(jsonPath("$.data.deactivateApp.errors[0].message").value("App id must be a UUID."))
+            .andExpect(jsonPath("$.data.deactivateApp").doesNotExist())
+            .andExpect(jsonPath("$.errors[0].extensions.code").value("VALIDATION_ERROR"))
+            .andExpect(jsonPath("$.errors[0].extensions.violations[0].field").value("id"))
+            .andExpect(jsonPath("$.errors[0].message").value("App id must be a UUID."))
 
         val missingAppId = UUID.randomUUID().toString()
         executeGraphql(
             """
             mutation {
               deactivateApp(input: { id: "$missingAppId" }) {
-                app {
-                  id
-                }
-                errors {
-                  code
-                  message
-                }
+                id
               }
             }
             """.trimIndent(),
             admin.accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.deactivateApp.app").doesNotExist())
-            .andExpect(jsonPath("$.data.deactivateApp.errors[0].code").value("NOT_FOUND"))
-            .andExpect(jsonPath("$.data.deactivateApp.errors[0].message").value("App not found."))
+            .andExpect(jsonPath("$.data.deactivateApp").doesNotExist())
+            .andExpect(jsonPath("$.errors[0].extensions.code").value("NOT_FOUND"))
+            .andExpect(jsonPath("$.errors[0].message").value("App not found."))
     }
 
     private fun registerApp(name: String, accessToken: String): String =
@@ -137,15 +112,10 @@ class AppGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
             """
             mutation {
               registerApp(input: { name: "$name" }) {
-                app {
-                  id
-                }
-                errors {
-                  code
-                }
+                id
               }
             }
             """.trimIndent(),
             accessToken,
-        ).textAt("/data/registerApp/app/id")
+        ).textAt("/data/registerApp/id")
 }

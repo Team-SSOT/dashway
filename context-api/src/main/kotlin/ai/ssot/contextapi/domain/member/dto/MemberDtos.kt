@@ -1,6 +1,6 @@
 package ai.ssot.contextapi.domain.member.dto
 
-import ai.ssot.contextapi.shared.graphql.MutationError
+import ai.ssot.contextapi.shared.page.PageInfo
 import java.time.LocalDateTime
 
 data class RegisterMemberInput(
@@ -19,29 +19,16 @@ data class UpdateMemberInput(
     val enabled: Boolean? = null,
 )
 
-data class MemberView(
+data class MemberDto(
     val id: Long,
     val name: String,
     val email: String,
     val admin: Boolean,
     val enabled: Boolean,
-    val createdAt: LocalDateTime,
+    val createdDatetime: LocalDateTime,
 )
 
 data class MemberPage(
-    val items: List<MemberView>,
-    val page: Int,
-    val size: Int,
-    val totalElements: Int,
-    val totalPages: Int,
-)
-
-data class RegisterMemberPayload(
-    val member: MemberView? = null,
-    val errors: List<MutationError> = emptyList(),
-)
-
-data class UpdateMemberPayload(
-    val member: MemberView? = null,
-    val errors: List<MutationError> = emptyList(),
+    val members: List<MemberDto>,
+    val pageInfo: PageInfo
 )

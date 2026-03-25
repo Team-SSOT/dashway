@@ -1,6 +1,6 @@
 package ai.ssot.contextapi.domain.app.dto
 
-import ai.ssot.contextapi.shared.graphql.MutationError
+import ai.ssot.contextapi.shared.page.PageInfo
 import java.time.LocalDateTime
 
 data class RegisterAppInput(
@@ -12,27 +12,14 @@ data class DeactivateAppInput(
     val id: String,
 )
 
-data class AppView(
+data class AppDto(
     val id: String,
     val name: String,
     val enabled: Boolean,
-    val createdAt: LocalDateTime,
+    val createdDatetime: LocalDateTime,
 )
 
 data class AppPage(
-    val items: List<AppView>,
-    val page: Int,
-    val size: Int,
-    val totalElements: Int,
-    val totalPages: Int,
-)
-
-data class RegisterAppPayload(
-    val app: AppView? = null,
-    val errors: List<MutationError> = emptyList(),
-)
-
-data class DeactivateAppPayload(
-    val app: AppView? = null,
-    val errors: List<MutationError> = emptyList(),
+    val apps: List<AppDto>,
+    val pageInfo: PageInfo
 )

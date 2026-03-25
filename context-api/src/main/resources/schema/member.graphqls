@@ -4,8 +4,8 @@ type Query {
 }
 
 type Mutation {
-  registerMember(input: MemberInput!): MemberPayload!
-  updateMember(id: Long!, input: MemberInput!): MemberPayload!
+  registerMember(input: RegisterMemberInput!): Member
+  updateMember(input: UpdateMemberInput!): Member
 }
 
 type Member {
@@ -13,24 +13,27 @@ type Member {
   name: String!
   email: String!
   admin: Boolean!
-  isEnabled: Boolean!
+  enabled: Boolean!
   createdDatetime: DateTime!
 }
 
 type MemberPage {
-  items: [Member!]!
-  pageInfo: [PageInfo!]!
+  members: [Member!]!
+  pageInfo: PageInfo!
 }
 
-type MemberPayload {
-  member: Member
-  errors: [MutationError!]!
-}
-
-input MemberInput {
+input RegisterMemberInput {
   name: String!
   email: String!
   password: String!
   admin: Boolean = false
-  isEnabled: Boolean = true
+  enabled: Boolean = true
+}
+
+input UpdateMemberInput {
+  id: Long!
+  name: String
+  email: String
+  admin: Boolean
+  enabled: Boolean
 }

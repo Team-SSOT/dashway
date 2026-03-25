@@ -1,22 +1,11 @@
 package ai.ssot.contextapi.domain.team.service
 
 import ai.ssot.contextapi.domain.auth.service.CurrentViewerService
+import ai.ssot.contextapi.domain.member.dto.MemberDto
+import ai.ssot.contextapi.domain.member.dto.MemberPage
 import ai.ssot.contextapi.domain.member.exception.MemberNotFoundException
 import ai.ssot.contextapi.domain.member.service.MemberLookupService
-import ai.ssot.contextapi.domain.team.dto.AddTeamMemberInput
-import ai.ssot.contextapi.domain.team.dto.AddTeamMemberPayload
-import ai.ssot.contextapi.domain.team.dto.CreateTeamInput
-import ai.ssot.contextapi.domain.team.dto.CreateTeamPayload
-import ai.ssot.contextapi.domain.team.dto.DeleteTeamInput
-import ai.ssot.contextapi.domain.team.dto.DeleteTeamPayload
-import ai.ssot.contextapi.domain.team.dto.MemberPage
-import ai.ssot.contextapi.domain.team.dto.RemoveTeamMemberInput
-import ai.ssot.contextapi.domain.team.dto.RemoveTeamMemberPayload
-import ai.ssot.contextapi.domain.team.dto.TeamMemberView
-import ai.ssot.contextapi.domain.team.dto.TeamPage
-import ai.ssot.contextapi.domain.team.dto.TeamView
-import ai.ssot.contextapi.domain.team.dto.UpdateTeamInput
-import ai.ssot.contextapi.domain.team.dto.UpdateTeamPayload
+import ai.ssot.contextapi.domain.team.dto.*
 import ai.ssot.contextapi.domain.team.entity.Team
 import ai.ssot.contextapi.domain.team.entity.TeamMember
 import ai.ssot.contextapi.domain.team.entity.TeamMemberId
@@ -26,6 +15,7 @@ import ai.ssot.contextapi.domain.team.exception.TeamNotEmptyException
 import ai.ssot.contextapi.domain.team.exception.TeamNotFoundException
 import ai.ssot.contextapi.domain.team.repository.TeamMemberRepository
 import ai.ssot.contextapi.domain.team.repository.TeamRepository
+import ai.ssot.contextapi.shared.page.PageInfo
 import ai.ssot.contextapi.shared.page.PageSupport
 import ai.ssot.contextapi.shared.validation.requireNonBlankText
 import org.springframework.data.domain.Sort
@@ -42,36 +32,78 @@ class TeamService(
     @Transactional(readOnly = true)
     fun teams(page: Int, size: Int): TeamPage {
         currentViewerService.requireAdmin()
-        return teamRepository.findAll(PageSupport.pageRequest(page, size)).toTeamPage()
+        val teamPage = teamRepository.findAll(PageSupport.pageRequest(page, size))
+        return TeamPage(
+            items = teamPage.content.map { team ->
+                TeamDto(
+                    id = checkNotNull(team.id),
+                    name = team.name,
+                    createdDatetime = team.createdDatetime,
+                )
+            },
+            pageInfo = PageInfo(
+                page = teamPage.number,
+                size = teamPage.size,
+                totalElements = teamPage.totalElements.toInt(),
+                totalPages = teamPage.totalPages,
+            ),
+        )
     }
 
     @Transactional(readOnly = true)
-    fun team(id: Long): TeamView? {
+    fun team(id: Long): TeamDto? {
         currentViewerService.requireAdmin()
-        return teamRepository.findById(id).orElse(null)?.toView()
+        val team = teamRepository.findById(id).orElse(null) ?: return null
+        return TeamDto(
+            id = checkNotNull(team.id),
+            name = team.name,
+            createdDatetime = team.createdDatetime,
+        )
     }
 
     @Transactional(readOnly = true)
     fun teamMembers(teamId: Long, page: Int, size: Int): MemberPage {
         currentViewerService.requireAdmin()
-        return teamMemberRepository.findMemberSummariesByTeamId(
+        val memberPage = teamMemberRepository.findMemberSummariesByTeamId(
             teamId,
             PageSupport.pageRequest(page, size, Sort.unsorted()),
-        ).toMemberPage()
+        )
+        return MemberPage(
+            items = memberPage.content.map { member ->
+                MemberDto(
+                    id = member.id,
+                    name = member.name,
+                    email = member.email,
+                    admin = member.admin,
+                    enabled = member.enabled,
+                    createdDatetime = member.createdDatetime,
+                )
+            },
+            pageInfo = PageInfo(
+                page = memberPage.number,
+                size = memberPage.size,
+                totalElements = memberPage.totalElements.toInt(),
+                totalPages = memberPage.totalPages,
+            ),
+        )
     }
 
     @Transactional
-    fun createTeam(input: CreateTeamInput): CreateTeamPayload {
+    fun createTeam(input: CreateTeamInput): TeamDto {
         currentViewerService.requireAdmin()
         val name = input.name.trim()
         requireNonBlankText("name", name)
 
         val savedTeam = teamRepository.save(Team(name = name))
-        return CreateTeamPayload(team = savedTeam.toView())
+        return TeamDto(
+            id = checkNotNull(savedTeam.id),
+            name = savedTeam.name,
+            createdDatetime = savedTeam.createdDatetime,
+        )
     }
 
     @Transactional
-    fun updateTeam(input: UpdateTeamInput): UpdateTeamPayload {
+    fun updateTeam(input: UpdateTeamInput): TeamDto {
         currentViewerService.requireAdmin()
         val teamId = input.id
         val team = teamRepository.findById(teamId).orElseThrow { TeamNotFoundException(teamId) }
@@ -79,11 +111,16 @@ class TeamService(
         requireNonBlankText("name", name)
 
         team.name = name
-        return UpdateTeamPayload(team = teamRepository.save(team).toView())
+        val savedTeam = teamRepository.save(team)
+        return TeamDto(
+            id = checkNotNull(savedTeam.id),
+            name = savedTeam.name,
+            createdDatetime = savedTeam.createdDatetime,
+        )
     }
 
     @Transactional
-    fun deleteTeam(input: DeleteTeamInput): DeleteTeamPayload {
+    fun deleteTeam(input: DeleteTeamInput): Boolean {
         currentViewerService.requireAdmin()
         val teamId = input.id
         if (!teamRepository.existsById(teamId)) {
@@ -94,11 +131,11 @@ class TeamService(
         }
 
         teamRepository.deleteById(teamId)
-        return DeleteTeamPayload(deleted = true)
+        return true
     }
 
     @Transactional
-    fun addTeamMember(input: AddTeamMemberInput): AddTeamMemberPayload {
+    fun addTeamMember(input: AddTeamMemberInput): TeamMembershipDto {
         currentViewerService.requireAdmin()
         val teamId = input.teamId
         val memberId = input.memberId
@@ -112,11 +149,25 @@ class TeamService(
         }
 
         teamMemberRepository.save(TeamMember(id = TeamMemberId(teamId = teamId, memberId = memberId)))
-        return AddTeamMemberPayload(team = team.toView(), member = member.toTeamMemberView())
+        return TeamMembershipDto(
+            team = TeamDto(
+                id = checkNotNull(team.id),
+                name = team.name,
+                createdDatetime = team.createdDatetime,
+            ),
+            member = MemberDto(
+                id = member.id,
+                name = member.name,
+                email = member.email,
+                admin = member.admin,
+                enabled = member.enabled,
+                createdDatetime = member.createdDatetime,
+            ),
+        )
     }
 
     @Transactional
-    fun removeTeamMember(input: RemoveTeamMemberInput): RemoveTeamMemberPayload {
+    fun removeTeamMember(input: RemoveTeamMemberInput): TeamMembershipDto {
         currentViewerService.requireAdmin()
         val teamId = input.teamId
         val memberId = input.memberId
@@ -131,6 +182,20 @@ class TeamService(
         }
 
         teamMemberRepository.deleteById(membershipId)
-        return RemoveTeamMemberPayload(team = team.toView(), member = member.toTeamMemberView())
+        return TeamMembershipDto(
+            team = TeamDto(
+                id = checkNotNull(team.id),
+                name = team.name,
+                createdDatetime = team.createdDatetime,
+            ),
+            member = MemberDto(
+                id = member.id,
+                name = member.name,
+                email = member.email,
+                admin = member.admin,
+                enabled = member.enabled,
+                createdDatetime = member.createdDatetime,
+            ),
+        )
     }
 }

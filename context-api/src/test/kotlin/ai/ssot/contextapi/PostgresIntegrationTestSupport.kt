@@ -3,9 +3,9 @@ package ai.ssot.contextapi
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.io.ClassPathResource
+import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator
-import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.GenericContainer
@@ -66,8 +66,8 @@ abstract class PostgresIntegrationTestSupport {
             registry.add("context-api.auth.access-token-ttl") { "PT15M" }
             registry.add("context-api.auth.refresh-token-ttl") { "P7D" }
             registry.add("context-api.auth.jwt-secret") { "0123456789abcdef0123456789abcdef" }
-            registry.add("context-api.auth.redis.host", redis::getHost)
-            registry.add("context-api.auth.redis.port", redis::getFirstMappedPort)
+            registry.add("redis.host", redis::getHost)
+            registry.add("redis.port", redis::getFirstMappedPort)
         }
     }
 }

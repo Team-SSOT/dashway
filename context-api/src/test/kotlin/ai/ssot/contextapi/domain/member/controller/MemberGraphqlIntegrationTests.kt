@@ -39,7 +39,9 @@ class MemberGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
             """
             query {
               members(page: -1, size: 10) {
-                page
+                pageInfo {
+                  page
+                }
               }
             }
             """.trimIndent(),
@@ -47,6 +49,7 @@ class MemberGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.errors[0].message", containsString("page must be 0 or greater.")))
+            .andExpect(jsonPath("$.errors[0].extensions.code").value("VALIDATION_ERROR"))
     }
 
     @Test
@@ -63,33 +66,30 @@ class MemberGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
                 admin: true
                 enabled: false
               }) {
-                member {
-                  id
-                  name
-                  email
-                  admin
-                  enabled
-                }
-                errors {
-                  code
-                }
+                id
+                name
+                email
+                admin
+                enabled
               }
             }
             """.trimIndent(),
             admin.accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.updateMember.member.name").value("Alice Admin"))
-            .andExpect(jsonPath("$.data.updateMember.member.admin").value(true))
-            .andExpect(jsonPath("$.data.updateMember.member.enabled").value(false))
-            .andExpect(jsonPath("$.data.updateMember.errors").isEmpty())
+            .andExpect(jsonPath("$.data.updateMember.name").value("Alice Admin"))
+            .andExpect(jsonPath("$.data.updateMember.admin").value(true))
+            .andExpect(jsonPath("$.data.updateMember.enabled").value(false))
+            .andExpect(jsonPath("$.errors").doesNotExist())
 
         executeGraphql(
             """
             query {
               members(page: 0, size: 10) {
-                page
-                totalElements
+                pageInfo {
+                  page
+                  totalElements
+                }
                 items {
                   id
                   email
@@ -101,8 +101,8 @@ class MemberGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
             admin.accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.members.page").value(0))
-            .andExpect(jsonPath("$.data.members.totalElements").value(2))
+            .andExpect(jsonPath("$.data.members.pageInfo.page").value(0))
+            .andExpect(jsonPath("$.data.members.pageInfo.totalElements").value(2))
             .andExpect(jsonPath("$.data.members.items[0].id").value(memberId.toInt()))
             .andExpect(jsonPath("$.data.members.items[0].enabled").value(false))
     }
@@ -120,20 +120,15 @@ class MemberGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
                 email: "alice@example.com"
                 password: "another-password"
               }) {
-                member {
-                  id
-                }
-                errors {
-                  code
-                }
+                id
               }
             }
             """.trimIndent(),
             admin.accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.registerMember.member").doesNotExist())
-            .andExpect(jsonPath("$.data.registerMember.errors[0].code").value("DUPLICATE_MEMBER_EMAIL"))
+            .andExpect(jsonPath("$.data.registerMember").doesNotExist())
+            .andExpect(jsonPath("$.errors[0].extensions.code").value("DUPLICATE_MEMBER_EMAIL"))
     }
 
     @Test
@@ -147,26 +142,20 @@ class MemberGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
                 id: 999999
                 name: "Ghost"
               }) {
-                member {
-                  id
-                }
-                errors {
-                  code
-                  message
-                }
+                id
               }
             }
             """.trimIndent(),
             admin.accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.updateMember.member").doesNotExist())
-            .andExpect(jsonPath("$.data.updateMember.errors[0].code").value("NOT_FOUND"))
-            .andExpect(jsonPath("$.data.updateMember.errors[0].message").value("Member not found."))
+            .andExpect(jsonPath("$.data.updateMember").doesNotExist())
+            .andExpect(jsonPath("$.errors[0].extensions.code").value("NOT_FOUND"))
+            .andExpect(jsonPath("$.errors[0].message").value("Member not found."))
     }
 
     @Test
-    fun `returns multiple validation errors without persisting partial member updates`() {
+    fun `returns aggregated validation errors without persisting partial member updates`() {
         val admin = bootstrapAdmin()
         val memberId = registerMember("Alice", "alice@example.com", "alice-password", admin.accessToken)
 
@@ -179,22 +168,17 @@ class MemberGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
                 email: "   "
                 admin: true
               }) {
-                member {
-                  id
-                }
-                errors {
-                  code
-                  message
-                }
+                id
               }
             }
             """.trimIndent(),
             admin.accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.updateMember.member").doesNotExist())
-            .andExpect(jsonPath("$.data.updateMember.errors[0].code").value("VALIDATION_ERROR"))
-            .andExpect(jsonPath("$.data.updateMember.errors[1].code").value("VALIDATION_ERROR"))
+            .andExpect(jsonPath("$.data.updateMember").doesNotExist())
+            .andExpect(jsonPath("$.errors[0].extensions.code").value("VALIDATION_ERROR"))
+            .andExpect(jsonPath("$.errors[0].extensions.violations[0].field").value("name"))
+            .andExpect(jsonPath("$.errors[0].extensions.violations[1].field").value("email"))
 
         val response = executeGraphqlAndRead(
             """

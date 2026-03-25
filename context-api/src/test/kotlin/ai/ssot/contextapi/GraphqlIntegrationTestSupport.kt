@@ -2,8 +2,8 @@ package ai.ssot.contextapi
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.ResultActions
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.ResultActions
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import tools.jackson.databind.JsonNode
@@ -53,6 +53,17 @@ abstract class GraphqlIntegrationTestSupport : PostgresIntegrationTestSupport() 
                 }
             }
 
+    protected fun executeGraphqlAndReadAllowErrors(
+        query: String,
+        accessToken: String? = null,
+    ): JsonNode =
+        executeGraphql(query, accessToken)
+            .andExpect(status().isOk)
+            .andReturn()
+            .response
+            .contentAsString
+            .let(objectMapper::readTree)
+
     protected fun JsonNode.textAt(pointer: String): String =
         at(pointer).toString().trim('"')
 
@@ -88,9 +99,6 @@ abstract class GraphqlIntegrationTestSupport : PostgresIntegrationTestSupport() 
                   accessToken
                   refreshToken
                 }
-                errors {
-                  code
-                }
               }
             }
             """.trimIndent(),
@@ -121,16 +129,11 @@ abstract class GraphqlIntegrationTestSupport : PostgresIntegrationTestSupport() 
                 email: "$email"
                 password: "$password"$adminField$enabledField
               }) {
-                member {
-                  id
-                }
-                errors {
-                  code
-                }
+                id
               }
             }
             """.trimIndent(),
             accessToken,
-        ).longAt("/data/registerMember/member/id")
+        ).longAt("/data/registerMember/id")
     }
 }

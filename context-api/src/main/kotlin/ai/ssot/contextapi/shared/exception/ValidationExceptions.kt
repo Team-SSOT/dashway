@@ -1,8 +1,8 @@
 package ai.ssot.contextapi.shared.exception
 
-import ai.ssot.contextapi.shared.graphql.MutationErrorCode
-
 class RequiredFieldException(fieldName: String) : CustomException(
-    code = MutationErrorCode.VALIDATION_ERROR,
+    code = ErrorCode.VALIDATION_ERROR,
+    category = ErrorCategory.VALIDATION,
     message = "$fieldName is required.",
+    field = fieldName,
 )

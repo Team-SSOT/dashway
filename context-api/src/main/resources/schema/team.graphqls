@@ -4,35 +4,29 @@ extend type Query {
 }
 
 extend type Mutation {
-  createTeam(input: CreateTeamInput!): TeamPayload!
-  updateTeam(input: UpdateTeamInput!): TeamPayload!
-  deleteTeam(id: Long!): TeamPayload!
+  createTeam(input: CreateTeamInput!): Team
+  updateTeam(input: UpdateTeamInput!): Team
+  deleteTeam(input: DeleteTeamInput!): Boolean
 
-  addTeamMember(input: AddTeamMemberInput!): TeamMemberPayload!
-  removeTeamMember(input: RemoveTeamMemberInput!): TeamMemberPayload!
+  addTeamMember(input: AddTeamMemberInput!): TeamMembership
+  removeTeamMember(input: RemoveTeamMemberInput!): TeamMembership
 }
 
 type Team {
   id: Long!
   name: String!
-  createdAt: DateTime!
-  members : [Member!]!
+  createdDatetime: DateTime!
+  members(page: Int!, size: Int!): MemberPage!
 }
 
 type TeamPage {
-  items: [Team!]!
-  pageInfo: [PageInfo!]!
+  teams: [Team!]!
+  pageInfo: PageInfo!
 }
 
-type TeamPayload {
-  team: Team
-  errors: [MutationError!]!
-}
-
-type TeamMemberPayload {
+type TeamMembership {
   team: Team
   member: Member
-  errors: [MutationError!]!
 }
 
 input CreateTeamInput {
@@ -44,12 +38,16 @@ input UpdateTeamInput {
   name: String!
 }
 
-input AddTeamMemberInput {
+input DeleteTeamInput {
   id: Long!
-  memberIds: [Long!]!
+}
+
+input AddTeamMemberInput {
+  teamId: Long!
+  memberId: Long!
 }
 
 input RemoveTeamMemberInput {
-  id: Long!
-  memberIds: [Long!]!
+  teamId: Long!
+  memberId: Long!
 }

@@ -25,7 +25,7 @@ interface TeamMemberRepository : JpaRepository<TeamMember, TeamMemberId> {
             m.email as email,
             m.is_admin as admin,
             m.is_enabled as enabled,
-            m.created_datetime as "createdAt"
+            m.created_datetime as "createdDatetime"
         from team_member tm
         join members m on m.id = tm.member_id
         where tm.team_id = :teamId

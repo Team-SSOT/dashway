@@ -1,20 +1,14 @@
 package ai.ssot.contextapi.domain.auth.service
 
-import ai.ssot.contextapi.domain.auth.dto.AuthTokenPair
-import ai.ssot.contextapi.domain.auth.dto.LoginInput
-import ai.ssot.contextapi.domain.auth.dto.LoginPayload
-import ai.ssot.contextapi.domain.auth.dto.LogoutInput
-import ai.ssot.contextapi.domain.auth.dto.LogoutPayload
-import ai.ssot.contextapi.domain.auth.dto.RefreshTokenInput
-import ai.ssot.contextapi.domain.auth.dto.RefreshTokenPayload
+import ai.ssot.contextapi.domain.auth.dto.*
 import ai.ssot.contextapi.domain.auth.exception.InvalidCredentialsException
 import ai.ssot.contextapi.domain.auth.exception.InvalidRefreshTokenException
 import ai.ssot.contextapi.domain.auth.repository.RefreshTokenRepository
-import ai.ssot.contextapi.domain.member.dto.MemberView
+import ai.ssot.contextapi.domain.member.dto.MemberDto
 import ai.ssot.contextapi.domain.member.service.MemberAuthLookup
 import ai.ssot.contextapi.domain.member.service.MemberAuthLookupService
 import ai.ssot.contextapi.security.AuthProperties
-import ai.ssot.contextapi.security.token.AccessTokenService
+import ai.ssot.contextapi.security.token.TokenService
 import ai.ssot.contextapi.shared.validation.requireNonBlankText
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -30,14 +24,23 @@ class AuthService(
     private val memberAuthLookupService: MemberAuthLookupService,
     private val passwordEncoder: PasswordEncoder,
     private val refreshTokenRepository: RefreshTokenRepository,
-    private val accessTokenService: AccessTokenService,
+    private val tokenService: TokenService,
 ) {
     @Transactional(readOnly = true)
-    fun me(): MemberView? =
-        memberAuthLookupService.findById(currentViewerService.requireAuthenticated().memberId)?.toView()
+    fun me(): MemberDto? =
+        memberAuthLookupService.findById(currentViewerService.requireAuthenticated().memberId)?.let { member ->
+            MemberDto(
+                id = member.id,
+                name = member.name,
+                email = member.email,
+                admin = member.admin,
+                enabled = member.enabled,
+                createdDatetime = member.createdDatetime,
+            )
+        }
 
     @Transactional(readOnly = true)
-    fun login(input: LoginInput): LoginPayload {
+    fun login(input: LoginInput): AuthSessionDto {
         val email = input.email.trim()
         requireNonBlankText("email", email)
         requireNonBlankText("password", input.password)
@@ -48,14 +51,21 @@ class AuthService(
             ?.takeIf { passwordEncoder.matches(input.password, it.passwordHash) }
             ?: throw InvalidCredentialsException()
 
-        return LoginPayload(
-            member = member.toView(),
+        return AuthSessionDto(
+            member = MemberDto(
+                id = member.id,
+                name = member.name,
+                email = member.email,
+                admin = member.admin,
+                enabled = member.enabled,
+                createdDatetime = member.createdDatetime,
+            ),
             tokens = issueTokenPair(member),
         )
     }
 
     @Transactional
-    fun refreshToken(input: RefreshTokenInput): RefreshTokenPayload {
+    fun refreshToken(input: RefreshTokenInput): AuthSessionDto {
         val refreshToken = input.refreshToken.trim()
         requireNonBlankText("refreshToken", refreshToken)
 
@@ -65,44 +75,42 @@ class AuthService(
             ?.takeIf { it.enabled }
             ?: throw InvalidRefreshTokenException()
 
-        return RefreshTokenPayload(
-            member = member.toView(),
+        return AuthSessionDto(
+            member = MemberDto(
+                id = member.id,
+                name = member.name,
+                email = member.email,
+                admin = member.admin,
+                enabled = member.enabled,
+                createdDatetime = member.createdDatetime,
+            ),
             tokens = issueTokenPair(member),
         )
     }
 
     @Transactional
-    fun logout(input: LogoutInput): LogoutPayload {
+    fun logout(input: LogoutInput): Boolean {
         val refreshToken = input.refreshToken.trim()
         requireNonBlankText("refreshToken", refreshToken)
 
         refreshTokenRepository.delete(refreshToken)
-        return LogoutPayload(loggedOut = true)
+        return true
     }
 
     private fun issueTokenPair(member: MemberAuthLookup): AuthTokenPair {
         val issuedAt = Instant.now()
+        val accessTokenExpiresAt = issuedAt.plus(authProperties.accessTokenTtl)
         val refreshTokenExpiresAt = issuedAt.plus(authProperties.refreshTokenTtl)
-        val accessToken = accessTokenService.issue(member, issuedAt)
+        val accessToken = tokenService.generateAccessToken(member.id, member.admin)
 
         return AuthTokenPair(
-            accessToken = accessToken.tokenValue,
+            accessToken = accessToken,
             refreshToken = refreshTokenRepository.create(member.id),
-            accessTokenExpiresAt = accessToken.expiresAt.toLocalDateTime(),
+            accessTokenExpiresAt = accessTokenExpiresAt.toLocalDateTime(),
             refreshTokenExpiresAt = refreshTokenExpiresAt.toLocalDateTime(),
         )
     }
 
     private fun Instant.toLocalDateTime(): LocalDateTime =
         LocalDateTime.ofInstant(this, ZoneOffset.UTC)
-
-    private fun MemberAuthLookup.toView(): MemberView =
-        MemberView(
-            id = id,
-            name = name,
-            email = email,
-            admin = admin,
-            enabled = enabled,
-            createdAt = createdAt,
-        )
 }

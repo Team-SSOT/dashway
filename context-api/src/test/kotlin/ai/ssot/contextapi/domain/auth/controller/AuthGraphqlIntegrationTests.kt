@@ -1,6 +1,7 @@
 package ai.ssot.contextapi.domain.auth.controller
 
 import ai.ssot.contextapi.GraphqlIntegrationTestSupport
+import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
@@ -31,6 +32,7 @@ class AuthGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
             .andExpect(jsonPath("$.data.me.id").value(admin.memberId.toInt()))
             .andExpect(jsonPath("$.data.me.email").value("admin@example.com"))
             .andExpect(jsonPath("$.data.me.admin").value(true))
+            .andExpect(jsonPath("$.errors").doesNotExist())
     }
 
     @Test
@@ -47,9 +49,6 @@ class AuthGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
                 tokens {
                   accessToken
                   refreshToken
-                }
-                errors {
-                  code
                 }
               }
             }
@@ -68,32 +67,24 @@ class AuthGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
                 member {
                   id
                 }
-                errors {
-                  code
-                }
               }
             }
             """.trimIndent(),
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.refreshToken.member").doesNotExist())
-            .andExpect(jsonPath("$.data.refreshToken.errors[0].code").value("INVALID_REFRESH_TOKEN"))
+            .andExpect(jsonPath("$.data.refreshToken").doesNotExist())
+            .andExpect(jsonPath("$.errors[0].extensions.code").value("INVALID_REFRESH_TOKEN"))
 
         executeGraphql(
             """
             mutation {
-              logout(input: { refreshToken: "$rotatedRefreshToken" }) {
-                loggedOut
-                errors {
-                  code
-                }
-              }
+              logout(input: { refreshToken: "$rotatedRefreshToken" })
             }
             """.trimIndent(),
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.logout.loggedOut").value(true))
-            .andExpect(jsonPath("$.data.logout.errors").isEmpty())
+            .andExpect(jsonPath("$.data.logout").value(true))
+            .andExpect(jsonPath("$.errors").doesNotExist())
     }
 
     @Test
@@ -103,18 +94,13 @@ class AuthGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
         executeGraphql(
             """
             mutation {
-              logout(input: { refreshToken: "${admin.refreshToken}" }) {
-                loggedOut
-                errors {
-                  code
-                }
-              }
+              logout(input: { refreshToken: "${admin.refreshToken}" })
             }
             """.trimIndent(),
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.logout.loggedOut").value(true))
-            .andExpect(jsonPath("$.data.logout.errors").isEmpty())
+            .andExpect(jsonPath("$.data.logout").value(true))
+            .andExpect(jsonPath("$.errors").doesNotExist())
 
         executeGraphql(
             """
@@ -123,16 +109,13 @@ class AuthGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
                 member {
                   id
                 }
-                errors {
-                  code
-                }
               }
             }
             """.trimIndent(),
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.refreshToken.member").doesNotExist())
-            .andExpect(jsonPath("$.data.refreshToken.errors[0].code").value("INVALID_REFRESH_TOKEN"))
+            .andExpect(jsonPath("$.data.refreshToken").doesNotExist())
+            .andExpect(jsonPath("$.errors[0].extensions.code").value("INVALID_REFRESH_TOKEN"))
     }
 
     @Test
@@ -153,21 +136,16 @@ class AuthGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
                 id: $memberId
                 enabled: false
               }) {
-                member {
-                  id
-                  enabled
-                }
-                errors {
-                  code
-                }
+                id
+                enabled
               }
             }
             """.trimIndent(),
             admin.accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.updateMember.member.enabled").value(false))
-            .andExpect(jsonPath("$.data.updateMember.errors").isEmpty())
+            .andExpect(jsonPath("$.data.updateMember.enabled").value(false))
+            .andExpect(jsonPath("$.errors").doesNotExist())
 
         executeGraphql(
             """
@@ -176,16 +154,13 @@ class AuthGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
                 member {
                   id
                 }
-                errors {
-                  code
-                }
               }
             }
             """.trimIndent(),
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.refreshToken.member").doesNotExist())
-            .andExpect(jsonPath("$.data.refreshToken.errors[0].code").value("INVALID_REFRESH_TOKEN"))
+            .andExpect(jsonPath("$.data.refreshToken").doesNotExist())
+            .andExpect(jsonPath("$.errors[0].extensions.code").value("INVALID_REFRESH_TOKEN"))
     }
 
     @Test
@@ -206,21 +181,16 @@ class AuthGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
                 id: $memberId
                 name: "Updated User"
               }) {
-                member {
-                  id
-                  name
-                }
-                errors {
-                  code
-                }
+                id
+                name
               }
             }
             """.trimIndent(),
             user.accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.updateMember.member.name").value("Updated User"))
-            .andExpect(jsonPath("$.data.updateMember.errors").isEmpty())
+            .andExpect(jsonPath("$.data.updateMember.name").value("Updated User"))
+            .andExpect(jsonPath("$.errors").doesNotExist())
 
         executeGraphql(
             """
@@ -229,19 +199,48 @@ class AuthGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
                 id: ${admin.memberId}
                 name: "Hijacked"
               }) {
-                member {
-                  id
-                }
-                errors {
-                  code
-                }
+                id
               }
             }
             """.trimIndent(),
             user.accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.updateMember.member").doesNotExist())
-            .andExpect(jsonPath("$.data.updateMember.errors[0].code").value("FORBIDDEN"))
+            .andExpect(jsonPath("$.data.updateMember").doesNotExist())
+            .andExpect(jsonPath("$.errors[0].extensions.code").value("FORBIDDEN"))
+    }
+
+    @Test
+    fun `returns filter authentication failures as graphql top level errors`() {
+        executeGraphql(
+            """
+            query {
+              me {
+                id
+              }
+            }
+            """.trimIndent(),
+            "invalid-access-token",
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.data").value(nullValue()))
+            .andExpect(jsonPath("$.errors[0].extensions.errorType").value("PERMISSION_DENIED"))
+            .andExpect(jsonPath("$.errors[0].extensions.code").value("UNAUTHENTICATED"))
+    }
+
+    @Test
+    fun `returns missing authentication as graphql top level errors`() {
+        executeGraphql(
+            """
+            query {
+              me {
+                id
+              }
+            }
+            """.trimIndent(),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.data.me").doesNotExist())
+            .andExpect(jsonPath("$.errors[0].extensions.code").value("UNAUTHENTICATED"))
     }
 }

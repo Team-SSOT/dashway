@@ -3,48 +3,54 @@ package ai.ssot.contextapi.domain.auth.service
 import ai.ssot.contextapi.domain.auth.exception.ForbiddenException
 import ai.ssot.contextapi.domain.auth.exception.UnauthenticatedException
 import ai.ssot.contextapi.domain.member.service.MemberAuthLookupService
-import ai.ssot.contextapi.security.context.AuthenticationContextAccessor
-import ai.ssot.contextapi.security.principal.AuthenticatedMemberPrincipal
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 
+data class AuthenticatedViewer(
+    val memberId: Long,
+    val email: String,
+    val admin: Boolean,
+)
+
 interface CurrentViewerService {
-    fun requireAuthenticated(): AuthenticatedMemberPrincipal
+    fun requireAuthenticated(): AuthenticatedViewer
 
-    fun requireAdmin(): AuthenticatedMemberPrincipal
+    fun requireAdmin(): AuthenticatedViewer
 
-    fun requireAdminOrSelf(memberId: Long): AuthenticatedMemberPrincipal
+    fun requireAdminOrSelf(memberId: Long): AuthenticatedViewer
 }
 
 @Service
 class SecurityContextCurrentViewerService(
     private val memberAuthLookupService: MemberAuthLookupService,
-    private val authenticationContextAccessor: AuthenticationContextAccessor,
 ) : CurrentViewerService {
-    override fun requireAuthenticated(): AuthenticatedMemberPrincipal {
-        val principal = authenticationContextAccessor.authenticatedMemberPrincipalOrNull()
+    override fun requireAuthenticated(): AuthenticatedViewer {
+        val authentication = SecurityContextHolder.getContext().authentication
             ?: throw UnauthenticatedException()
-        val member = memberAuthLookupService.findById(principal.memberId)
+        val memberId = authentication.principal.toString().toLongOrNull()
+            ?: throw UnauthenticatedException()
+        val member = memberAuthLookupService.findById(memberId)
             ?: throw UnauthenticatedException()
 
         if (!member.enabled) {
             throw UnauthenticatedException()
         }
 
-        return AuthenticatedMemberPrincipal(
+        return AuthenticatedViewer(
             memberId = member.id,
             email = member.email,
             admin = member.admin,
         )
     }
 
-    override fun requireAdmin(): AuthenticatedMemberPrincipal =
+    override fun requireAdmin(): AuthenticatedViewer =
         requireAuthenticated().also {
             if (!it.admin) {
                 throw ForbiddenException()
             }
         }
 
-    override fun requireAdminOrSelf(memberId: Long): AuthenticatedMemberPrincipal =
+    override fun requireAdminOrSelf(memberId: Long): AuthenticatedViewer =
         requireAuthenticated().also {
             if (!it.admin && it.memberId != memberId) {
                 throw ForbiddenException()
