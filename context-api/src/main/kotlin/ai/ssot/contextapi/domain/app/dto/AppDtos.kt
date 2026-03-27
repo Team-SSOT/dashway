@@ -1,25 +1,23 @@
 package ai.ssot.contextapi.domain.app.dto
 
-import ai.ssot.contextapi.shared.page.PageInfo
+import ai.ssot.contextapi.generated.types.App
 import java.time.LocalDateTime
-
-data class RegisterAppInput(
-    val name: String,
-    val enabled: Boolean? = null,
-)
-
-data class DeactivateAppInput(
-    val id: String,
-)
+import java.util.*
 
 data class AppDto(
-    val id: String,
+    val id: UUID,
     val name: String,
-    val enabled: Boolean,
+    val port: Int,
+    val isEnabled: Boolean,
     val createdDatetime: LocalDateTime,
-)
-
-data class AppPage(
-    val apps: List<AppDto>,
-    val pageInfo: PageInfo
-)
+) {
+    fun toGraphQL(): App {
+        return App.newBuilder()
+            .id(id.toString())
+            .name(name)
+            .port(port)
+            .isEnabled(isEnabled)
+            .createdDatetime(createdDatetime)
+            .build()
+    }
+}

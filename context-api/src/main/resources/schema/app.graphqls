@@ -4,14 +4,15 @@ extend type Query {
 }
 
 extend type Mutation {
-  registerApp(input: RegisterAppInput!): App
+  activateApp(input: ActivateAppInput!): App
   deactivateApp(input: DeactivateAppInput!): App
 }
 
 type App {
   id: String!
   name: String!
-  enabled: Boolean!
+  port: Int!
+  isEnabled: Boolean!
   createdDatetime: DateTime!
 }
 
@@ -20,9 +21,8 @@ type AppPage {
   pageInfo: PageInfo!
 }
 
-input RegisterAppInput {
-  name: String!
-  enabled: Boolean = true
+input ActivateAppInput {
+  id: String!
 }
 
 input DeactivateAppInput {

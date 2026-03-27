@@ -12,8 +12,8 @@ type Member {
   id: Long!
   name: String!
   email: String!
-  admin: Boolean!
-  enabled: Boolean!
+  isAdmin: Boolean!
+  isEnabled: Boolean!
   createdDatetime: DateTime!
 }
 
@@ -26,14 +26,13 @@ input RegisterMemberInput {
   name: String!
   email: String!
   password: String!
-  admin: Boolean = false
-  enabled: Boolean = true
+  teamId: Long!
 }
 
 input UpdateMemberInput {
   id: Long!
   name: String
   email: String
-  admin: Boolean
-  enabled: Boolean
+  isAdmin: Boolean
+  isEnabled: Boolean
 }

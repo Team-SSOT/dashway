@@ -26,8 +26,20 @@ class TeamRepositoryIntegrationTests : PostgresIntegrationTestSupport() {
 
     @Test
     fun `finds memberships by member id and member projections by team id`() {
-        val member1 = memberRepository.save(Member(name = "member-1", email = "member-1@example.com"))
-        val member2 = memberRepository.save(Member(name = "member-2", email = "member-2@example.com"))
+        val member1 = memberRepository.save(
+            Member(
+                name = "member-1",
+                email = "member-1@example.com",
+                password = "member-1-password",
+            ),
+        )
+        val member2 = memberRepository.save(
+            Member(
+                name = "member-2",
+                email = "member-2@example.com",
+                password = "member-2-password",
+            ),
+        )
         teamRepository.saveAll(
             listOf(
                 Team(name = "team-10"),

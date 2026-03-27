@@ -22,7 +22,7 @@ class MemberGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
             """
             query {
               members(page: 0, size: 10) {
-                items {
+                members {
                   id
                   email
                 }
@@ -32,8 +32,8 @@ class MemberGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
             admin.accessToken,
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.members.items[0].id").value(secondMemberId.toInt()))
-            .andExpect(jsonPath("$.data.members.items[1].id").value(firstMemberId.toInt()))
+            .andExpect(jsonPath("$.data.members.members[0].id").value(secondMemberId.toInt()))
+            .andExpect(jsonPath("$.data.members.members[1].id").value(firstMemberId.toInt()))
 
         executeGraphql(
             """
@@ -90,7 +90,7 @@ class MemberGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
                   page
                   totalElements
                 }
-                items {
+                members {
                   id
                   email
                   enabled
@@ -103,8 +103,8 @@ class MemberGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.data.members.pageInfo.page").value(0))
             .andExpect(jsonPath("$.data.members.pageInfo.totalElements").value(2))
-            .andExpect(jsonPath("$.data.members.items[0].id").value(memberId.toInt()))
-            .andExpect(jsonPath("$.data.members.items[0].enabled").value(false))
+            .andExpect(jsonPath("$.data.members.members[0].id").value(memberId.toInt()))
+            .andExpect(jsonPath("$.data.members.members[0].enabled").value(false))
     }
 
     @Test

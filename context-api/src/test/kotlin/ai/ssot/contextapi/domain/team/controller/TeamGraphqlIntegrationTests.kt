@@ -46,14 +46,9 @@ class TeamGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
               team(id: $teamId) {
                 id
                 name
-                members(page: 0, size: 10) {
-                  pageInfo {
-                    totalElements
-                  }
-                  items {
-                    id
-                    email
-                  }
+                members {
+                  id
+                  email
                 }
               }
             }
@@ -63,8 +58,8 @@ class TeamGraphqlIntegrationTests : GraphqlIntegrationTestSupport() {
 
         assertEquals(teamId, teamResponse.longAt("/data/team/id"))
         assertEquals("Platform", teamResponse.textAt("/data/team/name"))
-        assertEquals(1, teamResponse.at("/data/team/members/pageInfo/totalElements").asInt())
-        assertEquals("bob@example.com", teamResponse.textAt("/data/team/members/items/0/email"))
+        assertEquals(1, teamResponse.at("/data/team/members").size())
+        assertEquals("bob@example.com", teamResponse.textAt("/data/team/members/0/email"))
 
         executeGraphql(
             """

@@ -8,15 +8,15 @@ extend type Mutation {
   updateTeam(input: UpdateTeamInput!): Team
   deleteTeam(input: DeleteTeamInput!): Boolean
 
-  addTeamMember(input: AddTeamMemberInput!): TeamMembership
-  removeTeamMember(input: RemoveTeamMemberInput!): TeamMembership
+  addTeamMember(input: AddTeamMemberInput!): TeamMember
+  removeTeamMember(input: RemoveTeamMemberInput!): TeamMember
 }
 
 type Team {
   id: Long!
   name: String!
   createdDatetime: DateTime!
-  members(page: Int!, size: Int!): MemberPage!
+  members: [Member!]!
 }
 
 type TeamPage {
@@ -24,7 +24,7 @@ type TeamPage {
   pageInfo: PageInfo!
 }
 
-type TeamMembership {
+type TeamMember {
   team: Team
   member: Member
 }

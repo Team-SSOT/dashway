@@ -1,9 +1,11 @@
 plugins {
+    id("com.netflix.dgs.codegen") version "8.3.0"
     kotlin("jvm") version "2.2.21"
     kotlin("plugin.spring") version "2.2.21"
     id("org.springframework.boot") version "4.0.3"
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("plugin.jpa") version "2.2.21"
+    id("com.google.devtools.ksp") version "2.1.21-2.0.1"
 }
 
 group = "ai.ssot"
@@ -34,6 +36,10 @@ dependencies {
 
     implementation("io.github.oshai:kotlin-logging-jvm:5.1.4")
 
+    implementation("io.github.openfeign.querydsl:querydsl-jpa:7.0")
+    ksp("io.github.openfeign.querydsl:querydsl-ksp-codegen:7.0")
+    annotationProcessor("io.github.openfeign.querydsl:querydsl-apt:7.0:jakarta")
+
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")
     implementation("io.jsonwebtoken:jjwt-impl:0.12.6")
     implementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
@@ -57,6 +63,18 @@ dependencyManagement {
     imports {
         mavenBom("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${property("netflixDgsVersion")}")
     }
+}
+
+tasks.generateJava {
+    schemaPaths = mutableListOf("${projectDir}/src/main/resources/schema")
+    packageName = "ai.ssot.contextapi.generated"
+    language = "java"
+    generateClient = true
+    typeMapping = mutableMapOf(
+        "PageInfo" to "ai.ssot.contextapi.shared.page.PageInfo",
+        "DateTime" to "java.time.LocalDateTime",
+        "Long" to "java.lang.Long",
+    )
 }
 
 kotlin {

@@ -1,5 +1,6 @@
 package ai.ssot.contextapi
 
+import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
@@ -37,6 +38,11 @@ abstract class GraphqlIntegrationTestSupport : PostgresIntegrationTestSupport() 
                 .content(objectMapper.writeValueAsString(mapOf("query" to query))),
         )
 
+    protected fun executeGraphql(
+        request: GraphQLQueryRequest,
+        accessToken: String? = null,
+    ): ResultActions = executeGraphql(request.serialize(), accessToken)
+
     protected fun executeGraphqlAndRead(
         query: String,
         accessToken: String? = null,
@@ -52,6 +58,11 @@ abstract class GraphqlIntegrationTestSupport : PostgresIntegrationTestSupport() 
                     response.toPrettyString()
                 }
             }
+
+    protected fun executeGraphqlAndRead(
+        request: GraphQLQueryRequest,
+        accessToken: String? = null,
+    ): JsonNode = executeGraphqlAndRead(request.serialize(), accessToken)
 
     protected fun executeGraphqlAndReadAllowErrors(
         query: String,

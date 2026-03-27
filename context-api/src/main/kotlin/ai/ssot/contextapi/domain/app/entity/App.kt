@@ -15,8 +15,10 @@ class App(
     var id: UUID = UUID.randomUUID(),
     @Column(nullable = false)
     var name: String = "",
+    @Column(nullable = false)
+    val port: Int,
     @Column(name = "is_enabled", nullable = false)
-    var enabled: Boolean = true,
+    var isEnabled: Boolean = true,
     @Column(name = "created_datetime", nullable = false)
     var createdDatetime: LocalDateTime = LocalDateTime.now(),
 )
