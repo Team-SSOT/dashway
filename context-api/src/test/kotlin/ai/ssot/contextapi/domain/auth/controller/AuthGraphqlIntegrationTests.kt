@@ -1,6 +1,7 @@
 package ai.ssot.contextapi.domain.auth.controller
 
 import ai.ssot.contextapi.GraphqlBehaviorSpecSupport
+import ai.ssot.contextapi.TEST_AUTOCONFIG_EXCLUDES
 import ai.ssot.contextapi.generated.client.LoginGraphQLQuery
 import ai.ssot.contextapi.generated.client.LoginProjectionRoot
 import ai.ssot.contextapi.generated.client.LogoutGraphQLQuery
@@ -12,23 +13,16 @@ import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotBeBlank
+import jakarta.servlet.http.Cookie
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpStatus
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.util.UUID
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(properties = [TEST_AUTOCONFIG_EXCLUDES])
 @AutoConfigureMockMvc
 class AuthGraphqlIntegrationTests : GraphqlBehaviorSpecSupport() {
-    @LocalServerPort
-    private var port: Int = 0
-
     init {
         given("login") {
             `when`("valid admin credentials are provided") {
@@ -41,18 +35,17 @@ class AuthGraphqlIntegrationTests : GraphqlBehaviorSpecSupport() {
                             password = "admin-password",
                         ),
                     )
-                    val setCookie = response.headers.getFirst(HttpHeaders.SET_COOKIE).orEmpty()
 
                     response.body.textAt("/data/login/member/email") shouldBe "admin@example.com"
                     response.body.textAt("/data/login/tokens/accessToken").shouldNotBeBlank()
                     response.body.at("/data/login/tokens/refreshToken").isMissingNode shouldBe true
                     response.body.at("/errors").isMissingNode shouldBe true
-                    setCookie.shouldContain("${TokenService.REFRESH_TOKEN_HEADER}=")
-                    setCookie.shouldContain("HttpOnly")
-                    setCookie.shouldContain("Secure")
-                    setCookie.shouldContain("SameSite=None")
-                    setCookie.shouldContain("Path=/graphql")
-                    setCookie.shouldContain("Max-Age=")
+                    response.setCookie.shouldContain("${TokenService.REFRESH_TOKEN_HEADER}=")
+                    response.setCookie.shouldContain("HttpOnly")
+                    response.setCookie.shouldContain("Secure")
+                    response.setCookie.shouldContain("SameSite=None")
+                    response.setCookie.shouldContain("Path=/graphql")
+                    response.setCookie.shouldContain("Max-Age=")
                 }
             }
 
@@ -109,8 +102,10 @@ class AuthGraphqlIntegrationTests : GraphqlBehaviorSpecSupport() {
                         refreshRequest(),
                         refreshToken = admin.refreshToken,
                     )
-                    val rotatedCookieHeader = refreshResponse.headers.getFirst(HttpHeaders.SET_COOKIE).orEmpty()
-                    val rotatedRefreshToken = extractCookieValue(rotatedCookieHeader, TokenService.REFRESH_TOKEN_HEADER)
+                    val rotatedRefreshToken = extractCookieValue(
+                        refreshResponse.setCookie,
+                        TokenService.REFRESH_TOKEN_HEADER,
+                    )
 
                     refreshResponse.body.longAt("/data/refresh/member/id") shouldBe admin.memberId
                     refreshResponse.body.textAt("/data/refresh/member/email") shouldBe "admin@example.com"
@@ -170,49 +165,29 @@ class AuthGraphqlIntegrationTests : GraphqlBehaviorSpecSupport() {
 
     private data class GraphqlHttpResponse(
         val body: tools.jackson.databind.JsonNode,
-        val headers: HttpHeaders,
+        val setCookie: String,
     )
-
-    private val httpClient: HttpClient = HttpClient.newHttpClient()
 
     private fun executeAuthGraphql(
         request: GraphQLQueryRequest,
         accessToken: String? = null,
         refreshToken: String? = null,
     ): GraphqlHttpResponse {
-        val requestBuilder = HttpRequest.newBuilder()
-            .uri(URI.create("http://localhost:$port/graphql"))
-            .header(HttpHeaders.CONTENT_TYPE, "application/json")
-            .POST(
-                HttpRequest.BodyPublishers.ofString(
-                    objectMapper.writeValueAsString(
-                        mapOf("query" to request.serialize()),
-                    ),
-                ),
-            )
-
-        if (accessToken != null) {
-            requestBuilder.header(HttpHeaders.AUTHORIZATION, "Bearer $accessToken")
-        }
-        if (refreshToken != null) {
-            requestBuilder.header(HttpHeaders.COOKIE, "${TokenService.REFRESH_TOKEN_HEADER}=$refreshToken")
-        }
-
-        val response = httpClient.send(
-            requestBuilder.build(),
-            HttpResponse.BodyHandlers.ofString(),
+        val cookies: Array<out Cookie> = refreshToken
+            ?.let { arrayOf(refreshTokenCookie(it)) }
+            ?: emptyArray()
+        val response = executeGraphql(
+            request = request,
+            accessToken = accessToken,
+            cookies = cookies,
         )
-
-        response.statusCode() shouldBe HttpStatus.OK.value()
-
-        val responseHeaders = HttpHeaders()
-        response.headers().map().forEach { (name, values) ->
-            values.forEach { value -> responseHeaders.add(name, value) }
-        }
+            .andExpect(status().isOk)
+            .andReturn()
+            .response
 
         return GraphqlHttpResponse(
-            body = objectMapper.readTree(response.body()),
-            headers = responseHeaders,
+            body = objectMapper.readTree(response.contentAsString),
+            setCookie = response.getHeader(HttpHeaders.SET_COOKIE).orEmpty(),
         )
     }
 

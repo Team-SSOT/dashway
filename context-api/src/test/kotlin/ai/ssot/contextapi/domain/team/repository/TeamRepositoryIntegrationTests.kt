@@ -1,17 +1,29 @@
 package ai.ssot.contextapi.domain.team.repository
 
-import ai.ssot.contextapi.PostgresBehaviorSpecSupport
+import ai.ssot.contextapi.IntegrationTestEnvironment
+import ai.ssot.contextapi.TEST_AUTOCONFIG_EXCLUDES
+import ai.ssot.contextapi.config.QueryDslConfig
 import ai.ssot.contextapi.domain.member.entity.Member
 import ai.ssot.contextapi.domain.member.repository.MemberRepository
 import ai.ssot.contextapi.domain.team.entity.Team
 import ai.ssot.contextapi.domain.team.entity.TeamMember
 import ai.ssot.contextapi.domain.team.entity.TeamMemberId
-import io.kotest.matchers.shouldBe
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase
+import org.springframework.context.annotation.Import
+import org.junit.jupiter.api.Test
+import org.springframework.test.context.DynamicPropertyRegistry
+import org.springframework.test.context.DynamicPropertySource
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
-@SpringBootTest
-class TeamRepositoryIntegrationTests : PostgresBehaviorSpecSupport() {
+@DataJpaTest(properties = [TEST_AUTOCONFIG_EXCLUDES])
+@Import(QueryDslConfig::class)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+class TeamRepositoryIntegrationTests {
     @Autowired
     private lateinit var memberRepository: MemberRepository
 
@@ -21,49 +33,51 @@ class TeamRepositoryIntegrationTests : PostgresBehaviorSpecSupport() {
     @Autowired
     private lateinit var teamRepository: TeamRepository
 
-    init {
-        given("team member repository") {
-            `when`("finding memberships by member id") {
-                then("returns all team memberships for the member") {
-                    val fixture = seedFixture()
+    @Test
+    fun `returns all team memberships for the member`() {
+        val fixture = seedFixture()
 
-                    val memberships = teamMemberRepository.findAllByIdMemberId(fixture.enabledMemberId)
+        val memberships = teamMemberRepository.findAllByIdMemberId(fixture.enabledMemberId)
 
-                    memberships.map { it.id.teamId }.toSet() shouldBe setOf(
-                        fixture.platformTeamId,
-                        fixture.securityTeamId,
-                    )
-                }
-            }
+        assertEquals(
+            setOf(fixture.platformTeamId, fixture.securityTeamId),
+            memberships.map { it.id.teamId }.toSet(),
+        )
+    }
 
-            `when`("getting team id to members") {
-                then("returns enabled member projections only") {
-                    val fixture = seedFixture()
+    @Test
+    fun `returns enabled member projections only`() {
+        val fixture = seedFixture()
 
-                    val teamIdToMembers = teamMemberRepository.getTeamIdToMembers(
-                        listOf(
-                            fixture.platformTeamId,
-                            fixture.disabledOnlyTeamId,
-                            fixture.emptyTeamId,
-                        ),
-                    )
+        val teamIdToMembers = teamMemberRepository.getTeamIdToMembers(
+            listOf(
+                fixture.platformTeamId,
+                fixture.disabledOnlyTeamId,
+                fixture.emptyTeamId,
+            ),
+        )
 
-                    teamIdToMembers.getValue(fixture.platformTeamId).map { checkNotNull(it.id) } shouldBe listOf(
-                        fixture.enabledMemberId,
-                    )
-                    teamIdToMembers[fixture.disabledOnlyTeamId] shouldBe null
-                    teamIdToMembers[fixture.emptyTeamId] shouldBe null
-                }
-            }
+        assertEquals(
+            listOf(fixture.enabledMemberId),
+            teamIdToMembers.getValue(fixture.platformTeamId).map { checkNotNull(it.id) },
+        )
+        assertNull(teamIdToMembers[fixture.disabledOnlyTeamId])
+        assertNull(teamIdToMembers[fixture.emptyTeamId])
+    }
 
-            `when`("checking membership existence by team id") {
-                then("distinguishes teams with and without memberships") {
-                    val fixture = seedFixture()
+    @Test
+    fun `distinguishes teams with and without memberships`() {
+        val fixture = seedFixture()
 
-                    teamMemberRepository.existsByIdTeamId(fixture.platformTeamId) shouldBe true
-                    teamMemberRepository.existsByIdTeamId(fixture.emptyTeamId) shouldBe false
-                }
-            }
+        assertTrue(teamMemberRepository.existsByIdTeamId(fixture.platformTeamId))
+        assertFalse(teamMemberRepository.existsByIdTeamId(fixture.emptyTeamId))
+    }
+
+    companion object {
+        @JvmStatic
+        @DynamicPropertySource
+        fun registerDataSourceProperties(registry: DynamicPropertyRegistry) {
+            IntegrationTestEnvironment.registerDataSourceProperties(registry)
         }
     }
 

@@ -1,6 +1,7 @@
 package ai.ssot.contextapi.domain.team.controller
 
 import ai.ssot.contextapi.GraphqlBehaviorSpecSupport
+import ai.ssot.contextapi.TEST_AUTOCONFIG_EXCLUDES
 import ai.ssot.contextapi.generated.client.AddTeamMemberGraphQLQuery
 import ai.ssot.contextapi.generated.client.AddTeamMemberProjectionRoot
 import ai.ssot.contextapi.generated.client.CreateTeamGraphQLQuery
@@ -25,7 +26,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import tools.jackson.databind.JsonNode
 
-@SpringBootTest
+@SpringBootTest(properties = [TEST_AUTOCONFIG_EXCLUDES])
 @AutoConfigureMockMvc
 class TeamGraphqlIntegrationTests : GraphqlBehaviorSpecSupport() {
     init {

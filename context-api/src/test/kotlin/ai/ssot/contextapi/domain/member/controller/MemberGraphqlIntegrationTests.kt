@@ -1,6 +1,7 @@
 package ai.ssot.contextapi.domain.member.controller
 
 import ai.ssot.contextapi.GraphqlBehaviorSpecSupport
+import ai.ssot.contextapi.TEST_AUTOCONFIG_EXCLUDES
 import ai.ssot.contextapi.generated.client.MemberGraphQLQuery
 import ai.ssot.contextapi.generated.client.MemberProjectionRoot
 import ai.ssot.contextapi.generated.client.MembersGraphQLQuery
@@ -16,7 +17,7 @@ import io.kotest.matchers.shouldBe
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 
-@SpringBootTest
+@SpringBootTest(properties = [TEST_AUTOCONFIG_EXCLUDES])
 @AutoConfigureMockMvc
 class MemberGraphqlIntegrationTests : GraphqlBehaviorSpecSupport() {
     init {

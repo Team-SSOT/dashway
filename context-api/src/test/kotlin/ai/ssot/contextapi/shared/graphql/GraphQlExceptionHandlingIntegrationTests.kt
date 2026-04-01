@@ -1,27 +1,31 @@
 package ai.ssot.contextapi.shared.graphql
 
-import ai.ssot.contextapi.GraphqlIntegrationTestSupport
-import org.junit.jupiter.api.Test
+import ai.ssot.contextapi.GraphqlBehaviorSpecSupport
+import ai.ssot.contextapi.TEST_AUTOCONFIG_EXCLUDES
+import io.kotest.matchers.shouldBe
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
-@SpringBootTest
+@SpringBootTest(properties = [TEST_AUTOCONFIG_EXCLUDES])
 @AutoConfigureMockMvc
-class GraphQlExceptionHandlingIntegrationTests : GraphqlIntegrationTestSupport() {
-    @Test
-    fun `returns shared graphql errors for unexpected runtime exceptions`() {
-        val response = executeGraphqlAndReadAllowErrors(
-            """
-            query {
-              testUnhandledException
-            }
-            """.trimIndent(),
-        )
+class GraphQlExceptionHandlingIntegrationTests : GraphqlBehaviorSpecSupport() {
+    init {
+        given("graphql exception handling") {
+            `when`("an unexpected runtime exception is thrown") {
+                then("returns the shared graphql error shape") {
+                    val response = executeGraphqlAndReadAllowErrors(
+                        """
+                        query {
+                          testUnhandledException
+                        }
+                        """.trimIndent(),
+                    )
 
-        assertTrue(response.at("/data/testUnhandledException").isNull)
-        assertTrue(response.at("/errors/0/extensions/errorType").isMissingNode)
-        assertEquals("Unexpected test exception.", response.textAt("/errors/0/message"))
+                    response.at("/data/testUnhandledException").isNull shouldBe true
+                    response.at("/errors/0/extensions/errorType").isMissingNode shouldBe true
+                    response.textAt("/errors/0/message") shouldBe "Unexpected test exception."
+                }
+            }
+        }
     }
 }

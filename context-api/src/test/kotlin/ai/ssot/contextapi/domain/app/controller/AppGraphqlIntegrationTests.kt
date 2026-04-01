@@ -1,6 +1,7 @@
 package ai.ssot.contextapi.domain.app.controller
 
 import ai.ssot.contextapi.GraphqlBehaviorSpecSupport
+import ai.ssot.contextapi.TEST_AUTOCONFIG_EXCLUDES
 import ai.ssot.contextapi.domain.app.entity.App
 import ai.ssot.contextapi.domain.app.repository.AppRepository
 import ai.ssot.contextapi.generated.client.ActivateAppGraphQLQuery
@@ -21,7 +22,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import tools.jackson.databind.JsonNode
 import java.util.UUID
 
-@SpringBootTest
+@SpringBootTest(properties = [TEST_AUTOCONFIG_EXCLUDES])
 @AutoConfigureMockMvc
 class AppGraphqlIntegrationTests : GraphqlBehaviorSpecSupport() {
     @Autowired

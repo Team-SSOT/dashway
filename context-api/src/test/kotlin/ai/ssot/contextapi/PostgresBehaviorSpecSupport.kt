@@ -30,7 +30,7 @@ abstract class PostgresBehaviorSpecSupport : BehaviorSpec() {
         @JvmStatic
         @DynamicPropertySource
         fun registerDataSourceProperties(registry: DynamicPropertyRegistry) {
-            IntegrationTestEnvironment.registerDataSourceProperties(registry)
+            IntegrationTestEnvironment.registerApplicationProperties(registry)
         }
     }
 }
