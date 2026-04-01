@@ -18,11 +18,8 @@ class Member(
     @Column(nullable = false, unique = true)
     var email: String = "",
 
-    @Column(name = "password")
-    var password: String? = null,
-
-    @Column(name = "is_admin", nullable = false)
-    var isAdmin: Boolean = false,
+    @Column(name = "password", nullable = false)
+    var password: String = "",
 
     @Column(name = "is_enabled", nullable = false)
     var isEnabled: Boolean = true,

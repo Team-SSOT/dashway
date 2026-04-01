@@ -1,9 +1,12 @@
 package ai.ssot.contextapi.domain.team.controller
 
+import ai.ssot.contextapi.domain.auth.service.withAdmin
+import ai.ssot.contextapi.domain.team.dataloader.TeamMemberDataLoader
 import ai.ssot.contextapi.domain.team.service.TeamService
 import ai.ssot.contextapi.generated.types.*
 import ai.ssot.contextapi.shared.page.PageInfo
 import com.netflix.graphql.dgs.*
+import java.util.concurrent.CompletableFuture
 
 @DgsComponent
 class TeamController(
@@ -28,22 +31,30 @@ class TeamController(
     }
 
     @DgsQuery
-    fun team(@InputArgument id: Long): Team? = teamService.getDtoById(id)?.toGraphQL()
+    fun team(@InputArgument id: Long): Team? = teamService.getDtoById(id).toGraphQL()
 
     @DgsMutation
     fun createTeam(@InputArgument input: CreateTeamInput): Team =
-        teamService.createTeam(input.name).toGraphQL()
+        withAdmin {
+            teamService.createTeam(input.name).toGraphQL()
+        }
 
     @DgsMutation
     fun updateTeam(@InputArgument input: UpdateTeamInput): Team =
-        teamService.updateTeam(input.id, input.name).toGraphQL()
+        withAdmin {
+            teamService.updateTeam(input.id, input.name).toGraphQL()
+        }
 
     @DgsMutation
-    fun deleteTeam(@InputArgument input: DeleteTeamInput): Boolean = teamService.deleteTeam(input.id)
+    fun deleteTeam(@InputArgument input: DeleteTeamInput): Boolean =
+        withAdmin {
+            teamService.deleteTeam(input.id)
+        }
 
     @DgsData(parentType = "Team", field = "members")
-    fun members(dfe: DgsDataFetchingEnvironment): List<Member> {
+    fun members(dfe: DgsDataFetchingEnvironment): CompletableFuture<List<Member>> {
         val source = dfe.getSourceOrThrow<Team>()
-        return teamService.getMembersByTeamId(source.id).map { it.toGraphQL() }
+        return dfe.getDataLoader<Long, List<Member>>(TeamMemberDataLoader::class.java)
+            .load(source.id)
     }
 }

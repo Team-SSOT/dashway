@@ -1,22 +1,22 @@
-extend type Query {
-  me: Member
-}
+#extend type Query {
+  #인증
+  #검색(사용자용)
+  #검색(LLM용)
+#}
 
 extend type Mutation {
-  login(input: LoginInput!): LoginPayload
-  logout(input: LogoutInput!): Boolean
+  login(input: LoginInput!): LoginPayload!
+  logout: Boolean!
+  refresh: LoginPayload!
 }
 
-type AuthTokenPair {
+type AuthToken {
   accessToken: String!
-  refreshToken: String!
-  accessTokenExpiresAt: DateTime!
-  refreshTokenExpiresAt: DateTime!
 }
 
 type LoginPayload {
   member: Member!
-  tokens: AuthTokenPair!
+  tokens: AuthToken!
 }
 
 input LoginInput {
@@ -24,10 +24,7 @@ input LoginInput {
   password: String!
 }
 
-input RefreshTokenInput {
-  refreshToken: String!
-}
-
-input LogoutInput {
-  refreshToken: String!
+type Authority {
+  id: Int!
+  name: String!
 }

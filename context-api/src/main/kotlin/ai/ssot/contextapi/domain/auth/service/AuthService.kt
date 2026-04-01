@@ -1,116 +1,80 @@
 package ai.ssot.contextapi.domain.auth.service
 
-import ai.ssot.contextapi.domain.auth.dto.*
-import ai.ssot.contextapi.domain.auth.exception.InvalidCredentialsException
+import ai.ssot.contextapi.domain.auth.dto.AuthDto
+import ai.ssot.contextapi.domain.auth.dto.AuthTokenDto
 import ai.ssot.contextapi.domain.auth.exception.InvalidRefreshTokenException
-import ai.ssot.contextapi.domain.auth.repository.RefreshTokenRepository
+import ai.ssot.contextapi.domain.auth.exception.LoginFailureException
+import ai.ssot.contextapi.domain.auth.repository.TokenRepository
 import ai.ssot.contextapi.domain.member.dto.MemberDto
-import ai.ssot.contextapi.domain.member.service.MemberAuthLookup
-import ai.ssot.contextapi.domain.member.service.MemberAuthLookupService
-import ai.ssot.contextapi.security.AuthProperties
+import ai.ssot.contextapi.domain.member.service.MemberService
 import ai.ssot.contextapi.security.token.TokenService
-import ai.ssot.contextapi.shared.validation.requireNonBlankText
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 
 @Service
 class AuthService(
-    private val authProperties: AuthProperties,
-    private val currentViewerService: CurrentViewerService,
-    private val memberAuthLookupService: MemberAuthLookupService,
+    private val memberService: MemberService,
     private val passwordEncoder: PasswordEncoder,
-    private val refreshTokenRepository: RefreshTokenRepository,
+    private val tokenRepository: TokenRepository,
     private val tokenService: TokenService,
+    private val authorityService: AuthorityService,
 ) {
+
     @Transactional(readOnly = true)
-    fun me(): MemberDto? =
-        memberAuthLookupService.findById(currentViewerService.requireAuthenticated().memberId)?.let { member ->
-            MemberDto(
-                id = member.id,
-                name = member.name,
-                email = member.email,
-                admin = member.admin,
-                enabled = member.enabled,
-                createdDatetime = member.createdDatetime,
-            )
+    fun login(email: String, password: String): AuthDto {
+        val normalizedEmail = email.trim()
+
+        val member = memberService.findByEmail(normalizedEmail)
+            ?.takeIf { it.isEnabled }
+            ?.takeIf { passwordEncoder.matches(password, it.password) }
+            ?: throw LoginFailureException()
+
+        val authorities = authorityService.getAllDtoByMemberId(member.id!!)
+        val (accessToken, refreshToken) = tokenService.generateTokens(member.id!!, authorities.map { it.name })
+        tokenRepository.saveRefreshToken(
+            memberId = member.id!!,
+            refreshToken = refreshToken,
+            ttlSeconds = tokenService.getTtl(refreshToken),
+        )
+
+        return AuthDto(
+            member = MemberDto(member),
+            tokens = AuthTokenDto(accessToken, refreshToken),
+        )
+    }
+
+    @Transactional
+    fun refreshTokens(refreshToken: String): AuthDto {
+
+        val memberId = tokenService.getMemberId(refreshToken)
+        if(!tokenRepository.deleteRefreshToken(refreshToken)) {
+            throw InvalidRefreshTokenException()
         }
 
-    @Transactional(readOnly = true)
-    fun login(input: LoginInput): AuthSessionDto {
-        val email = input.email.trim()
-        requireNonBlankText("email", email)
-        requireNonBlankText("password", input.password)
+        val member = memberService.getById(memberId)
+        val authorities = authorityService.getAllDtoByMemberId(memberId)
 
-        val member = memberAuthLookupService.findByEmail(email)
-            ?.takeIf { it.enabled }
-            ?.takeIf { !it.passwordHash.isNullOrBlank() }
-            ?.takeIf { passwordEncoder.matches(input.password, it.passwordHash) }
-            ?: throw InvalidCredentialsException()
+        val (newAccessToken, newRefreshToken) = tokenService.generateTokens(memberId, authorities.map { it.name })
+        tokenRepository.saveRefreshToken(
+            memberId = memberId,
+            refreshToken = newRefreshToken,
+            ttlSeconds = tokenService.getTtl(newRefreshToken),
+        )
 
-        return AuthSessionDto(
-            member = MemberDto(
-                id = member.id,
-                name = member.name,
-                email = member.email,
-                admin = member.admin,
-                enabled = member.enabled,
-                createdDatetime = member.createdDatetime,
+        return AuthDto(
+            member = MemberDto(member),
+            tokens = AuthTokenDto(
+                accessToken = newAccessToken,
+                refreshToken = newRefreshToken,
             ),
-            tokens = issueTokenPair(member),
         )
     }
 
     @Transactional
-    fun refreshToken(input: RefreshTokenInput): AuthSessionDto {
-        val refreshToken = input.refreshToken.trim()
-        requireNonBlankText("refreshToken", refreshToken)
-
-        val memberId = refreshTokenRepository.consume(refreshToken)
-            ?: throw InvalidRefreshTokenException()
-        val member = memberAuthLookupService.findById(memberId)
-            ?.takeIf { it.enabled }
-            ?: throw InvalidRefreshTokenException()
-
-        return AuthSessionDto(
-            member = MemberDto(
-                id = member.id,
-                name = member.name,
-                email = member.email,
-                admin = member.admin,
-                enabled = member.enabled,
-                createdDatetime = member.createdDatetime,
-            ),
-            tokens = issueTokenPair(member),
-        )
-    }
-
-    @Transactional
-    fun logout(input: LogoutInput): Boolean {
-        val refreshToken = input.refreshToken.trim()
-        requireNonBlankText("refreshToken", refreshToken)
-
-        refreshTokenRepository.delete(refreshToken)
+    fun logout(accessToken: String, refreshToken: String): Boolean {
+        tokenRepository.deleteRefreshToken(refreshToken)
+        tokenRepository.saveBlacklistToken(accessToken, tokenService.getTtl(accessToken))
         return true
     }
-
-    private fun issueTokenPair(member: MemberAuthLookup): AuthTokenPair {
-        val issuedAt = Instant.now()
-        val accessTokenExpiresAt = issuedAt.plus(authProperties.accessTokenTtl)
-        val refreshTokenExpiresAt = issuedAt.plus(authProperties.refreshTokenTtl)
-        val accessToken = tokenService.generateAccessToken(member.id, member.admin)
-
-        return AuthTokenPair(
-            accessToken = accessToken,
-            refreshToken = refreshTokenRepository.create(member.id),
-            accessTokenExpiresAt = accessTokenExpiresAt.toLocalDateTime(),
-            refreshTokenExpiresAt = refreshTokenExpiresAt.toLocalDateTime(),
-        )
-    }
-
-    private fun Instant.toLocalDateTime(): LocalDateTime =
-        LocalDateTime.ofInstant(this, ZoneOffset.UTC)
 }

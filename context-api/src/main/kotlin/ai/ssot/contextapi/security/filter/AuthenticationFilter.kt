@@ -36,14 +36,8 @@ class AuthenticationFilter(
     }
 
     private fun getAuthentication(token: String): UsernamePasswordAuthenticationToken {
-
-        val id = tokenService.getId(token)
-        val role = if (tokenService.isAdmin(token)) {
-            "ROLE_ADMIN"
-        } else {
-            "ROLE_USER"
-        }
-
-        return UsernamePasswordAuthenticationToken(id, "", listOf(SimpleGrantedAuthority(role)))
+        val id = tokenService.getMemberId(token)
+        val authorities = tokenService.getRoles(token).map { SimpleGrantedAuthority("ROLE_$it") }
+        return UsernamePasswordAuthenticationToken.authenticated(id, "", authorities)
     }
 }

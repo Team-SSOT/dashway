@@ -2,12 +2,17 @@ spring:
   application:
     name: context-api
 
-
-token:
-  expiration:
-    access: 14400
-    refresh: 144000
-  secret: "context-api-token-secret"
+context-api:
+  auth:
+    issuer: context-api
+    access-token-ttl: 900
+    refresh-token-ttl: 604800
+    jwt-secret: "0123456789abcdef0123456789abcdef"
+    cors-allowed-origins: []
+    refresh-cookie:
+      path: /graphql
+      secure: true
+      same-site: None
 
 redis:
   host: localhost

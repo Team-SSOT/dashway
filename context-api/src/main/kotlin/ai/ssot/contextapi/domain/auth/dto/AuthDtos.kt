@@ -1,7 +1,9 @@
 package ai.ssot.contextapi.domain.auth.dto
 
 import ai.ssot.contextapi.domain.member.dto.MemberDto
-import java.time.LocalDateTime
+import ai.ssot.contextapi.generated.types.AuthToken
+import ai.ssot.contextapi.generated.types.Authority
+import ai.ssot.contextapi.generated.types.LoginPayload
 
 data class LoginInput(
     val email: String,
@@ -16,14 +18,26 @@ data class LogoutInput(
     val refreshToken: String,
 )
 
-data class AuthTokenPair(
+data class AuthTokenDto(
     val accessToken: String,
     val refreshToken: String,
-    val accessTokenExpiresAt: LocalDateTime,
-    val refreshTokenExpiresAt: LocalDateTime,
-)
+) {
+    fun toGraphQL() = AuthToken(accessToken)
+}
 
-data class AuthSessionDto(
+data class AuthDto(
     val member: MemberDto,
-    val tokens: AuthTokenPair,
-)
+    val tokens: AuthTokenDto,
+) {
+    fun toGraphQL() = LoginPayload.newBuilder()
+        .member(member.toGraphQL())
+        .tokens(tokens.toGraphQL())
+        .build()
+}
+
+data class AuthorityDto (
+    val id: Int,
+    val name: String
+) {
+    fun toGraphQL() = Authority(id, name)
+}

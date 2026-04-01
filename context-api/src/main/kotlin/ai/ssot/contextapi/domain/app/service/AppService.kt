@@ -1,11 +1,8 @@
 package ai.ssot.contextapi.domain.app.service
 
 import ai.ssot.contextapi.domain.app.dto.AppDto
-import ai.ssot.contextapi.domain.app.entity.App
 import ai.ssot.contextapi.domain.app.exception.AppNotFoundException
-import ai.ssot.contextapi.domain.app.exception.InvalidAppIdException
 import ai.ssot.contextapi.domain.app.repository.AppRepository
-import ai.ssot.contextapi.domain.auth.service.CurrentViewerService
 import ai.ssot.contextapi.shared.page.PageResult
 import ai.ssot.contextapi.shared.page.PageSupport
 import ai.ssot.contextapi.shared.utils.parseFromString
@@ -15,11 +12,9 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class AppService(
     private val appRepository: AppRepository,
-    private val currentViewerService: CurrentViewerService,
 ) {
     @Transactional(readOnly = true)
     fun getAll(page: Int, size: Int): PageResult<AppDto> {
-        currentViewerService.requireAdmin()
         val appPage = appRepository.findAll(PageSupport.pageRequest(page, size))
             .map { app ->
                 AppDto(
@@ -36,7 +31,7 @@ class AppService(
 
     @Transactional(readOnly = true)
     fun getDtoById(id: String): AppDto {
-        val appId = parseAppId(id) ?: throw InvalidAppIdException(id)
+        val appId = parseFromString(id)
 
         return appRepository.findById(appId)
             .map {

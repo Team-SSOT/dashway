@@ -51,6 +51,18 @@ class ContextGraphQlExceptionHandler {
             )
         }
 
+    @GraphQlExceptionHandler
+    fun handleUnexpectedException(
+        exception: Exception,
+        environment: DataFetchingEnvironment,
+    ): GraphQLError =
+        exception.also(::logHandled).let { handled ->
+            GraphQlErrors.unexpectedError(
+                message = handled.message ?: "Unexpected error.",
+                environment = environment,
+            )
+        }
+
     private fun logHandled(exception: Throwable) {
         logger.warn(exception) { "GraphQL request failed." }
     }

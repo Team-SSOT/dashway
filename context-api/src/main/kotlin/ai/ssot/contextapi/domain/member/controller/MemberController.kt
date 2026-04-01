@@ -1,5 +1,7 @@
 package ai.ssot.contextapi.domain.member.controller
 
+import ai.ssot.contextapi.domain.auth.service.AuthorityService
+import ai.ssot.contextapi.domain.auth.service.withOwnedOrAdmin
 import ai.ssot.contextapi.domain.member.dto.RegisterMemberDto
 import ai.ssot.contextapi.domain.member.dto.UpdateMemberDto
 import ai.ssot.contextapi.domain.member.service.MemberRegistrationService
@@ -17,6 +19,7 @@ import com.netflix.graphql.dgs.InputArgument
 @DgsComponent
 class MemberController(
     private val memberService: MemberService,
+    private val authorityService: AuthorityService,
     private val memberRegistrationService: MemberRegistrationService
 ) {
     @DgsQuery
@@ -38,7 +41,7 @@ class MemberController(
     }
 
     @DgsQuery
-    fun member(@InputArgument id: Long): Member? = memberService.getDtoById(id)?.toGraphQL()
+    fun member(@InputArgument id: Long): Member? = memberService.getDtoById(id).toGraphQL()
 
     @DgsMutation
     fun registerMember(@InputArgument input: RegisterMemberInput): Member =
@@ -48,19 +51,23 @@ class MemberController(
                 email = input.email,
                 password = input.password,
                 teamId = input.teamId,
+                isEnabled = input.isEnabled,
+                authorityIds = input.authorityIds
             )
         ).toGraphQL()
 
 
     @DgsMutation
     fun updateMember(@InputArgument input: UpdateMemberInput): Member =
-        memberService.updateMember(
-            UpdateMemberDto(
-                id = input.id,
-                name = input.name,
-                email = input.email,
-                isAdmin = input.isAdmin,
-                isEnabled = input.isEnabled,
-            )
-        ).toGraphQL()
+        withOwnedOrAdmin(input.id) {
+            memberService.updateMember(
+                UpdateMemberDto(
+                    id = input.id,
+                    name = input.name,
+                    email = input.email,
+                    authorities = authorityService.getAllDtoByMemberId(input.id),
+                    isEnabled = input.isEnabled,
+                )
+            ).toGraphQL()
+        }
 }

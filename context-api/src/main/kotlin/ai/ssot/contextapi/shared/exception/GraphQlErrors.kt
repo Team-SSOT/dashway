@@ -1,7 +1,6 @@
 package ai.ssot.contextapi.shared.exception
 
-import com.netflix.graphql.types.errors.ErrorType
-import com.netflix.graphql.types.errors.TypedGraphQLError
+import graphql.ErrorClassification
 import graphql.GraphQLError
 import graphql.execution.ResultPath
 import graphql.language.SourceLocation
@@ -19,22 +18,14 @@ object GraphQlErrors {
         location: SourceLocation? = null,
     ): GraphQLError =
         buildError(
-            descriptor = ErrorDescriptor(
-                code = ErrorCode.UNAUTHENTICATED,
-                category = ErrorCategory.AUTHENTICATION,
-                message = "Authentication is required.",
-            ),
+            message = "Authentication is required.",
             path = path,
             location = location,
         )
 
     fun forbiddenError(environment: DataFetchingEnvironment): GraphQLError =
         buildError(
-            descriptor = ErrorDescriptor(
-                code = ErrorCode.FORBIDDEN,
-                category = ErrorCategory.AUTHORIZATION,
-                message = "You do not have permission to perform this action.",
-            ),
+            message = "You do not have permission to perform this action.",
             path = environment.executionStepInfo.path,
             location = environment.field.sourceLocation,
         )
@@ -43,14 +34,8 @@ object GraphQlErrors {
         message: String,
         environment: DataFetchingEnvironment,
     ): GraphQLError =
-        validationError(
-            descriptors = listOf(
-                ErrorDescriptor(
-                    code = ErrorCode.VALIDATION_ERROR,
-                    category = ErrorCategory.VALIDATION,
-                    message = message,
-                ),
-            ),
+        errorFromDescriptors(
+            descriptors = listOf(ErrorDescriptor(message = message)),
             path = environment.executionStepInfo.path,
             location = environment.field.sourceLocation,
         )
@@ -69,72 +54,87 @@ object GraphQlErrors {
         exception: CustomException,
         path: ResultPath?,
         location: SourceLocation?,
-    ): List<GraphQLError> {
-        val validationDescriptors = exception.errors.filter { it.category == ErrorCategory.VALIDATION }
-        val nonValidationDescriptors = exception.errors.filterNot { it.category == ErrorCategory.VALIDATION }
-        val errors = mutableListOf<GraphQLError>()
-
-        if (validationDescriptors.isNotEmpty()) {
-            errors.plusAssign(validationError(validationDescriptors, path, location))
-        }
-
-        errors += nonValidationDescriptors.map { descriptor ->
-            buildError(descriptor, path, location)
-        }
-
-        return errors
-    }
-
-    private fun validationError(
-        descriptors: List<ErrorDescriptor>,
-        path: ResultPath?,
-        location: SourceLocation?,
-    ): GraphQLError =
-        buildError(
-            descriptor = descriptors.first(),
-            path = path,
-            location = location,
-            extraExtensions = mapOf(
-                "violations" to descriptors.map { descriptor ->
-                    buildMap<String, Any?> {
-                        put("code", descriptor.code.name)
-                        put("message", descriptor.message)
-                        descriptor.field?.let { put("field", it) }
-                        if (descriptor.details.isNotEmpty()) {
-                            put("details", descriptor.details)
-                        }
-                    }
-                },
+    ): List<GraphQLError> =
+        listOf(
+            errorFromDescriptors(
+                descriptors = exception.errors,
+                path = path,
+                location = location,
             ),
         )
 
+    fun unexpectedError(
+        message: String,
+        environment: DataFetchingEnvironment,
+    ): GraphQLError =
+        buildError(
+            message = message,
+            path = environment.executionStepInfo.path,
+            location = environment.field.sourceLocation,
+        )
+
+    private fun errorFromDescriptors(
+        descriptors: List<ErrorDescriptor>,
+        path: ResultPath?,
+        location: SourceLocation?,
+    ): GraphQLError {
+        val firstDescriptor = descriptors.first()
+        val shouldIncludeViolations = descriptors.size > 1 || descriptors.any { it.field != null || it.details.isNotEmpty() }
+
+        return if (shouldIncludeViolations) {
+            buildError(
+                message = firstDescriptor.message,
+                path = path,
+                location = location,
+                extraExtensions = mapOf(
+                    "violations" to descriptors.map(::toViolation),
+                ),
+            )
+        } else {
+            buildError(
+                message = firstDescriptor.message,
+                path = path,
+                location = location,
+            )
+        }
+    }
+
     private fun buildError(
-        descriptor: ErrorDescriptor,
+        message: String,
         path: ResultPath?,
         location: SourceLocation?,
         extraExtensions: Map<String, Any?> = emptyMap(),
-    ): GraphQLError {
-        val extensions = linkedMapOf<String, Any?>("code" to descriptor.code.name)
-        extensions.putAll(extraExtensions)
+    ): GraphQLError =
+        SimpleGraphQLError(
+            message = message,
+            locations = location?.let(::listOf),
+            path = path?.toList(),
+            extensions = extraExtensions.ifEmpty { null },
+        )
 
-        val builder = descriptor.category.newBuilder()
-            .message(descriptor.message)
-            .path(path)
-            .location(location)
-        if (extensions.isNotEmpty()) {
-            builder.extensions(extensions)
+    private fun toViolation(descriptor: ErrorDescriptor): Map<String, Any?> =
+        buildMap {
+            put("message", descriptor.message)
+            descriptor.field?.let { put("field", it) }
+            if (descriptor.details.isNotEmpty()) {
+                put("details", descriptor.details)
+            }
         }
 
-        return builder.build()
+    private data class SimpleGraphQLError(
+        private val message: String,
+        private val locations: List<SourceLocation>?,
+        private val path: List<Any>?,
+        private val extensions: Map<String, Any?>?,
+    ) : GraphQLError {
+        override fun getMessage(): String = message
+
+        override fun getLocations(): List<SourceLocation>? = locations
+
+        override fun getPath(): List<Any>? = path
+
+        override fun getExtensions(): Map<String, Any?>? = extensions
+
+        override fun getErrorType(): ErrorClassification? = null
     }
-
-    private fun ErrorCategory.newBuilder(): TypedGraphQLError.Builder =
-        when (this) {
-            ErrorCategory.VALIDATION -> TypedGraphQLError.newBadRequestBuilder().errorType(ErrorType.BAD_REQUEST)
-            ErrorCategory.AUTHENTICATION, ErrorCategory.AUTHORIZATION ->
-                TypedGraphQLError.newPermissionDeniedBuilder().errorType(ErrorType.PERMISSION_DENIED)
-            ErrorCategory.NOT_FOUND -> TypedGraphQLError.newNotFoundBuilder().errorType(ErrorType.NOT_FOUND)
-            ErrorCategory.CONFLICT -> TypedGraphQLError.newConflictBuilder().errorType(ErrorType.BAD_REQUEST)
-            ErrorCategory.INTERNAL -> TypedGraphQLError.newInternalErrorBuilder().errorType(ErrorType.INTERNAL)
-        }
 }
