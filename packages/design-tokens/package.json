@@ -1,0 +1,26 @@
+{
+  "name": "@dashway/design-tokens",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./css/tokens.css": "./src/css/tokens.css",
+    "./css/shadcn-bridge.css": "./src/css/shadcn-bridge.css",
+    "./css/tailwind-theme.css": "./src/css/tailwind-theme.css"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "biome check .",
+    "typecheck": "tsgo --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

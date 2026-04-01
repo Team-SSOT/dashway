@@ -48,6 +48,18 @@ Thumbs.db
 # ── Vercel ───────────────────────────────────
 .vercel
 
+# ── Electron ────────────────────────────────
+.vite/
+release/
+*.dmg
+*.AppImage
+*.exe
+*.deb
+*.snap
+
+# ── Relay ───────────────────────────────────
+__generated__/
+
 # ── Misc ─────────────────────────────────────
 *.pem
 hs_err_pid*
