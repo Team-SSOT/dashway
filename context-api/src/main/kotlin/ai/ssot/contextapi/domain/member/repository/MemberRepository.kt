@@ -7,6 +7,4 @@ interface MemberRepository : JpaRepository<Member, Long> {
     fun findByEmail(email: String): Member?
 
     fun existsByEmail(email: String): Boolean
-
-    fun existsByEmailAndIdNot(email: String, id: Long): Boolean
 }

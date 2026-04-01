@@ -1,20 +1,17 @@
 package ai.ssot.contextapi.domain.team.repository
 
-import ai.ssot.contextapi.PostgresIntegrationTestSupport
+import ai.ssot.contextapi.PostgresBehaviorSpecSupport
 import ai.ssot.contextapi.domain.member.entity.Member
 import ai.ssot.contextapi.domain.member.repository.MemberRepository
 import ai.ssot.contextapi.domain.team.entity.Team
 import ai.ssot.contextapi.domain.team.entity.TeamMember
 import ai.ssot.contextapi.domain.team.entity.TeamMemberId
-import org.junit.jupiter.api.Test
+import io.kotest.matchers.shouldBe
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.data.domain.PageRequest
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 @SpringBootTest
-class TeamRepositoryIntegrationTests : PostgresIntegrationTestSupport() {
+class TeamRepositoryIntegrationTests : PostgresBehaviorSpecSupport() {
     @Autowired
     private lateinit var memberRepository: MemberRepository
 
@@ -24,43 +21,109 @@ class TeamRepositoryIntegrationTests : PostgresIntegrationTestSupport() {
     @Autowired
     private lateinit var teamRepository: TeamRepository
 
-    @Test
-    fun `finds memberships by member id and member projections by team id`() {
-        val member1 = memberRepository.save(
-            Member(
-                name = "member-1",
-                email = "member-1@example.com",
-                password = "member-1-password",
-            ),
+    init {
+        given("team member repository") {
+            `when`("finding memberships by member id") {
+                then("returns all team memberships for the member") {
+                    val fixture = seedFixture()
+
+                    val memberships = teamMemberRepository.findAllByIdMemberId(fixture.enabledMemberId)
+
+                    memberships.map { it.id.teamId }.toSet() shouldBe setOf(
+                        fixture.platformTeamId,
+                        fixture.securityTeamId,
+                    )
+                }
+            }
+
+            `when`("getting team id to members") {
+                then("returns enabled member projections only") {
+                    val fixture = seedFixture()
+
+                    val teamIdToMembers = teamMemberRepository.getTeamIdToMembers(
+                        listOf(
+                            fixture.platformTeamId,
+                            fixture.disabledOnlyTeamId,
+                            fixture.emptyTeamId,
+                        ),
+                    )
+
+                    teamIdToMembers.getValue(fixture.platformTeamId).map { checkNotNull(it.id) } shouldBe listOf(
+                        fixture.enabledMemberId,
+                    )
+                    teamIdToMembers[fixture.disabledOnlyTeamId] shouldBe null
+                    teamIdToMembers[fixture.emptyTeamId] shouldBe null
+                }
+            }
+
+            `when`("checking membership existence by team id") {
+                then("distinguishes teams with and without memberships") {
+                    val fixture = seedFixture()
+
+                    teamMemberRepository.existsByIdTeamId(fixture.platformTeamId) shouldBe true
+                    teamMemberRepository.existsByIdTeamId(fixture.emptyTeamId) shouldBe false
+                }
+            }
+        }
+    }
+
+    private data class Fixture(
+        val enabledMemberId: Long,
+        val platformTeamId: Long,
+        val securityTeamId: Long,
+        val disabledOnlyTeamId: Long,
+        val emptyTeamId: Long,
+    )
+
+    private fun seedFixture(): Fixture {
+        val enabledMemberId = saveMember(
+            name = "enabled-member",
+            email = "enabled-member@example.com",
+            isEnabled = true,
         )
-        val member2 = memberRepository.save(
-            Member(
-                name = "member-2",
-                email = "member-2@example.com",
-                password = "member-2-password",
-            ),
+        val disabledMemberId = saveMember(
+            name = "disabled-member",
+            email = "disabled-member@example.com",
+            isEnabled = false,
         )
-        teamRepository.saveAll(
-            listOf(
-                Team(name = "team-10"),
-                Team(name = "team-20"),
-                Team(name = "team-30"),
-            ),
-        )
-        val teams = teamRepository.findAll().sortedBy { it.id }
+        val platformTeamId = saveTeam("platform")
+        val securityTeamId = saveTeam("security")
+        val disabledOnlyTeamId = saveTeam("disabled-only")
+        val emptyTeamId = saveTeam("empty")
+
         teamMemberRepository.saveAll(
             listOf(
-                TeamMember(TeamMemberId(checkNotNull(teams[0].id), checkNotNull(member1.id))),
-                TeamMember(TeamMemberId(checkNotNull(teams[1].id), checkNotNull(member1.id))),
-                TeamMember(TeamMemberId(checkNotNull(teams[2].id), checkNotNull(member2.id))),
+                TeamMember(TeamMemberId(platformTeamId, enabledMemberId)),
+                TeamMember(TeamMemberId(securityTeamId, enabledMemberId)),
+                TeamMember(TeamMemberId(disabledOnlyTeamId, disabledMemberId)),
             ),
         )
 
-        val memberships = teamMemberRepository.findAllByIdMemberId(checkNotNull(member1.id))
-        val teamMembers = teamMemberRepository.findMemberSummariesByTeamId(checkNotNull(teams[0].id), PageRequest.of(0, 10))
-
-        assertEquals(setOf(checkNotNull(teams[0].id), checkNotNull(teams[1].id)), memberships.map { it.id.teamId }.toSet())
-        assertEquals(listOf(checkNotNull(member1.id)), teamMembers.content.map { it.id })
-        assertTrue(teamMemberRepository.existsByIdTeamId(checkNotNull(teams[0].id)))
+        return Fixture(
+            enabledMemberId = enabledMemberId,
+            platformTeamId = platformTeamId,
+            securityTeamId = securityTeamId,
+            disabledOnlyTeamId = disabledOnlyTeamId,
+            emptyTeamId = emptyTeamId,
+        )
     }
+
+    private fun saveMember(
+        name: String,
+        email: String,
+        isEnabled: Boolean,
+    ): Long =
+        checkNotNull(
+            memberRepository.save(
+                Member(
+                    name = name,
+                    email = email,
+                    password = "$name-password",
+                    isEnabled = isEnabled,
+                ),
+            ).id,
+        )
+
+    private fun saveTeam(name: String): Long =
+        checkNotNull(teamRepository.save(Team(name = name)).id)
 }

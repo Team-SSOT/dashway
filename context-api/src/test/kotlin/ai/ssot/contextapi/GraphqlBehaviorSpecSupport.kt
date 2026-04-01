@@ -27,7 +27,7 @@ import tools.jackson.databind.JsonNode
 import tools.jackson.databind.ObjectMapper
 import java.util.UUID
 
-abstract class GraphqlIntegrationTestSupport : PostgresIntegrationTestSupport() {
+abstract class GraphqlBehaviorSpecSupport : PostgresBehaviorSpecSupport() {
     protected data class AuthSession(
         val memberId: Long,
         val accessToken: String,

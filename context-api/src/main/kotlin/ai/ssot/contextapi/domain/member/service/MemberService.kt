@@ -2,6 +2,7 @@ package ai.ssot.contextapi.domain.member.service
 
 import ai.ssot.contextapi.domain.auth.service.MemberAuthorityService
 import ai.ssot.contextapi.domain.auth.service.checkIsAdmin
+import ai.ssot.contextapi.domain.auth.exception.ForbiddenException
 import ai.ssot.contextapi.domain.member.dto.MemberDto
 import ai.ssot.contextapi.domain.member.dto.UpdateMemberDto
 import ai.ssot.contextapi.domain.member.entity.Member
@@ -42,14 +43,6 @@ class MemberService(
     }
 
     @Transactional(readOnly = true)
-    fun getDtosByIds(ids: List<Long>): List<MemberDto> {
-        if (ids.isEmpty()) {
-            return emptyList()
-        }
-        return memberRepository.findAllById(ids).map { MemberDto(it) }
-    }
-
-    @Transactional(readOnly = true)
     fun findByEmail(email: String): Member? = memberRepository.findByEmail(email)
 
     fun existsByEmail(email: String): Boolean = memberRepository.existsByEmail(email)
@@ -78,16 +71,22 @@ class MemberService(
 
         input.name?.apply { member.name = this }
         input.isEnabled?.apply {
-            checkIsAdmin()
+            requireAdmin()
             member.isEnabled = this
         }
-        input.authorities?.apply {
-            checkIsAdmin()
-            memberAuthorityService.update(member.id!!, input.authorities.map { it.id })
+        input.authorityIds?.apply {
+            requireAdmin()
+            memberAuthorityService.update(member.id!!, this)
         }
 
         return MemberDto(
             memberRepository.save(member)
         )
+    }
+
+    private fun requireAdmin() {
+        if (!checkIsAdmin()) {
+            throw ForbiddenException()
+        }
     }
 }

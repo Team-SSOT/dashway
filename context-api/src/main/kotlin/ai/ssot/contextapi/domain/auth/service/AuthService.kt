@@ -8,6 +8,7 @@ import ai.ssot.contextapi.domain.auth.repository.TokenRepository
 import ai.ssot.contextapi.domain.member.dto.MemberDto
 import ai.ssot.contextapi.domain.member.service.MemberService
 import ai.ssot.contextapi.security.token.TokenService
+import ai.ssot.contextapi.security.token.TokenService.Companion.TOKEN_PREFIX
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -73,8 +74,9 @@ class AuthService(
 
     @Transactional
     fun logout(accessToken: String, refreshToken: String): Boolean {
+        val rawAccessToken = accessToken.removePrefix(TOKEN_PREFIX)
         tokenRepository.deleteRefreshToken(refreshToken)
-        tokenRepository.saveBlacklistToken(accessToken, tokenService.getTtl(accessToken))
+        tokenRepository.saveBlacklistToken(rawAccessToken, tokenService.getTtl(rawAccessToken))
         return true
     }
 }

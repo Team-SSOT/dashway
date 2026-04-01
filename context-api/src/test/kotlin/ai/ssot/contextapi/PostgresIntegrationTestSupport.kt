@@ -12,6 +12,54 @@ import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.PostgreSQLContainer
 import javax.sql.DataSource
 
+internal fun resetPersistenceState(
+    dataSource: DataSource,
+    stringRedisTemplate: StringRedisTemplate,
+) {
+    ResourceDatabasePopulator(ClassPathResource("db/ddl/ddl.sql")).execute(dataSource)
+
+    val jdbcTemplate = JdbcTemplate(dataSource)
+    jdbcTemplate.update("DELETE FROM team_member")
+    jdbcTemplate.update("DELETE FROM member_authorities")
+    jdbcTemplate.update("DELETE FROM teams")
+    jdbcTemplate.update("DELETE FROM members")
+    jdbcTemplate.update("DELETE FROM apps")
+
+    stringRedisTemplate.connectionFactory?.connection?.serverCommands()?.flushAll()
+}
+
+internal object IntegrationTestEnvironment {
+    val postgres: PostgreSQLContainer<Nothing> =
+        PostgreSQLContainer<Nothing>("postgres:17-alpine").apply {
+            withDatabaseName("context_api")
+            withUsername("context_api")
+            withPassword("context_api")
+        }
+
+    val redis: GenericContainer<Nothing> =
+        GenericContainer<Nothing>("redis:7-alpine").apply {
+            withExposedPorts(6379)
+        }
+
+    init {
+        postgres.start()
+        redis.start()
+    }
+
+    fun registerDataSourceProperties(registry: DynamicPropertyRegistry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl)
+        registry.add("spring.datasource.username", postgres::getUsername)
+        registry.add("spring.datasource.password", postgres::getPassword)
+        registry.add("spring.datasource.driver-class-name", postgres::getDriverClassName)
+        registry.add("context-api.auth.issuer") { "context-api-test" }
+        registry.add("context-api.auth.access-token-ttl") { "900" }
+        registry.add("context-api.auth.refresh-token-ttl") { "604800" }
+        registry.add("context-api.auth.jwt-secret") { "0123456789abcdef0123456789abcdef" }
+        registry.add("redis.host", redis::getHost)
+        registry.add("redis.port", redis::getFirstMappedPort)
+    }
+}
+
 abstract class PostgresIntegrationTestSupport {
     @Autowired
     private lateinit var dataSource: DataSource
@@ -21,53 +69,18 @@ abstract class PostgresIntegrationTestSupport {
 
     @BeforeEach
     fun prepareSchema() {
-        ResourceDatabasePopulator(ClassPathResource("db/ddl/ddl.sql")).execute(dataSource)
+        resetState()
+    }
 
-        val jdbcTemplate = JdbcTemplate(dataSource)
-        jdbcTemplate.update("DELETE FROM team_member")
-        jdbcTemplate.update("DELETE FROM teams")
-        jdbcTemplate.update("DELETE FROM members")
-        jdbcTemplate.update("DELETE FROM apps")
-
-        stringRedisTemplate.connectionFactory?.connection?.serverCommands()?.flushAll()
+    protected fun resetState() {
+        resetPersistenceState(dataSource, stringRedisTemplate)
     }
 
     companion object {
         @JvmStatic
-        val postgres: PostgreSQLContainer<Nothing> =
-            PostgreSQLContainer<Nothing>("postgres:17-alpine").apply {
-                withDatabaseName("context_api")
-                withUsername("context_api")
-                withPassword("context_api")
-            }
-
-        init {
-            postgres.start()
-        }
-
-        @JvmStatic
-        val redis: GenericContainer<Nothing> =
-            GenericContainer<Nothing>("redis:7-alpine").apply {
-                withExposedPorts(6379)
-            }
-
-        init {
-            redis.start()
-        }
-
-        @JvmStatic
         @DynamicPropertySource
         fun registerDataSourceProperties(registry: DynamicPropertyRegistry) {
-            registry.add("spring.datasource.url", postgres::getJdbcUrl)
-            registry.add("spring.datasource.username", postgres::getUsername)
-            registry.add("spring.datasource.password", postgres::getPassword)
-            registry.add("spring.datasource.driver-class-name", postgres::getDriverClassName)
-            registry.add("context-api.auth.issuer") { "context-api-test" }
-            registry.add("context-api.auth.access-token-ttl") { "PT15M" }
-            registry.add("context-api.auth.refresh-token-ttl") { "P7D" }
-            registry.add("context-api.auth.jwt-secret") { "0123456789abcdef0123456789abcdef" }
-            registry.add("redis.host", redis::getHost)
-            registry.add("redis.port", redis::getFirstMappedPort)
+            IntegrationTestEnvironment.registerDataSourceProperties(registry)
         }
     }
 }

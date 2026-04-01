@@ -18,7 +18,8 @@ interface QAuthorityRepository {
 @Repository
 class QAuthorityRepositoryImpl(private val queryFactory: JPAQueryFactory): QAuthorityRepository {
     override fun findAllByMemberId(memberId: Long): List<Authority> {
-        return queryFactory.selectFrom(authority)
+        return queryFactory.select(authority)
+            .from(memberAuthority)
             .join(memberAuthority.authority, authority)
             .where(memberAuthority.id.memberId.eq(memberId))
             .fetch()

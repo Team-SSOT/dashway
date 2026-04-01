@@ -40,8 +40,13 @@ class TokenService(
     private fun generateRefreshToken(memberId: Long, roles: List<String>) =
         generateToken(memberId, roles, authProperties.refreshTokenTtl)
 
-    private fun generateToken(memberId: Long, roles: List<String>, tokenTtlSeconds: Long): String {
-        val claims = createClaims(memberId, roles)
+    private fun generateToken(
+        memberId: Long,
+        roles: List<String>,
+        tokenTtlSeconds: Long,
+        additionalClaims: Map<String, Any> = emptyMap(),
+    ): String {
+        val claims = createClaims(memberId, roles, additionalClaims)
         val now = Date()
         val expiredDate = Date(now.time + (tokenTtlSeconds * 1000))
 
@@ -54,11 +59,21 @@ class TokenService(
             .compact()
     }
 
-    private fun createClaims(memberId: Long, roles: List<String>) =
-        Jwts.claims()
+    private fun createClaims(
+        memberId: Long,
+        roles: List<String>,
+        additionalClaims: Map<String, Any>,
+    ): Claims {
+        val builder = Jwts.claims()
             .id(memberId.toString())
             .add("roles", roles)
-            .build()
+
+        additionalClaims.forEach { (key, value) ->
+            builder.add(key, value)
+        }
+
+        return builder.build()
+    }
 
     private fun getSecretKey() = Keys.hmacShaKeyFor(
         Base64.getEncoder().encode(Sha512DigestUtils.sha(authProperties.jwtSecret))

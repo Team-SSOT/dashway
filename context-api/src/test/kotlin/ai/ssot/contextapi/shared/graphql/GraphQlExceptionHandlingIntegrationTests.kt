@@ -11,7 +11,7 @@ import kotlin.test.assertTrue
 @AutoConfigureMockMvc
 class GraphQlExceptionHandlingIntegrationTests : GraphqlIntegrationTestSupport() {
     @Test
-    fun `falls back to the DGS default handler for unexpected runtime exceptions`() {
+    fun `returns shared graphql errors for unexpected runtime exceptions`() {
         val response = executeGraphqlAndReadAllowErrors(
             """
             query {
@@ -21,10 +21,7 @@ class GraphQlExceptionHandlingIntegrationTests : GraphqlIntegrationTestSupport()
         )
 
         assertTrue(response.at("/data/testUnhandledException").isNull)
-        assertEquals("INTERNAL", response.textAt("/errors/0/extensions/errorType"))
-        assertEquals(
-            "java.lang.IllegalStateException: Unexpected test exception.",
-            response.textAt("/errors/0/message"),
-        )
+        assertTrue(response.at("/errors/0/extensions/errorType").isMissingNode)
+        assertEquals("Unexpected test exception.", response.textAt("/errors/0/message"))
     }
 }

@@ -32,7 +32,7 @@ fun <T> withAdmin(action: (Long) -> T): T {
 fun <T> withOwnedOrAdmin(memberId:Long, action: (Long) -> T): T {
     val authenticatedMemberId = getMemberIdFromAuthentication()
 
-    if(authenticatedMemberId != memberId || !checkIsAdmin()) {
+    if(authenticatedMemberId != memberId && !checkIsAdmin()) {
         throw ForbiddenException()
     }
 

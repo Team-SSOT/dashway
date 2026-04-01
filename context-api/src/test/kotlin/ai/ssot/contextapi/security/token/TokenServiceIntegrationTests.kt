@@ -1,26 +1,45 @@
 package ai.ssot.contextapi.security.token
 
-import ai.ssot.contextapi.PostgresIntegrationTestSupport
-import org.junit.jupiter.api.Test
+import ai.ssot.contextapi.PostgresBehaviorSpecSupport
+import ai.ssot.contextapi.security.exception.InvalidTokenPrefixException
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.shouldBe
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 @SpringBootTest
-class TokenServiceIntegrationTests : PostgresIntegrationTestSupport() {
+class TokenServiceIntegrationTests : PostgresBehaviorSpecSupport() {
     @Autowired
     private lateinit var tokenService: TokenService
 
-    @Test
-    fun `issues access tokens with expected claims`() {
-        val token = tokenService.generateAccessToken(
-            userId = 7L,
-            isAdmin = true,
-        )
+    init {
+        given("access token generation") {
+            `when`("a token is issued with member roles") {
+                then("verify succeeds and exposes member id and roles from the claims") {
+                    val token = tokenService.generateAccessToken(
+                        memberId = 7L,
+                        roles = listOf("ADMIN", "MEMBER"),
+                    )
 
-        assertTrue(tokenService.verify("Bearer $token"))
-        assertEquals("7", tokenService.getId(token))
-        assertEquals(true, tokenService.isAdmin(token))
+                    tokenService.verify("Bearer $token") shouldBe true
+                    tokenService.getMemberId(token) shouldBe 7L
+                    tokenService.getRoles(token) shouldContainExactly listOf("ADMIN", "MEMBER")
+                }
+            }
+
+            `when`("the bearer prefix is missing") {
+                then("verify throws the token prefix exception") {
+                    val token = tokenService.generateAccessToken(
+                        memberId = 7L,
+                        roles = listOf("ADMIN"),
+                    )
+
+                    shouldThrow<InvalidTokenPrefixException> {
+                        tokenService.verify(token)
+                    }
+                }
+            }
+        }
     }
 }

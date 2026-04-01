@@ -1,6 +1,5 @@
 package ai.ssot.contextapi.domain.member.controller
 
-import ai.ssot.contextapi.domain.auth.service.AuthorityService
 import ai.ssot.contextapi.domain.auth.service.withOwnedOrAdmin
 import ai.ssot.contextapi.domain.member.dto.RegisterMemberDto
 import ai.ssot.contextapi.domain.member.dto.UpdateMemberDto
@@ -19,7 +18,6 @@ import com.netflix.graphql.dgs.InputArgument
 @DgsComponent
 class MemberController(
     private val memberService: MemberService,
-    private val authorityService: AuthorityService,
     private val memberRegistrationService: MemberRegistrationService
 ) {
     @DgsQuery
@@ -65,7 +63,7 @@ class MemberController(
                     id = input.id,
                     name = input.name,
                     email = input.email,
-                    authorities = authorityService.getAllDtoByMemberId(input.id),
+                    authorityIds = input.authorityIds,
                     isEnabled = input.isEnabled,
                 )
             ).toGraphQL()
