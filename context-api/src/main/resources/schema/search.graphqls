@@ -1,0 +1,88 @@
+extend type Query {
+  search(input: SearchInput!): SearchResult!
+}
+
+input SearchInput {
+  query: String!
+  page: Int
+  size: Int
+  sources: [SearchSource!]
+  appIds: [String!]
+  graphNodeTypes: [String!]
+}
+
+enum SearchSource {
+  MEMBER
+  TEAM
+  GRAPH_NODE
+  APP
+}
+
+enum SourceErrorCode {
+  TIMEOUT
+  UNAVAILABLE
+  UNAUTHORIZED
+  INVALID_RESPONSE
+  UNKNOWN
+}
+
+type SearchResult {
+  items: [SearchItem!]!
+  pageInfo: SearchPageInfo!
+  sourceErrors: [SearchSourceError!]!
+}
+
+type SearchPageInfo {
+  page: Int!
+  size: Int!
+  totalCount: Int
+}
+
+type SearchSourceError {
+  sourceType: SearchSource!
+  sourceId: String!
+  code: SourceErrorCode!
+  message: String!
+}
+
+interface SearchItem {
+  id: String!
+  sourceType: SearchSource!
+  sourceId: String!
+  title: String!
+}
+
+type MemberSearchItem implements SearchItem {
+  id: String!
+  sourceType: SearchSource!
+  sourceId: String!
+  title: String!
+  name: String!
+  email: String!
+}
+
+type TeamSearchItem implements SearchItem {
+  id: String!
+  sourceType: SearchSource!
+  sourceId: String!
+  title: String!
+  name: String!
+}
+
+type GraphNodeSearchItem implements SearchItem {
+  id: String!
+  sourceType: SearchSource!
+  sourceId: String!
+  title: String!
+  nodeType: String!
+}
+
+type AppSearchItem implements SearchItem {
+  id: String!
+  sourceType: SearchSource!
+  sourceId: String!
+  title: String!
+  appId: String!
+  appName: String!
+  rawPayload: JSON!
+}

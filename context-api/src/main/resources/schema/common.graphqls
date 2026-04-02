@@ -5,6 +5,7 @@ schema {
 
 scalar Long
 scalar DateTime
+scalar JSON
 
 type PageInfo {
   page: Int!
