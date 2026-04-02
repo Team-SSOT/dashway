@@ -1,4 +1,25 @@
 services:
+  context-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: context-api-backend:local
+    container_name: context-api-server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/context_api
+      SPRING_DATASOURCE_USERNAME: context_api
+      SPRING_DATASOURCE_PASSWORD: context_api
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "8080:8080"
+
   postgres:
     image: postgres:18.3
     container_name: context-api-postgres

@@ -39,3 +39,6 @@ out/
 ### Kotlin ###
 .kotlin
 agent-os/
+.agents/
+.claude/
+/gstack-codex-the-sprint.md
