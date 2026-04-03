@@ -28,7 +28,7 @@ input RegisterMemberInput {
   password: String!
   isEnabled: Boolean!
   teamId: Long
-  authorityIds: [Int!]!
+  authorityIds: [Int!]
 }
 
 input UpdateMemberInput {

@@ -2,13 +2,25 @@ spring:
   application:
     name: context-api
 
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    username: context_api
+    password: context_api
+    url: jdbc:postgresql://localhost:5432/dashway
+
+
+logging:
+  level:
+    web: debug
+    org.springframework.security: debug
+
 context-api:
   auth:
     issuer: context-api
     access-token-ttl: 900
     refresh-token-ttl: 604800
     jwt-secret: "0123456789abcdef0123456789abcdef"
-    cors-allowed-origins: []
+    cors-allowed-origins: ["*"]
     refresh-cookie:
       path: /graphql
       secure: true

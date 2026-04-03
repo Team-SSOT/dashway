@@ -2,7 +2,6 @@ package ai.ssot.contextapi.domain.member.service
 
 import ai.ssot.contextapi.domain.auth.service.MemberAuthorityService
 import ai.ssot.contextapi.domain.auth.service.verifyIsAdmin
-import ai.ssot.contextapi.domain.auth.service.withAdmin
 import ai.ssot.contextapi.domain.member.dto.MemberDto
 import ai.ssot.contextapi.domain.member.dto.RegisterMemberDto
 import ai.ssot.contextapi.domain.member.exception.DuplicateMemberEmailException
@@ -35,7 +34,7 @@ class MemberRegistrationService(
 
         input.authorityIds
             ?.also { verifyIsAdmin() }
-            ?:let { listOf(1) }
+            ?:let { listOf(3) }
             .apply {
                 memberAuthorityService.create(member.id!!, this)
             }

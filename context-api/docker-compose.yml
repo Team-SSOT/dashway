@@ -27,7 +27,7 @@ services:
     container_name: context-api-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: context_api
+      POSTGRES_DB: dashway
       POSTGRES_USER: context_api
       POSTGRES_PASSWORD: context_api
     ports:
