@@ -1,6 +1,7 @@
 package ai.ssot.contextapi.domain.member.service
 
 import ai.ssot.contextapi.domain.auth.service.MemberAuthorityService
+import ai.ssot.contextapi.domain.auth.service.verifyIsAdmin
 import ai.ssot.contextapi.domain.auth.service.withAdmin
 import ai.ssot.contextapi.domain.member.dto.MemberDto
 import ai.ssot.contextapi.domain.member.dto.RegisterMemberDto
@@ -32,11 +33,13 @@ class MemberRegistrationService(
             teamMemberService.addMember(it, member.id!!)
         }
 
-        input.authorityIds?.also { authorityIds ->
-            withAdmin {
-                memberAuthorityService.create(member.id!!, authorityIds)
+        input.authorityIds
+            ?.also { verifyIsAdmin() }
+            ?:let { listOf(1) }
+            .apply {
+                memberAuthorityService.create(member.id!!, this)
             }
-        }
+
 
         return memberService.getDtoById(checkNotNull(member.id))
     }

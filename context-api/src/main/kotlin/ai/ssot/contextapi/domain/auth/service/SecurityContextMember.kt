@@ -29,6 +29,13 @@ fun <T> withAdmin(action: (Long) -> T): T {
     return action(memberId)
 }
 
+fun verifyIsAdmin() {
+    if(!checkIsAdmin()) {
+        throw ForbiddenException()
+    }
+}
+
+
 fun <T> withOwnedOrAdmin(memberId:Long, action: (Long) -> T): T {
     val authenticatedMemberId = getMemberIdFromAuthentication()
 
