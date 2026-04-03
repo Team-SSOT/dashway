@@ -2,6 +2,15 @@
   "name": "dashway",
   "private": true,
   "packageManager": "pnpm@10.0.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild",
+      "fs-xattr",
+      "macos-alias",
+      "sharp"
+    ]
+  },
   "scripts": {
     "dev": "pnpm --filter @dashway/landing dev",
     "dev:desktop": "pnpm --filter @dashway/desktop dev",

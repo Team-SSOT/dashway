@@ -1,16 +1,15 @@
 import { Environment, type FetchFunction, Network, RecordSource, Store } from 'relay-runtime'
 
 const fetchFn: FetchFunction = async (params, variables) => {
-  const response = await fetch('http://localhost:8080/graphql', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      query: params.text,
-      variables,
-    }),
-  })
+  if (!params.text) {
+    throw new Error('Desktop shell only supports text GraphQL operations.')
+  }
 
-  return await response.json()
+  return window.desktop.shell.graphql({
+    query: params.text,
+    variables: (variables as Record<string, unknown>) ?? undefined,
+    operationName: params.name,
+  })
 }
 
 export function createRelayEnvironment(): Environment {

@@ -1,8 +1,19 @@
-import type { BootstrapPayload, WorkspaceConfig } from '@dashway/config-schema'
+import type {
+  ShellBootstrapReadyResult,
+  ShellBootstrapResult,
+  ShellGraphqlRequest,
+  ShellGraphqlResponse,
+  ShellLoginInput,
+  ThemeMode,
+  WorkspaceConfig,
+} from '@dashway/config-schema'
 
 export interface ShellAPI {
-  getBootstrap(): Promise<BootstrapPayload>
-  setTheme(mode: 'system' | 'light' | 'dark'): Promise<void>
+  getBootstrap(): Promise<ShellBootstrapResult>
+  login(input: ShellLoginInput): Promise<ShellBootstrapReadyResult>
+  logout(): Promise<void>
+  graphql(request: ShellGraphqlRequest): Promise<ShellGraphqlResponse>
+  setTheme(mode: ThemeMode): Promise<void>
 }
 
 export interface WorkspaceAPI {
@@ -19,6 +30,7 @@ export interface WindowAPI {
 
 export interface EventsAPI {
   onDeepLink(callback: (url: string) => void): () => void
+  onSessionInvalidated(callback: () => void): () => void
   onWindowFocus(callback: () => void): () => void
   onWindowBlur(callback: () => void): () => void
 }
