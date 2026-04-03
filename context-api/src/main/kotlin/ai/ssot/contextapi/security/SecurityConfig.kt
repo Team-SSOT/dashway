@@ -27,7 +27,11 @@ class SecurityConfig(
             .cors { }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests {
-                it.requestMatchers("/graphql").permitAll()
+                it.requestMatchers(
+                    "/graphql",
+                    "/internal/install/health",
+                    "/internal/install/bootstrap",
+                ).permitAll()
                     .anyRequest().denyAll()
             }
             .addFilterBefore(authenticationFilter, AuthorizationFilter::class.java)

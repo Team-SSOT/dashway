@@ -13,6 +13,9 @@ context-api:
       path: /graphql
       secure: true
       same-site: None
+  install:
+    bootstrap-enabled: false
+    bootstrap-secret: ""
 
 redis:
   host: localhost

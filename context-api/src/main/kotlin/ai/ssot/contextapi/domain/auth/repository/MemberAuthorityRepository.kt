@@ -14,6 +14,7 @@ import org.springframework.stereotype.Repository
 
 interface MemberAuthorityRepository : JpaRepository<MemberAuthority, MemberAuthorityId>, QMemberAuthorityRepository {
     fun deleteAllByIdMemberId(memberId: Long)
+    fun findAllByIdAuthorityId(authorityId: Int): List<MemberAuthority>
 }
 
 interface QMemberAuthorityRepository {

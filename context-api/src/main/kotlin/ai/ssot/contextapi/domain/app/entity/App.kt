@@ -16,7 +16,7 @@ class App(
     @Column(nullable = false)
     var name: String = "",
     @Column(nullable = false)
-    val port: Int,
+    var port: Int,
     @Column(name = "is_enabled", nullable = false)
     var isEnabled: Boolean = true,
     @Column(name = "created_datetime", nullable = false)
