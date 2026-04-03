@@ -12,7 +12,7 @@ services:
       redis:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/context_api
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/dashway
       SPRING_DATASOURCE_USERNAME: context_api
       SPRING_DATASOURCE_PASSWORD: context_api
       REDIS_HOST: redis
@@ -37,7 +37,7 @@ services:
       # Postgres runs init scripts only when the data directory is created from an empty volume.
       - ./src/main/resources/db/ddl/ddl.sql:/docker-entrypoint-initdb.d/ddl.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U context_api -d context_api"]
+      test: ["CMD-SHELL", "pg_isready -U context_api -d dashway"]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -30,7 +30,7 @@ internal fun resetPersistenceState(
 internal object IntegrationTestEnvironment {
     private val postgres: PostgreSQLContainer<Nothing> by lazy {
         PostgreSQLContainer<Nothing>("postgres:17-alpine").apply {
-            withDatabaseName("context_api")
+            withDatabaseName("dashway")
             withUsername("context_api")
             withPassword("context_api")
             start()
