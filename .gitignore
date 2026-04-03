@@ -63,3 +63,4 @@ __generated__/
 # ── Misc ─────────────────────────────────────
 *.pem
 hs_err_pid*
+.dashway/

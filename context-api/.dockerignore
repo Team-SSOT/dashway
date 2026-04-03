@@ -1,5 +1,5 @@
 .git
 .gradle
 .idea
-build
-out
+agent-os
+src/test
