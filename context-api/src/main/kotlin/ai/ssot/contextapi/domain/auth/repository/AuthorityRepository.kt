@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 
 interface AuthorityRepository : JpaRepository<Authority, Int>, QAuthorityRepository {
+    fun findAllByOrderByIdAsc(): List<Authority>
 }
 
 interface QAuthorityRepository {

@@ -1,8 +1,9 @@
-#extend type Query {
-  #인증
-  #검색(사용자용)
-  #검색(LLM용)
-#}
+extend type Query {
+  authorities: [Authority!]!
+#  인증 -> OAuth spec으로 REST API로 만들듯?
+#  검색(사용자용)
+#  검색(LLM용)
+}
 
 extend type Mutation {
   login(input: LoginInput!): LoginPayload!

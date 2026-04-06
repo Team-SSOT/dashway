@@ -161,6 +161,40 @@ class AuthGraphqlIntegrationTests : GraphqlBehaviorSpecSupport() {
                 }
             }
         }
+
+        given("authorities") {
+            `when`("an authenticated member requests the authority catalog") {
+                then("returns all authorities in ascending id order") {
+                    val member = bootstrapMember()
+
+                    val response = executeGraphqlAndRead(
+                        authoritiesQuery(),
+                        accessToken = member.accessToken,
+                    )
+
+                    response.longAt("/data/authorities/0/id") shouldBe 1L
+                    response.textAt("/data/authorities/0/name") shouldBe "ADMIN"
+                    response.longAt("/data/authorities/1/id") shouldBe 2L
+                    response.textAt("/data/authorities/1/name") shouldBe "LEADER"
+                    response.longAt("/data/authorities/2/id") shouldBe 3L
+                    response.textAt("/data/authorities/2/name") shouldBe "MEMBER"
+                    response.at("/data/authorities/3").isMissingNode shouldBe true
+                }
+            }
+
+            `when`("the request is unauthenticated") {
+                then("returns the shared unauthenticated error contract") {
+                    val response = executeGraphqlAndReadAllowErrors(
+                        authoritiesQuery(),
+                    )
+
+                    val authoritiesNode = response.at("/data/authorities")
+                    (authoritiesNode.isMissingNode || authoritiesNode.isNull) shouldBe true
+                    response.textAt("/errors/0/message") shouldBe "Authentication is required."
+                    response.at("/errors/0/extensions").isMissingNode shouldBe true
+                }
+            }
+        }
     }
 
     private data class GraphqlHttpResponse(
@@ -228,4 +262,14 @@ class AuthGraphqlIntegrationTests : GraphqlBehaviorSpecSupport() {
             LogoutGraphQLQuery.newRequest().build(),
             null,
         )
+
+    private fun authoritiesQuery(): String =
+        """
+        query {
+          authorities {
+            id
+            name
+          }
+        }
+        """.trimIndent()
 }

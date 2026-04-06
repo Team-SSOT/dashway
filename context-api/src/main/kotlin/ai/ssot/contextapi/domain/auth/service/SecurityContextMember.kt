@@ -4,15 +4,6 @@ import ai.ssot.contextapi.domain.auth.exception.ForbiddenException
 import ai.ssot.contextapi.domain.auth.exception.UnauthenticatedException
 import org.springframework.security.core.context.SecurityContextHolder
 
-fun requireAuthenticatedMemberId(): Long {
-    val authentication = SecurityContextHolder.getContext().authentication
-        ?: throw UnauthenticatedException()
-
-    return authentication.principal.toString().toLongOrNull()
-        ?: throw UnauthenticatedException()
-}
-
-
 fun <T> withAuthenticatedMember(action: (Long) -> T): T {
     val memberId = getMemberIdFromAuthentication()
 
