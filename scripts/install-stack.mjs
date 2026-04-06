@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url'
 import {
   INSTALLER_STATE_VERSION,
   assertRequiredAdminOptions,
+  buildInstallExecutionPlan,
   buildStatePath,
   loadInstallerManifest,
   parseCliArgs,
@@ -41,55 +42,52 @@ async function main() {
     previousState,
   })
   const selectedAppUnits = installerInputs.selectedAppUnits
-
-  await assertFileExists(path.join(repoRoot, manifest.core.composeFile))
-  for (const appUnit of selectedAppUnits) {
-    await assertFileExists(path.join(repoRoot, appUnit.composeFile))
-  }
+  const executionPlan = buildInstallExecutionPlan({
+    manifest,
+    selectedAppUnits,
+    installSecret,
+    installerInputs,
+  })
 
   if (manifest.apps.length === 0) {
-    console.log('No selectable app services are registered yet. Installing context-api only.')
+    console.log('No selectable app services are registered yet. Installing infrastructure and context-api only.')
   }
 
-  console.log(`Bringing up ${manifest.core.displayName}...`)
-  await runComposeUp({
-    composeFile: path.join(repoRoot, manifest.core.composeFile),
-    environment: {
-      CONTEXT_API_INSTALL_BOOTSTRAP_ENABLED: 'true',
-      CONTEXT_API_INSTALL_BOOTSTRAP_SECRET: installSecret,
-    },
-  })
+  let bootstrapResponse = null
+  for (const step of executionPlan) {
+    if (step.type === 'assert-file-exists') {
+      await assertFileExists(path.join(repoRoot, step.composeFile))
+      continue
+    }
 
-  console.log('Waiting for context-api install health endpoint...')
-  await waitForHealthy(manifest.core.healthUrl, 120_000)
+    if (step.type === 'compose-up') {
+      console.log(`Bringing up ${step.unit.displayName}...`)
+      await runComposeUp({
+        composeFile: path.join(repoRoot, step.unit.composeFile),
+        environment: step.environment,
+        wait: step.wait,
+      })
+      continue
+    }
 
-  console.log('Syncing installer bootstrap state into context-api...')
-  const bootstrapResponse = await postJson({
-    url: manifest.core.bootstrapUrl,
-    headers: {
-      'X-Dashway-Install-Secret': installSecret,
-    },
-    body: {
-      admin: {
-        name: installerInputs.adminName,
-        email: installerInputs.adminEmail,
-        password: installerInputs.adminPassword,
-      },
-      apps: manifest.apps.map((appUnit) => ({
-        id: appUnit.catalog.id,
-        name: appUnit.catalog.name,
-        port: appUnit.catalog.port,
-      })),
-      selectedAppIds: selectedAppUnits.map((appUnit) => appUnit.catalog.id),
-    },
-  })
+    if (step.type === 'wait-for-healthy') {
+      console.log(`Waiting for ${step.unit.displayName} install health endpoint...`)
+      await waitForHealthy(step.url, step.timeoutMs)
+      continue
+    }
 
-  for (const appUnit of selectedAppUnits) {
-    console.log(`Bringing up ${appUnit.displayName}...`)
-    await runComposeUp({
-      composeFile: path.join(repoRoot, appUnit.composeFile),
-      environment: {},
-    })
+    if (step.type === 'bootstrap') {
+      console.log('Syncing installer bootstrap state into context-api...')
+      bootstrapResponse = await postJson({
+        url: step.url,
+        headers: step.headers,
+        body: step.body,
+      })
+    }
+  }
+
+  if (bootstrapResponse === null) {
+    throw new Error('Installer bootstrap step did not run.')
   }
 
   const state = {
@@ -122,7 +120,7 @@ function printHelp() {
 
 Notes:
   - The installer reads server units from installer/manifest.json.
-  - Context API is always started first.
+  - Dashway Infra starts first, then Context API.
   - In an interactive terminal, missing admin fields and app selection are prompted.
   - In a non-interactive terminal, required values must be passed as flags.`)
 }
@@ -264,8 +262,13 @@ function manifestShapeForResolution(appUnits) {
   }
 }
 
-async function runComposeUp({ composeFile, environment }) {
-  await runCommand('docker', ['compose', '-f', composeFile, 'up', '-d', '--build'], {
+async function runComposeUp({ composeFile, environment, wait = false }) {
+  const args = ['compose', '-f', composeFile, 'up', '-d', '--build']
+  if (wait) {
+    args.push('--wait')
+  }
+
+  await runCommand('docker', args, {
     cwd: repoRoot,
     env: {
       ...process.env,
