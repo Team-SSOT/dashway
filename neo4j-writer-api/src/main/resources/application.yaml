@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: neo4j-writer-api
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:dashway}
+    password: ${RABBITMQ_PASSWORD:dashway123456}
+
+server:
+  port: ${PORT:8080}
+
+dashway:
+  neo4j:
+    uri: ${NEO4J_URI:bolt://localhost:7687}
+    username: ${NEO4J_USER:neo4j}
+    password: ${NEO4J_PASSWORD:dashway123456}
+    database: ${NEO4J_DATABASE:neo4j}
+  ingest:
+    rabbit:
+      exchange: ${GRAPH_EXCHANGE:dashway.graph}
+      routing-key: ${GRAPH_ROUTING_KEY:ingest}
+      queue: ${GRAPH_QUEUE:dashway.graph.ingest}
+      retry-exchange: ${GRAPH_RETRY_EXCHANGE:dashway.graph.retry}
+      retry-routing-key: ${GRAPH_RETRY_ROUTING_KEY:ingest.retry}
+      retry-queue: ${GRAPH_RETRY_QUEUE:dashway.graph.ingest.retry}
+      dlq-exchange: ${GRAPH_DLQ_EXCHANGE:dashway.graph.dlx}
+      dlq-routing-key: ${GRAPH_DLQ_ROUTING_KEY:ingest.dlq}
+      dlq-queue: ${GRAPH_DLQ_QUEUE:dashway.graph.ingest.dlq}
+      retry-delay-ms: ${GRAPH_RETRY_DELAY_MS:30000}
+      max-attempts: ${GRAPH_MAX_ATTEMPTS:5}
+      prefetch: ${GRAPH_PREFETCH:20}
+    idempotency:
+      ttl-ms: ${GRAPH_IDEMPOTENCY_TTL_MS:86400000}
+      cleanup-interval-ms: ${GRAPH_IDEMPOTENCY_CLEANUP_INTERVAL_MS:3600000}
