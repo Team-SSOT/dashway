@@ -1,5 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
+  "infra": {
+    "id": "dashway-infra",
+    "displayName": "Dashway Infra",
+    "composeFile": "docker-compose.yml"
+  },
   "core": {
     "id": "context-api",
     "displayName": "Context API",

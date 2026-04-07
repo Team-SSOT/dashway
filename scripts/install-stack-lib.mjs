@@ -70,10 +70,11 @@ export function validateInstallerManifest(manifest) {
   if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
     throw new Error('Installer manifest must be a JSON object.')
   }
-  if (manifest.schemaVersion !== 1) {
+  if (manifest.schemaVersion !== 2) {
     throw new Error(`Unsupported installer manifest schema version: ${manifest.schemaVersion}`)
   }
 
+  assertInfraUnit(manifest.infra)
   assertCoreUnit(manifest.core)
 
   if (!Array.isArray(manifest.apps)) {
@@ -100,6 +101,84 @@ export function validateInstallerManifest(manifest) {
 export async function loadInstallerManifest(manifestPath) {
   const manifestSource = await readFile(manifestPath, 'utf8')
   return validateInstallerManifest(JSON.parse(manifestSource))
+}
+
+export function buildComposeInstallPlan({ manifest, selectedAppUnits }) {
+  return [
+    { ...manifest.infra, kind: 'infra' },
+    { ...manifest.core, kind: 'core' },
+    ...selectedAppUnits.map((appUnit) => ({ ...appUnit, kind: 'app' })),
+  ]
+}
+
+export function buildInstallExecutionPlan({
+  manifest,
+  selectedAppUnits,
+  installSecret,
+  installerInputs,
+}) {
+  const composeInstallPlan = buildComposeInstallPlan({
+    manifest,
+    selectedAppUnits,
+  })
+  const [infraUnit, coreUnit, ...appComposeUnits] = composeInstallPlan
+  const bootstrapPayload = {
+    admin: {
+      name: installerInputs.adminName,
+      email: installerInputs.adminEmail,
+      password: installerInputs.adminPassword,
+    },
+    apps: manifest.apps.map((appUnit) => ({
+      id: appUnit.catalog.id,
+      name: appUnit.catalog.name,
+      port: appUnit.catalog.port,
+    })),
+    selectedAppIds: selectedAppUnits.map((appUnit) => appUnit.catalog.id),
+  }
+
+  return [
+    ...composeInstallPlan.map((composeUnit) => ({
+      type: 'assert-file-exists',
+      composeFile: composeUnit.composeFile,
+      unit: composeUnit,
+    })),
+    {
+      type: 'compose-up',
+      unit: infraUnit,
+      environment: {},
+      wait: true,
+    },
+    {
+      type: 'compose-up',
+      unit: coreUnit,
+      environment: {
+        CONTEXT_API_INSTALL_BOOTSTRAP_ENABLED: 'true',
+        CONTEXT_API_INSTALL_BOOTSTRAP_SECRET: installSecret,
+      },
+      wait: false,
+    },
+    {
+      type: 'wait-for-healthy',
+      unit: coreUnit,
+      url: manifest.core.healthUrl,
+      timeoutMs: 120_000,
+    },
+    {
+      type: 'bootstrap',
+      unit: coreUnit,
+      url: manifest.core.bootstrapUrl,
+      headers: {
+        'X-Dashway-Install-Secret': installSecret,
+      },
+      body: bootstrapPayload,
+    },
+    ...appComposeUnits.map((appUnit) => ({
+      type: 'compose-up',
+      unit: appUnit,
+      environment: {},
+      wait: false,
+    })),
+  ]
 }
 
 export function resolveSelectedAppUnits(manifest, rawAppsValue) {
@@ -199,27 +278,28 @@ export async function writeInstallState(statePath, state) {
   })
 }
 
+function assertInfraUnit(infra) {
+  assertComposeUnit(infra, 'infra', ['id', 'displayName', 'composeFile'])
+}
+
 function assertCoreUnit(core) {
-  if (!core || typeof core !== 'object' || Array.isArray(core)) {
-    throw new Error('Installer manifest core must be an object.')
+  assertComposeUnit(core, 'core', ['id', 'displayName', 'composeFile', 'healthUrl', 'bootstrapUrl'])
+}
+
+function assertComposeUnit(unit, unitName, fields) {
+  if (!unit || typeof unit !== 'object' || Array.isArray(unit)) {
+    throw new Error(`Installer manifest ${unitName} must be an object.`)
   }
 
-  for (const field of ['id', 'displayName', 'composeFile', 'healthUrl', 'bootstrapUrl']) {
-    if (typeof core[field] !== 'string' || core[field].trim().length === 0) {
-      throw new Error(`Installer core field "${field}" must be a non-empty string.`)
+  for (const field of fields) {
+    if (typeof unit[field] !== 'string' || unit[field].trim().length === 0) {
+      throw new Error(`Installer ${unitName} field "${field}" must be a non-empty string.`)
     }
   }
 }
 
 function assertAppUnit(app) {
-  if (!app || typeof app !== 'object' || Array.isArray(app)) {
-    throw new Error('Installer app entry must be an object.')
-  }
-  for (const field of ['id', 'displayName', 'composeFile']) {
-    if (typeof app[field] !== 'string' || app[field].trim().length === 0) {
-      throw new Error(`Installer app field "${field}" must be a non-empty string.`)
-    }
-  }
+  assertComposeUnit(app, 'app', ['id', 'displayName', 'composeFile'])
   if (!app.catalog || typeof app.catalog !== 'object' || Array.isArray(app.catalog)) {
     throw new Error(`Installer app "${app.id}" is missing a catalog definition.`)
   }

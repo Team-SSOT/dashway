@@ -1,0 +1,84 @@
+services:
+  postgres:
+    image: postgres:18.3
+    container_name: dashway-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dashway
+      POSTGRES_USER: context_api
+      POSTGRES_PASSWORD: context_api
+    ports:
+      - "5432:5432"
+    volumes:
+      - context-api-postgres-storage:/var/lib/postgresql
+      # Postgres runs init scripts only when the data directory is created from an empty volume.
+      - ./context-api/src/main/resources/db/ddl/ddl.sql:/docker-entrypoint-initdb.d/ddl.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U context_api -d dashway"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dashway-shared
+
+  redis:
+    image: redis:8.2
+    container_name: dashway-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - context-api-redis-storage:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dashway-shared
+
+#  neo4j:
+#    image: neo4j:${NEO4J_VERSION:-5}
+#    container_name: dashway-neo4j
+#    restart: unless-stopped
+#    environment:
+#      NEO4J_AUTH: none
+#    ports:
+#      - "7474:7474"
+#      - "7687:7687"
+#    volumes:
+#      - dashway-neo4j-data:/data
+#      - dashway-neo4j-logs:/logs
+#    networks:
+#      - dashway-shared
+#
+#  elasticsearch:
+#    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_STACK_VERSION:-8.17.3}
+#    container_name: dashway-elasticsearch
+#    restart: unless-stopped
+#    environment:
+#      discovery.type: single-node
+#      xpack.security.enabled: "false"
+#      ES_JAVA_OPTS: -Xms512m -Xmx512m
+#    ports:
+#      - "9200:9200"
+#    volumes:
+#      - dashway-elasticsearch-data:/usr/share/elasticsearch/data
+#    networks:
+#      - dashway-shared
+
+volumes:
+  context-api-postgres-storage:
+    name: context-api-postgres-storage
+  context-api-redis-storage:
+    name: context-api-redis-storage
+#  dashway-neo4j-data:
+#    name: dashway-neo4j-data
+#  dashway-neo4j-logs:
+#    name: dashway-neo4j-logs
+#  dashway-elasticsearch-data:
+#    name: dashway-elasticsearch-data
+
+networks:
+  dashway-shared:
+    name: dashway-shared
