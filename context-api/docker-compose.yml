@@ -6,11 +6,6 @@ services:
     image: context-api-backend:local
     container_name: context-api-server
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/dashway
       SPRING_DATASOURCE_USERNAME: context_api
@@ -21,42 +16,10 @@ services:
       CONTEXT_API_INSTALL_BOOTSTRAP_SECRET: ${CONTEXT_API_INSTALL_BOOTSTRAP_SECRET:-}
     ports:
       - "8080:8080"
+    networks:
+      - dashway-shared
 
-  postgres:
-    image: postgres:18.3
-    container_name: context-api-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: dashway
-      POSTGRES_USER: context_api
-      POSTGRES_PASSWORD: context_api
-    ports:
-      - "5432:5432"
-    volumes:
-      - context-api-postgres-storage:/var/lib/postgresql
-      # Postgres runs init scripts only when the data directory is created from an empty volume.
-      - ./src/main/resources/db/ddl/ddl.sql:/docker-entrypoint-initdb.d/ddl.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U context_api -d dashway"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:8.2
-    container_name: context-api-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - context-api-redis-storage:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  # Remove this volume, for example with `docker compose down -v`, to rerun `ddl.sql`.
-  context-api-postgres-storage:
-  context-api-redis-storage:
+networks:
+  dashway-shared:
+    external: true
+    name: dashway-shared
