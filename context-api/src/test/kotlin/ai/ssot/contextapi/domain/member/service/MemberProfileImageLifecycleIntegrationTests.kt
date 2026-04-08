@@ -85,7 +85,7 @@ class MemberProfileImageLifecycleIntegrationTests : PostgresIntegrationTestSuppo
     }
 
     @Test
-    fun `updateMember cleans up the new file after rollback when replacing the current file`() {
+    fun `updateMember leaves the new file after rollback when replacing the current file`() {
         val member = createMemberWithProfileImage()
         val currentPath = checkNotNull(member.profileImgPath)
         lateinit var newPath: String
@@ -102,7 +102,7 @@ class MemberProfileImageLifecycleIntegrationTests : PostgresIntegrationTestSuppo
         }
 
         assertTrue(Files.exists(localFileStore.storageRoot.resolve(currentPath)))
-        assertFalse(Files.exists(localFileStore.storageRoot.resolve(newPath)))
+        assertTrue(Files.exists(localFileStore.storageRoot.resolve(newPath)))
         assertEquals(
             currentPath,
             memberRepository.findById(member.id!!).orElseThrow().profileImgPath,
