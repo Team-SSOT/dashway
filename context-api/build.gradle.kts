@@ -31,6 +31,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter")
+    implementation("name.nkonev.multipart-spring-graphql:multipart-spring-graphql:2.0.0")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("tools.jackson.module:jackson-module-kotlin")
 
@@ -76,7 +77,9 @@ tasks.generateJava {
     typeMapping = mutableMapOf(
         "PageInfo" to "ai.ssot.contextapi.shared.page.PageInfo",
         "DateTime" to "java.time.LocalDateTime",
+        "JSON" to "tools.jackson.databind.JsonNode",
         "Long" to "java.lang.Long",
+        "Upload" to "org.springframework.web.multipart.MultipartFile",
     )
 }
 

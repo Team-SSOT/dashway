@@ -4,14 +4,15 @@ type Query {
 }
 
 type Mutation {
-  registerMember(input: RegisterMemberInput!): Member!
-  updateMember(input: UpdateMemberInput!): Member!
+  registerMember(input: RegisterMemberInput!, file: Upload): Member!
+  updateMember(input: UpdateMemberInput!, file: Upload): Member!
 }
 
 type Member {
   id: Long!
   name: String!
   email: String!
+  profileImgPath: String
   authorities: [Authority!]!
   isEnabled: Boolean!
   createdDatetime: DateTime!
@@ -34,7 +35,6 @@ input RegisterMemberInput {
 input UpdateMemberInput {
   id: Long!
   name: String
-  email: String
   isEnabled: Boolean
   authorityIds: [Int!]
 }

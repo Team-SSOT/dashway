@@ -22,19 +22,24 @@ class AuthenticationEntryPoint : AuthenticationEntryPoint {
             return
         }
 
-        response.status = HttpServletResponse.SC_OK
-        response.contentType = MediaType.APPLICATION_JSON_VALUE
-        response.characterEncoding = Charsets.UTF_8.name()
-        response.writer.write(
-            objectMapper.writeValueAsString(
-                mapOf(
-                    "data" to null,
-                    "errors" to listOf(
-                        GraphQlErrors.unauthenticatedError().toSpecification(),
+        if (request.requestURI.endsWith("/graphql")) {
+            response.status = HttpServletResponse.SC_OK
+            response.contentType = MediaType.APPLICATION_JSON_VALUE
+            response.characterEncoding = Charsets.UTF_8.name()
+            response.writer.write(
+                objectMapper.writeValueAsString(
+                    mapOf(
+                        "data" to null,
+                        "errors" to listOf(
+                            GraphQlErrors.unauthenticatedError().toSpecification(),
+                        ),
                     ),
                 ),
-            ),
-        )
-        response.writer.flush()
+            )
+            response.writer.flush()
+            return
+        }
+
+        response.sendError(HttpServletResponse.SC_UNAUTHORIZED)
     }
 }

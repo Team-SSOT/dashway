@@ -11,11 +11,15 @@ CREATE TABLE IF NOT EXISTS members (
     name                VARCHAR     NOT NULL,
     email               VARCHAR     NOT NULL    UNIQUE,
     password            VARCHAR     NOT NULL,
+    profile_img_path    VARCHAR,
 
     is_enabled          BOOLEAN     NOT NULL    DEFAULT TRUE,
 
     created_datetime    TIMESTAMP   NOT NULL    DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE members
+    ADD COLUMN IF NOT EXISTS profile_img_path VARCHAR;
 
 CREATE TABLE IF NOT EXISTS authorities (
     id          INT         NOT NULL PRIMARY KEY,

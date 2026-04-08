@@ -21,7 +21,15 @@ class TeamMemberDataLoader(
         return CompletableFuture.completedFuture(
             keys.associateWith { teamId ->
                 teamIdToMembers[teamId]
-                    ?.map { Member(it.id!!, it.name, it.email, null, it.isEnabled, it.createdDatetime) }
+                    ?.map {
+                        Member.newBuilder()
+                            .id(it.id!!)
+                            .name(it.name)
+                            .email(it.email)
+                            .isEnabled(it.isEnabled)
+                            .createdDatetime(it.createdDatetime)
+                            .build()
+                    }
                     ?: emptyList()
             }
         )

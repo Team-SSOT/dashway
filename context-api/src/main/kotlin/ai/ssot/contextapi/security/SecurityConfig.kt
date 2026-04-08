@@ -3,6 +3,7 @@ package ai.ssot.contextapi.security
 import ai.ssot.contextapi.security.filter.AuthenticationFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
@@ -32,6 +33,7 @@ class SecurityConfig(
                     "/internal/install/health",
                     "/internal/install/bootstrap",
                 ).permitAll()
+                    .requestMatchers(HttpMethod.GET, "/members/**").authenticated()
                     .anyRequest().denyAll()
             }
             .addFilterBefore(authenticationFilter, AuthorizationFilter::class.java)
@@ -49,12 +51,13 @@ class SecurityConfig(
         val configuration = CorsConfiguration().apply {
             allowCredentials = false
             allowedOrigins = authProperties.corsAllowedOrigins
-            allowedMethods = listOf("POST", "OPTIONS")
+            allowedMethods = listOf("GET", "POST", "OPTIONS")
             allowedHeaders = listOf("Authorization", "Content-Type")
         }
 
         return UrlBasedCorsConfigurationSource().apply {
             registerCorsConfiguration("/graphql", configuration)
+            registerCorsConfiguration("/members/**", configuration)
         }
     }
 }

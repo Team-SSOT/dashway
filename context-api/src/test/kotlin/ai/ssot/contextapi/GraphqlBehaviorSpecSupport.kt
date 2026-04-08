@@ -16,16 +16,18 @@ import ai.ssot.contextapi.security.token.TokenService
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest
 import jakarta.servlet.http.Cookie
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.mock.web.MockPart
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.ResultActions
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.web.multipart.MultipartFile
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.ObjectMapper
-import java.util.UUID
+import java.util.*
 
 abstract class GraphqlBehaviorSpecSupport : PostgresBehaviorSpecSupport() {
     protected data class AuthSession(
@@ -89,6 +91,95 @@ abstract class GraphqlBehaviorSpecSupport : PostgresBehaviorSpecSupport() {
         accessToken: String? = null,
         cookies: Array<out Cookie> = emptyArray(),
     ): ResultActions = executeGraphql(request.serialize(), accessToken, cookies)
+
+    protected fun executeMultipartGraphql(
+        query: String,
+        variables: Map<String, Any?>,
+        uploads: Map<String, MultipartFile>,
+        accessToken: String? = null,
+    ): ResultActions {
+        val operations = objectMapper.writeValueAsBytes(
+            mapOf(
+                "query" to query,
+                "variables" to variables,
+            ),
+        )
+        val multipartMap = uploads.keys
+            .toList()
+            .mapIndexed { index, variableName ->
+                index.toString() to listOf("variables.$variableName")
+            }
+            .toMap()
+
+        val requestBuilder = multipart("/graphql")
+            .accept(MediaType.APPLICATION_JSON)
+            .part(
+                MockPart(
+                    "operations",
+                    "operations.json",
+                    operations,
+                ).apply {
+                    headers.contentType = MediaType.APPLICATION_JSON
+                },
+            )
+            .part(
+                MockPart(
+                    "map",
+                    "map.json",
+                    objectMapper.writeValueAsBytes(multipartMap),
+                ).apply {
+                    headers.contentType = MediaType.APPLICATION_JSON
+                },
+            )
+            .with {
+                it.method = "POST"
+                it
+            }
+
+        uploads.entries.forEachIndexed { index, (_, file) ->
+            requestBuilder.file(
+                org.springframework.mock.web.MockMultipartFile(
+                    index.toString(),
+                    file.originalFilename,
+                    file.contentType,
+                    file.bytes,
+                ),
+            )
+        }
+
+        if (accessToken != null) {
+            requestBuilder.header("Authorization", "Bearer $accessToken")
+        }
+
+        return mockMvc.perform(requestBuilder)
+    }
+
+    protected fun executeMultipartGraphqlAndRead(
+        query: String,
+        variables: Map<String, Any?>,
+        uploads: Map<String, MultipartFile>,
+        accessToken: String? = null,
+    ): JsonNode =
+        executeMultipartGraphql(query, variables, uploads, accessToken)
+            .andReturn()
+            .let { result ->
+                val response = result.response
+                check(response.status == 200) {
+                    buildString {
+                        append("HTTP ${response.status}: ${response.contentAsString}")
+                        result.resolvedException?.let { ex ->
+                            append(" :: ${ex::class.qualifiedName}: ${ex.message}")
+                        }
+                    }
+                }
+                response.contentAsString
+            }
+            .let(objectMapper::readTree)
+            .also { response ->
+                check(response.at("/errors").isMissingNode) {
+                    response.toPrettyString()
+                }
+            }
 
     protected fun executeGraphqlAndRead(
         query: String,

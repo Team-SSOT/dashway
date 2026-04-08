@@ -167,7 +167,7 @@ class InstallBootstrapIntegrationTests : PostgresIntegrationTestSupport() {
                 Member(
                     name = "Existing Admin",
                     email = "existing-admin@example.com",
-                    password = passwordEncoder.encode("existing-secret"),
+                    password = requireNotNull(passwordEncoder.encode("existing-secret")),
                     isEnabled = true,
                 ),
             ).id,

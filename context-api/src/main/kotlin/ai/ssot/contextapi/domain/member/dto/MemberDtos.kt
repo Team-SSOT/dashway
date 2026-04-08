@@ -16,7 +16,6 @@ data class RegisterMemberDto(
 data class UpdateMemberDto(
     val id: Long,
     val name: String? = null,
-    val email: String? = null,
     val authorityIds: List<Int>? = null,
     val isEnabled: Boolean? = null,
 )
@@ -25,6 +24,7 @@ data class MemberDto(
     val id: Long,
     val name: String,
     val email: String,
+    val profileImgPath: String?,
     val isEnabled: Boolean,
     val createdDatetime: LocalDateTime,
 ) {
@@ -32,6 +32,7 @@ data class MemberDto(
         id = member.id!!,
         name = member.name,
         email = member.email,
+        profileImgPath = member.profileImgPath,
         isEnabled = member.isEnabled,
         createdDatetime = member.createdDatetime,
     )
@@ -43,6 +44,9 @@ data class MemberDto(
             .email(email)
             .isEnabled(isEnabled)
             .createdDatetime(createdDatetime)
+            .apply {
+                profileImgPath?.let { profileImgPath(it) }
+            }
             .build()
     }
 }

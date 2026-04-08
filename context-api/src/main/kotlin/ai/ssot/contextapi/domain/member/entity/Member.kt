@@ -21,6 +21,9 @@ class Member(
     @Column(name = "password", nullable = false)
     var password: String = "",
 
+    @Column(name = "profile_img_path")
+    var profileImgPath: String? = null,
+
     @Column(name = "is_enabled", nullable = false)
     var isEnabled: Boolean = true,
 
