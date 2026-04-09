@@ -52,20 +52,20 @@ services:
 #    networks:
 #      - dashway-shared
 #
-#  elasticsearch:
-#    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_STACK_VERSION:-8.17.3}
-#    container_name: dashway-elasticsearch
-#    restart: unless-stopped
-#    environment:
-#      discovery.type: single-node
-#      xpack.security.enabled: "false"
-#      ES_JAVA_OPTS: -Xms512m -Xmx512m
-#    ports:
-#      - "9200:9200"
-#    volumes:
-#      - dashway-elasticsearch-data:/usr/share/elasticsearch/data
-#    networks:
-#      - dashway-shared
+  elasticsearch:
+    image: elasticsearch:9.3.3
+    container_name: dashway-elasticsearch
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      mem_limit: 1g
+    ports:
+      - "9200:9200"
+    volumes:
+      - dashway-elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - dashway-shared
 
 volumes:
   context-api-postgres-storage:
@@ -76,8 +76,8 @@ volumes:
 #    name: dashway-neo4j-data
 #  dashway-neo4j-logs:
 #    name: dashway-neo4j-logs
-#  dashway-elasticsearch-data:
-#    name: dashway-elasticsearch-data
+  dashway-elasticsearch-data:
+    name: dashway-elasticsearch-data
 
 networks:
   dashway-shared:
