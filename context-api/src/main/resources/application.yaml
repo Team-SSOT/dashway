@@ -8,6 +8,9 @@ spring:
     password: context_api
     url: jdbc:postgresql://localhost:5432/dashway
 
+  elasticsearch:
+    url: http://localhost:9200
+
 
 logging:
   level:
