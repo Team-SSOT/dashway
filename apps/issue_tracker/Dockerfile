@@ -1,4 +1,12 @@
-# 1단계: Build Stage
+# 1단계: Frontend Build Stage
+FROM node:20-alpine AS frontend
+WORKDIR /web
+COPY frontend/package.json ./
+RUN npm install
+COPY frontend ./
+RUN npm run build
+
+# 2단계: Backend Build Stage
 FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /home/gradle/project
 
@@ -11,19 +19,21 @@ COPY backend/build.gradle.kts backend/settings.gradle.kts ./
 RUN chmod +x gradlew
 RUN ./gradlew dependencies --no-daemon
 
-# 소스 코드 복사 및 JAR 빌드
+# 소스 코드 복사
 COPY backend/src src
+
+# 프런트 빌드 산출물을 Spring Boot 정적 리소스 경로로 복사
+COPY --from=frontend /web/dist src/main/resources/static
+
 # plain jar가 생성되지 않도록 bootJar만 실행
 RUN ./gradlew bootJar --no-daemon
 
-# 2단계: Run Stage
+# 3단계: Run Stage
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Build Stage에서 생성된 JAR 파일 복사
-# Kotlin DSL의 경우 보통 build/libs/ 폴더에 생성됩니다.
 COPY --from=build /home/gradle/project/build/libs/*.jar app.jar
 
-EXPOSE 8080
+EXPOSE 12000
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
