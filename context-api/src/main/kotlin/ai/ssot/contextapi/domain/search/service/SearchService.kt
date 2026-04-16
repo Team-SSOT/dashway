@@ -10,7 +10,7 @@ import ai.ssot.contextapi.domain.search.dto.SearchTeamItem
 import ai.ssot.contextapi.domain.member.service.MemberService
 import ai.ssot.contextapi.domain.search.dto.AppContentSearchInput
 import ai.ssot.contextapi.domain.team.service.TeamService
-import ai.ssot.contextapi.infrastructure.elasticsearch.ElasticsearchAppContentRepository
+import ai.ssot.contextapi.infrastructure.search.AppContentSearchRepository
 import ai.ssot.contextapi.generated.types.SourceErrorCode
 import ai.ssot.contextapi.generated.types.SourceType
 import ai.ssot.contextapi.shared.page.PageInfo
@@ -23,9 +23,8 @@ import org.springframework.transaction.annotation.Transactional
 class SearchService(
     private val memberService: MemberService,
     private val teamService: TeamService,
-    private val appContentSearchService: ElasticsearchAppContentRepository,
+    private val appContentSearchService: AppContentSearchRepository,
 ) {
-    @Suppress("UNUSED_PARAMETER")
     @Transactional(readOnly = true)
     fun search(memberId: Long, input: SearchInput): SearchForMemberResult {
         val pageable = PageRequest.of(input.page, input.size)
@@ -38,7 +37,7 @@ class SearchService(
             when (source) {
                 SourceType.MEMBER -> executeMemberSearch(input.query, pageable)
                 SourceType.TEAM -> executeTeamSearch(input.query, pageable)
-                SourceType.APP -> executeAppSearch(input.query, input.appIds, pageable)
+                SourceType.APP -> executeAppSearch(memberId, input.query, input.appIds, pageable)
             }
         }
         val items = results.flatMap { it.items }
@@ -100,29 +99,43 @@ class SearchService(
         }
 
     private fun executeAppSearch(
+        memberId: Long,
         query: String,
         appIds: List<String>?,
         pageable: Pageable,
-    ): SourceExecutionResult {
-        val result = appContentSearchService.search(
-            AppContentSearchInput(
-                query = query,
-                appIds = appIds,
-                pageable = pageable,
-            ),
-        )
-        return SourceExecutionResult(
-            totalCount = result.totalCount,
-            items = result.items.map(SearchAppContentItem::from),
-            sourceErrors = result.errors.map {
-                SearchSourceError.of(
-                    sourceType = SourceType.APP,
-                    code = it.code,
-                    message = it.message,
-                )
-            },
-        )
-    }
+    ): SourceExecutionResult =
+        runCatching {
+            val result = appContentSearchService.search(
+                AppContentSearchInput(
+                    query = query,
+                    appIds = appIds,
+                    memberId = memberId,
+                    teamIds = teamService.getTeamIdsByMemberId(memberId),
+                    pageable = pageable,
+                ),
+            )
+            SourceExecutionResult(
+                totalCount = result.totalCount,
+                items = result.items.map(SearchAppContentItem::from),
+                sourceErrors = result.errors.map {
+                    SearchSourceError.of(
+                        sourceType = SourceType.APP,
+                        code = it.code,
+                        message = it.message,
+                    )
+                },
+            )
+        }.getOrElse { error ->
+            SourceExecutionResult(
+                sourceErrors = listOf(
+                    SearchSourceError.of(
+                        sourceType = SourceType.APP,
+                        code = SourceErrorCode.UNKNOWN,
+                        message = error.message ?: "App search failed.",
+                    ),
+                ),
+            )
+        }
 
     private data class SourceExecutionResult(
         val totalCount: Int = 0,

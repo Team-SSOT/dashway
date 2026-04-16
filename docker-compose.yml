@@ -52,22 +52,21 @@ services:
 #    networks:
 #      - dashway-shared
 #
-  elasticsearch:
-    image: elasticsearch:9.3.3
-    container_name: dashway-elasticsearch
+  meilisearch:
+    image: getmeili/meilisearch:v1.15
+    container_name: dashway-meilisearch
     restart: unless-stopped
     environment:
-      discovery.type: single-node
-      xpack.security.enabled: "false"
-      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      MEILI_ENV: development
+      MEILI_NO_ANALYTICS: "true"
     deploy:
       resources:
         limits:
           memory: 1g
     ports:
-      - "9200:9200"
+      - "7700:7700"
     volumes:
-      - dashway-elasticsearch-data:/usr/share/elasticsearch/data
+      - dashway-meilisearch-data:/meili_data
     networks:
       - dashway-shared
 
@@ -80,8 +79,8 @@ volumes:
 #    name: dashway-neo4j-data
 #  dashway-neo4j-logs:
 #    name: dashway-neo4j-logs
-  dashway-elasticsearch-data:
-    name: dashway-elasticsearch-data
+  dashway-meilisearch-data:
+    name: dashway-meilisearch-data
 
 networks:
   dashway-shared:

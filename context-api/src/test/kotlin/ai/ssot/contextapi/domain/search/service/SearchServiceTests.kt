@@ -11,7 +11,7 @@ import ai.ssot.contextapi.domain.team.entity.Team
 import ai.ssot.contextapi.domain.team.service.TeamService
 import ai.ssot.contextapi.generated.types.SourceErrorCode
 import ai.ssot.contextapi.generated.types.SourceType
-import ai.ssot.contextapi.infrastructure.elasticsearch.ElasticsearchAppContentRepository
+import ai.ssot.contextapi.infrastructure.search.AppContentSearchRepository
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -28,7 +28,7 @@ import java.time.LocalDateTime
 class SearchServiceTests {
     private val memberService = mock(MemberService::class.java)
     private val teamService = mock(TeamService::class.java)
-    private val appContentSearchService = mock(ElasticsearchAppContentRepository::class.java)
+    private val appContentSearchService = mock(AppContentSearchRepository::class.java)
     private val searchService = SearchService(
         memberService = memberService,
         teamService = teamService,
@@ -68,7 +68,18 @@ class SearchServiceTests {
                 1,
             ),
         )
-        `when`(appContentSearchService.search(AppContentSearchInput("alice", null, pageable))).thenReturn(
+        `when`(teamService.getTeamIdsByMemberId(99L)).thenReturn(listOf(201L, 202L))
+        `when`(
+            appContentSearchService.search(
+                AppContentSearchInput(
+                    query = "alice",
+                    appIds = null,
+                    memberId = 99L,
+                    teamIds = listOf(201L, 202L),
+                    pageable = pageable,
+                ),
+            ),
+        ).thenReturn(
             AppContentSearchResult(
                 totalCount = 1,
                 items = listOf(
@@ -91,7 +102,18 @@ class SearchServiceTests {
         val inOrder = inOrder(memberService, teamService, appContentSearchService)
         inOrder.verify(memberService).search("alice", pageable)
         inOrder.verify(teamService).search("alice", pageable)
-        inOrder.verify(appContentSearchService).search(AppContentSearchInput("alice", null, pageable))
+        inOrder.verify(teamService).getTeamIdsByMemberId(99L)
+        inOrder.verify(
+            appContentSearchService,
+        ).search(
+            AppContentSearchInput(
+                query = "alice",
+                appIds = null,
+                memberId = 99L,
+                teamIds = listOf(201L, 202L),
+                pageable = pageable,
+            ),
+        )
 
         assertEquals(3, result.items.size)
         assertEquals("SearchMemberItem", result.items[0]::class.java.simpleName)
@@ -107,7 +129,18 @@ class SearchServiceTests {
     @Test
     fun `search only calls requested sources`() {
         val pageable = PageRequest.of(0, 20)
-        `when`(appContentSearchService.search(AppContentSearchInput("docs", null, pageable))).thenReturn(
+        `when`(teamService.getTeamIdsByMemberId(1L)).thenReturn(listOf(10L))
+        `when`(
+            appContentSearchService.search(
+                AppContentSearchInput(
+                    query = "docs",
+                    appIds = null,
+                    memberId = 1L,
+                    teamIds = listOf(10L),
+                    pageable = pageable,
+                ),
+            ),
+        ).thenReturn(
             AppContentSearchResult(totalCount = 0),
         )
 
@@ -119,8 +152,17 @@ class SearchServiceTests {
             ),
         )
 
-        verifyNoInteractions(memberService, teamService)
-        verify(appContentSearchService).search(AppContentSearchInput("docs", null, pageable))
+        verifyNoInteractions(memberService)
+        verify(teamService).getTeamIdsByMemberId(1L)
+        verify(appContentSearchService).search(
+            AppContentSearchInput(
+                query = "docs",
+                appIds = null,
+                memberId = 1L,
+                teamIds = listOf(10L),
+                pageable = pageable,
+            ),
+        )
         assertTrue(result.items.isEmpty())
         assertTrue(result.sourceErrors.isEmpty())
     }
@@ -131,8 +173,11 @@ class SearchServiceTests {
         val expectedRequest = AppContentSearchInput(
             query = "docs",
             appIds = listOf("app-1", "app-2"),
+            memberId = 1L,
+            teamIds = listOf(11L, 12L),
             pageable = pageable,
         )
+        `when`(teamService.getTeamIdsByMemberId(1L)).thenReturn(listOf(11L, 12L))
         `when`(appContentSearchService.search(expectedRequest)).thenReturn(
             AppContentSearchResult(totalCount = 0),
         )
@@ -176,7 +221,18 @@ class SearchServiceTests {
     @Test
     fun `search keeps app items and app source errors together`() {
         val pageable = PageRequest.of(0, 20)
-        `when`(appContentSearchService.search(AppContentSearchInput("docs", null, pageable))).thenReturn(
+        `when`(teamService.getTeamIdsByMemberId(5L)).thenReturn(emptyList())
+        `when`(
+            appContentSearchService.search(
+                AppContentSearchInput(
+                    query = "docs",
+                    appIds = null,
+                    memberId = 5L,
+                    teamIds = emptyList(),
+                    pageable = pageable,
+                ),
+            ),
+        ).thenReturn(
             AppContentSearchResult(
                 totalCount = 1,
                 items = listOf(

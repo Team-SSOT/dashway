@@ -50,6 +50,11 @@ class TeamService(
         teamRepository.search(query, pageable)
 
     @Transactional(readOnly = true)
+    fun getTeamIdsByMemberId(memberId: Long): List<Long> =
+        teamMemberRepository.findAllByIdMemberId(memberId)
+            .map { it.id.teamId }
+
+    @Transactional(readOnly = true)
     fun getById(id: Long): Team {
         return teamRepository.findById(id).orElseThrow { TeamNotFoundException(id) }
     }

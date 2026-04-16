@@ -1,6 +1,7 @@
 package ai.ssot.contextapi.domain.search.dto
 
 import ai.ssot.contextapi.generated.types.SourceErrorCode
+import ai.ssot.contextapi.generated.types.SourceType
 import org.springframework.data.domain.Pageable
 import java.time.LocalDateTime
 import tools.jackson.databind.JsonNode
@@ -8,6 +9,8 @@ import tools.jackson.databind.JsonNode
 data class AppContentSearchInput(
     val query: String,
     val appIds: List<String>?,
+    val memberId: Long,
+    val teamIds: List<Long>,
     val pageable: Pageable,
 )
 
