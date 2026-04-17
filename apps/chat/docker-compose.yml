@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: chat-backend:local
+    container_name: chat-backend
+    restart: unless-stopped
+    ports:
+      - 12001:8080
