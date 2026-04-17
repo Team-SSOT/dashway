@@ -14,6 +14,12 @@ export function useWorkspaceSwitch() {
     setActiveWorkspace(workspaceId)
     setWorkspaceConfig(config)
     setActiveApp(config.defaultApp)
-    navigate(`/${config.defaultApp}`)
+
+    if (config.defaultApp) {
+      navigate(`/apps/${config.defaultApp}`)
+      return
+    }
+
+    navigate('/')
   }
 }

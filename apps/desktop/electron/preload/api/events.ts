@@ -8,6 +8,12 @@ export const eventsApi = {
     return () => ipcRenderer.removeListener(IPC.EVENT_DEEP_LINK, handler)
   },
 
+  onSessionInvalidated: (callback: () => void): (() => void) => {
+    const handler = () => callback()
+    ipcRenderer.on(IPC.EVENT_SESSION_INVALIDATED, handler)
+    return () => ipcRenderer.removeListener(IPC.EVENT_SESSION_INVALIDATED, handler)
+  },
+
   onWindowFocus: (callback: () => void): (() => void) => {
     const handler = () => callback()
     ipcRenderer.on(IPC.EVENT_WINDOW_FOCUS, handler)
