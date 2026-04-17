@@ -30,3 +30,14 @@ data class TeamMemberDto(
             .build()
     }
 }
+
+data class TeamSearchDto(
+    val id: Long,
+    val name: String,
+    val createdDatetime: LocalDateTime,
+)
+
+data class TeamSearchResult(
+    val totalCount: Int,
+    val items: List<TeamSearchDto>,
+)

@@ -1,6 +1,7 @@
 package ai.ssot.contextapi.domain.team.service
 
 import ai.ssot.contextapi.domain.team.dto.TeamDto
+import ai.ssot.contextapi.domain.team.dto.TeamSearchResult
 import ai.ssot.contextapi.domain.team.entity.Team
 import ai.ssot.contextapi.domain.team.exception.TeamNotEmptyException
 import ai.ssot.contextapi.domain.team.exception.TeamNotFoundException
@@ -9,6 +10,8 @@ import ai.ssot.contextapi.domain.team.repository.TeamRepository
 import ai.ssot.contextapi.shared.page.PageResult
 import ai.ssot.contextapi.shared.page.PageSupport
 import ai.ssot.contextapi.shared.validation.requireNonBlankText
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -41,6 +44,15 @@ class TeamService(
                 )
             }
     }
+
+    @Transactional(readOnly = true)
+    fun search(query: String, pageable: Pageable): Page<Team> =
+        teamRepository.search(query, pageable)
+
+    @Transactional(readOnly = true)
+    fun getTeamIdsByMemberId(memberId: Long): List<Long> =
+        teamMemberRepository.findAllByIdMemberId(memberId)
+            .map { it.id.teamId }
 
     @Transactional(readOnly = true)
     fun getById(id: Long): Team {

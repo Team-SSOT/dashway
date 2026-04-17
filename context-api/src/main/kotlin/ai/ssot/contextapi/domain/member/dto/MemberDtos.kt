@@ -50,3 +50,15 @@ data class MemberDto(
             .build()
     }
 }
+
+data class MemberSearchDto(
+    val id: Long,
+    val name: String,
+    val email: String,
+    val createdDatetime: LocalDateTime,
+)
+
+data class MemberSearchResult(
+    val totalCount: Int,
+    val items: List<MemberSearchDto>,
+)

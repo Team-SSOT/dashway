@@ -5,7 +5,7 @@ schema {
 
 scalar Long
 scalar DateTime
-#scalar JSON
+scalar JSON
 scalar Upload
 
 type PageInfo {

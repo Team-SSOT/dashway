@@ -8,16 +8,22 @@ spring:
     password: context_api
     url: jdbc:postgresql://localhost:5432/dashway
 
-
 logging:
   level:
     web: debug
     org.springframework.security: debug
 
 context-api:
+  search:
+    meilisearch:
+      host: http://localhost:7700
+      api-key: ""
+      index-name: app_content
+      connect-timeout-millis: 3000
+      read-timeout-millis: 3000
   auth:
     issuer: context-api
-    access-token-ttl: 900
+    access-token-ttl: 604800
     refresh-token-ttl: 604800
     jwt-secret: "0123456789abcdef0123456789abcdef"
     cors-allowed-origins: ["*"]
@@ -31,4 +37,4 @@ context-api:
 
 redis:
   host: localhost
-  port: 6390
+  port: 6379

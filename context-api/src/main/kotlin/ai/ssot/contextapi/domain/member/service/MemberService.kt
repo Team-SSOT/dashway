@@ -13,6 +13,8 @@ import ai.ssot.contextapi.shared.page.PageInfo
 import ai.ssot.contextapi.shared.page.PageResult
 import ai.ssot.contextapi.shared.page.PageSupport
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
@@ -69,6 +71,10 @@ class MemberService(
     fun findByEmail(email: String): Member? = memberRepository.findByEmail(email)
 
     fun existsByEmail(email: String): Boolean = memberRepository.existsByEmail(email)
+
+    @Transactional(readOnly = true)
+    fun search(query: String, pageable: Pageable): Page<Member> =
+        memberRepository.search(query, pageable)
 
     @Transactional
     fun create(
