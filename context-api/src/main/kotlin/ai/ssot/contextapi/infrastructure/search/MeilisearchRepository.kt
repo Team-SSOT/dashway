@@ -1,8 +1,5 @@
 package ai.ssot.contextapi.infrastructure.search
 
-import com.meilisearch.sdk.Client
-import com.meilisearch.sdk.SearchRequest
-import com.meilisearch.sdk.model.MatchingStrategy
 import ai.ssot.contextapi.config.MeilisearchSearchProperties
 import ai.ssot.contextapi.domain.search.dto.AppContent
 import ai.ssot.contextapi.domain.search.dto.AppContentSearchError
@@ -10,6 +7,9 @@ import ai.ssot.contextapi.domain.search.dto.AppContentSearchInput
 import ai.ssot.contextapi.domain.search.dto.AppContentSearchResult
 import ai.ssot.contextapi.generated.types.SourceErrorCode
 import ai.ssot.contextapi.generated.types.SourceType
+import com.meilisearch.sdk.Client
+import com.meilisearch.sdk.SearchRequest
+import com.meilisearch.sdk.model.MatchingStrategy
 import org.springframework.stereotype.Component
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.ObjectMapper
@@ -19,7 +19,7 @@ import java.time.OffsetDateTime
 import java.util.concurrent.TimeoutException
 
 @Component
-class AppContentSearchRepository(
+class MeilisearchRepository(
     private val meilisearchClient: Client,
     private val meilisearchProperties: MeilisearchSearchProperties,
     private val objectMapper: ObjectMapper,
@@ -47,11 +47,11 @@ class AppContentSearchRepository(
             .setPage(input.pageable.pageNumber + 1)
             .setHitsPerPage(input.pageable.pageSize)
             .setMatchingStrategy(MatchingStrategy.ALL)
+            .setSort(arrayOf("${AppContentDocument.CREATED_DATETIME_FIELD}:desc"))
             .setFilterArray(buildFilterArray(input))
 
     private fun buildFilterArray(input: AppContentSearchInput): Array<Array<String>> =
         buildList {
-            add(arrayOf("${AppContentDocument.SOURCE_FIELD} = \"${SourceType.APP.name}\""))
             buildAppIdFilter(input)?.let(::add)
             add(buildPermissionFilter(input))
         }.toTypedArray()
@@ -67,14 +67,12 @@ class AppContentSearchRepository(
 
     private fun buildPermissionFilter(input: AppContentSearchInput): Array<String> {
         val permissions = mutableListOf(
-            "${AppContentDocument.MEMBER_IDS_FIELD} = $PUBLIC_PERMISSION_ID",
-            "${AppContentDocument.MEMBER_IDS_FIELD} = ${input.memberId}",
-            "${AppContentDocument.TEAM_IDS_FIELD} = $PUBLIC_PERMISSION_ID",
             "${AppContentDocument.MEMBER_IDS_FIELD} IS EMPTY AND ${AppContentDocument.TEAM_IDS_FIELD} IS EMPTY",
+            "${AppContentDocument.MEMBER_IDS_FIELD} = ${input.memberId}",
         )
         input.teamIds
-            .distinct()
-            .takeIf { it.isNotEmpty() }
+            ?.distinct()
+            ?.takeIf { it.isNotEmpty() }
             ?.let { teamIds ->
                 permissions += "${AppContentDocument.TEAM_IDS_FIELD} IN [${teamIds.joinToString(", ")}]"
             }
@@ -167,8 +165,4 @@ class AppContentSearchRepository(
 
     private fun String.escapeFilterValue(): String =
         replace("\\", "\\\\").replace("\"", "\\\"")
-
-    companion object {
-        private const val PUBLIC_PERMISSION_ID = 0
-    }
 }

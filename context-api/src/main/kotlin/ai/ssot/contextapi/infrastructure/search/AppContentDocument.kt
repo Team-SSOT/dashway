@@ -22,6 +22,7 @@ data class AppContentDocument(
         const val SOURCE_FIELD = "source"
         const val TITLE_FIELD = "title"
         const val CONTENT_FIELD = "content"
+        const val CREATED_DATETIME_FIELD = "createdDatetime"
         const val MEMBER_IDS_FIELD = "memberIds"
         const val TEAM_IDS_FIELD = "teamIds"
 
@@ -42,5 +43,8 @@ data class AppContentDocument(
                     ),
                 ),
             )
+
+        fun sortableAttributesSettings(): Array<String> =
+            arrayOf(CREATED_DATETIME_FIELD)
     }
 }

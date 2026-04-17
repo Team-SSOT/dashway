@@ -2,24 +2,16 @@ package ai.ssot.contextapi.domain.search.service
 
 import ai.ssot.contextapi.domain.member.entity.Member
 import ai.ssot.contextapi.domain.member.service.MemberService
-import ai.ssot.contextapi.domain.search.dto.AppContent
-import ai.ssot.contextapi.domain.search.dto.AppContentSearchError
-import ai.ssot.contextapi.domain.search.dto.AppContentSearchInput
-import ai.ssot.contextapi.domain.search.dto.AppContentSearchResult
-import ai.ssot.contextapi.domain.search.dto.SearchInput
+import ai.ssot.contextapi.domain.search.dto.*
 import ai.ssot.contextapi.domain.team.entity.Team
 import ai.ssot.contextapi.domain.team.service.TeamService
 import ai.ssot.contextapi.generated.types.SourceErrorCode
 import ai.ssot.contextapi.generated.types.SourceType
-import ai.ssot.contextapi.infrastructure.search.AppContentSearchRepository
+import ai.ssot.contextapi.infrastructure.search.MeilisearchRepository
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.inOrder
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.verifyNoInteractions
-import org.mockito.Mockito.`when`
+import org.mockito.Mockito.*
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import tools.jackson.module.kotlin.jacksonObjectMapper
@@ -28,7 +20,7 @@ import java.time.LocalDateTime
 class SearchServiceTests {
     private val memberService = mock(MemberService::class.java)
     private val teamService = mock(TeamService::class.java)
-    private val appContentSearchService = mock(AppContentSearchRepository::class.java)
+    private val appContentSearchService = mock(MeilisearchRepository::class.java)
     private val searchService = SearchService(
         memberService = memberService,
         teamService = teamService,

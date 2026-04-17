@@ -48,6 +48,7 @@ internal fun resetMeilisearchState(
             AppContentDocument.filterableAttributesSettings(),
         ).taskUid,
     )
+    client.waitForTask(index.updateSortableAttributesSettings(AppContentDocument.sortableAttributesSettings()).taskUid)
 }
 
 internal fun indexAppContentDocuments(

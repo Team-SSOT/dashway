@@ -30,6 +30,7 @@ class AppContentMeilisearchIndexInitializer(
         val index = ensureIndex()
         reconcileSearchableAttributes(index)
         reconcileFilterableAttributes(index)
+        reconcileSortableAttributes(index)
     }
 
     private fun ensureIndex(): Index =
@@ -71,6 +72,19 @@ class AppContentMeilisearchIndexInitializer(
             "Updating filterableAttributes for Meilisearch index `${meilisearchProperties.indexName}`."
         }
         index.waitForTask(index.updateGranularFilterableAttributesSettings(expected).taskUid)
+    }
+
+    private fun reconcileSortableAttributes(index: Index) {
+        val expected = AppContentDocument.sortableAttributesSettings()
+        val current = index.getSortableAttributesSettings()
+        if (current.contentEquals(expected)) {
+            return
+        }
+
+        logger.info {
+            "Updating sortableAttributes for Meilisearch index `${meilisearchProperties.indexName}`."
+        }
+        index.waitForTask(index.updateSortableAttributesSettings(expected).taskUid)
     }
 
     private fun settingsEqual(current: Any?, expected: Any?): Boolean =

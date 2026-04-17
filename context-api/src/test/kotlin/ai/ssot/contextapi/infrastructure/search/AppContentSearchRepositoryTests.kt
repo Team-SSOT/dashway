@@ -1,15 +1,11 @@
 package ai.ssot.contextapi.infrastructure.search
 
-import com.meilisearch.sdk.Client
-import ai.ssot.contextapi.IntegrationTestEnvironment
-import ai.ssot.contextapi.MeilisearchIntegrationTestEnvironment
-import ai.ssot.contextapi.TEST_AUTOCONFIG_EXCLUDES
+import ai.ssot.contextapi.*
 import ai.ssot.contextapi.config.MeilisearchSearchProperties
 import ai.ssot.contextapi.domain.search.dto.AppContentSearchInput
 import ai.ssot.contextapi.generated.types.SourceErrorCode
 import ai.ssot.contextapi.generated.types.SourceType
-import ai.ssot.contextapi.indexAppContentDocuments
-import ai.ssot.contextapi.resetMeilisearchState
+import com.meilisearch.sdk.Client
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -29,7 +25,7 @@ class AppContentSearchRepositoryTests {
     private lateinit var meilisearchProperties: MeilisearchSearchProperties
 
     @Autowired
-    private lateinit var repository: AppContentSearchRepository
+    private lateinit var repository: MeilisearchRepository
 
     @BeforeEach
     fun resetIndex() {
@@ -181,7 +177,7 @@ class AppContentSearchRepositoryTests {
     }
 
     @Test
-    fun `repository applies member, team, public, and empty permission rules`() {
+    fun `repository applies member, team, and empty permission rules under current policy`() {
         saveDocuments(
             AppContentDocument(
                 id = "doc-member",
@@ -246,7 +242,7 @@ class AppContentSearchRepositoryTests {
         )
 
         assertEquals(
-            listOf("Member docs", "Team docs", "Public docs", "Unrestricted docs"),
+            listOf("Member docs", "Team docs", "Unrestricted docs"),
             result.items.map { it.title },
         )
         assertTrue(result.errors.isEmpty())

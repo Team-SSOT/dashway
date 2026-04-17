@@ -1,18 +1,11 @@
 package ai.ssot.contextapi.domain.search.service
 
-import ai.ssot.contextapi.domain.search.dto.SearchInput
-import ai.ssot.contextapi.domain.search.dto.SearchItem
-import ai.ssot.contextapi.domain.search.dto.SearchForMemberResult
-import ai.ssot.contextapi.domain.search.dto.SearchSourceError
-import ai.ssot.contextapi.domain.search.dto.SearchAppContentItem
-import ai.ssot.contextapi.domain.search.dto.SearchMemberItem
-import ai.ssot.contextapi.domain.search.dto.SearchTeamItem
 import ai.ssot.contextapi.domain.member.service.MemberService
-import ai.ssot.contextapi.domain.search.dto.AppContentSearchInput
+import ai.ssot.contextapi.domain.search.dto.*
 import ai.ssot.contextapi.domain.team.service.TeamService
-import ai.ssot.contextapi.infrastructure.search.AppContentSearchRepository
 import ai.ssot.contextapi.generated.types.SourceErrorCode
 import ai.ssot.contextapi.generated.types.SourceType
+import ai.ssot.contextapi.infrastructure.search.MeilisearchRepository
 import ai.ssot.contextapi.shared.page.PageInfo
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -23,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 class SearchService(
     private val memberService: MemberService,
     private val teamService: TeamService,
-    private val appContentSearchService: AppContentSearchRepository,
+    private val appContentSearchService: MeilisearchRepository,
 ) {
     @Transactional(readOnly = true)
     fun search(memberId: Long, input: SearchInput): SearchForMemberResult {
