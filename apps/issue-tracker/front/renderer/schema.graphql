@@ -1,0 +1,127 @@
+"""
+Placeholder schema for the Dashway Issue Tracker.
+Replace with an introspection dump from context-api once the issue
+domain lands server-side.
+"""
+scalar DateTime
+
+type Query {
+  viewer: Viewer!
+  projects: [Project!]!
+  project(id: ID!): Project
+  issue(id: ID!): Issue
+  issues(
+    projectId: ID
+    status: IssueStatus
+    assigneeId: ID
+    limit: Int
+    cursor: String
+  ): IssueConnection!
+}
+
+type Mutation {
+  createIssue(input: CreateIssueInput!): Issue!
+  updateIssue(id: ID!, input: UpdateIssueInput!): Issue!
+  moveIssue(id: ID!, status: IssueStatus!, orderKey: String!): Issue!
+}
+
+type Viewer {
+  id: ID!
+  name: String!
+  email: String!
+  avatarUrl: String
+}
+
+type User {
+  id: ID!
+  name: String!
+  email: String!
+  avatarUrl: String
+}
+
+type Project {
+  id: ID!
+  key: String!
+  name: String!
+  description: String
+  color: String
+  members: [User!]!
+  issueCount: Int!
+}
+
+type Label {
+  id: ID!
+  name: String!
+  color: String!
+}
+
+type Issue {
+  id: ID!
+  key: String!
+  title: String!
+  description: String
+  status: IssueStatus!
+  priority: IssuePriority!
+  orderKey: String!
+  project: Project!
+  assignees: [User!]!
+  reporter: User!
+  labels: [Label!]!
+  dueAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type IssueConnection {
+  edges: [IssueEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type IssueEdge {
+  node: Issue!
+  cursor: String!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  endCursor: String
+}
+
+enum IssueStatus {
+  BACKLOG
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+  CANCELLED
+}
+
+enum IssuePriority {
+  NO_PRIORITY
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+input CreateIssueInput {
+  projectId: ID!
+  title: String!
+  description: String
+  status: IssueStatus
+  priority: IssuePriority
+  assigneeIds: [ID!]
+  labelIds: [ID!]
+  dueAt: DateTime
+}
+
+input UpdateIssueInput {
+  title: String
+  description: String
+  status: IssueStatus
+  priority: IssuePriority
+  assigneeIds: [ID!]
+  labelIds: [ID!]
+  dueAt: DateTime
+}

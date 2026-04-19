@@ -1,0 +1,7 @@
+node_modules/
+dist/
+out/
+.vite/
+.cache/
+renderer/src/__generated__/
+*.log

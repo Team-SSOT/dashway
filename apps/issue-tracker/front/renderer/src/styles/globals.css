@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #07090c;
+  --color-bg-1: #0a0d14;
+  --color-bg-2: #0e1220;
+  --color-bg-3: #121828;
+  --color-surface: rgba(255, 255, 255, 0.04);
+  --color-surface-hi: rgba(255, 255, 255, 0.07);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-hi: rgba(255, 255, 255, 0.14);
+  --color-t1: #f0f4ff;
+  --color-t2: #7a8aab;
+  --color-t3: #3d4a63;
+  --color-accent-blue: #3b82f6;
+  --color-accent-violet: #8b5cf6;
+  --color-accent-fuchsia: #d946ef;
+  --color-ok: #10b981;
+  --color-warn: #f59e0b;
+  --color-err: #ef4444;
+
+  --color-status-backlog: #64748b;
+  --color-status-todo: #94a3b8;
+  --color-status-in-progress: #3b82f6;
+  --color-status-in-review: #8b5cf6;
+  --color-status-done: #10b981;
+  --color-status-cancelled: #475569;
+
+  --color-priority-urgent: #ef4444;
+  --color-priority-high: #f59e0b;
+  --color-priority-medium: #3b82f6;
+  --color-priority-low: #64748b;
+  --color-priority-none: #3d4a63;
+
+  --radius-card: 12px;
+  --radius-pill: 9999px;
+
+  --font-display: "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-bg);
+    color: var(--color-t1);
+    font-family: var(--font-body);
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  button {
+    font-family: inherit;
+  }
+}
+
+@layer components {
+  .glass {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    backdrop-filter: blur(12px);
+  }
+
+  .glass-hi {
+    background-color: var(--color-surface-hi);
+    border: 1px solid var(--color-border-hi);
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 9999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+}
