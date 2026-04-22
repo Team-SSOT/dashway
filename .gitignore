@@ -65,3 +65,5 @@ __generated__/
 *.pem
 hs_err_pid*
 .dashway/
+
+.omc

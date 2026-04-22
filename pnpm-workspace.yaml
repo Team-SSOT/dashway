@@ -1,4 +1,5 @@
 packages:
   - 'apps/*'
   - 'apps/issue_tracker/frontend'
+  - 'apps/chat/*'
   - 'packages/*'

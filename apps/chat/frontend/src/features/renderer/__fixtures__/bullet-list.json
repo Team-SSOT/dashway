@@ -1,0 +1,56 @@
+{
+  "root": {
+    "type": "root",
+    "version": 1,
+    "direction": "ltr",
+    "format": "",
+    "indent": 0,
+    "children": [
+      {
+        "type": "list",
+        "version": 1,
+        "direction": "ltr",
+        "format": "",
+        "indent": 0,
+        "listType": "bullet",
+        "tag": "ul",
+        "start": 1,
+        "children": [
+          {
+            "type": "listitem",
+            "version": 1,
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "value": 1,
+            "children": [
+              { "type": "text", "version": 1, "text": "apple", "format": 0, "detail": 0, "mode": "normal", "style": "" }
+            ]
+          },
+          {
+            "type": "listitem",
+            "version": 1,
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "value": 2,
+            "children": [
+              { "type": "text", "version": 1, "text": "banana", "format": 0, "detail": 0, "mode": "normal", "style": "" }
+            ]
+          },
+          {
+            "type": "listitem",
+            "version": 1,
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "value": 3,
+            "children": [
+              { "type": "text", "version": 1, "text": "cherry", "format": 0, "detail": 0, "mode": "normal", "style": "" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
