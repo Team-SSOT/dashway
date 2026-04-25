@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { X } from 'lucide-react'
 import type { SerializedEditorState } from 'lexical'
@@ -17,6 +17,12 @@ import { useThreadReplies } from '../hooks/useThreadReplies'
 import { useRealtimeThread } from '../hooks/useRealtimeThread'
 import { ThreadReplyList } from './ThreadReplyList'
 
+const THREAD_PANEL_ANIMATION_MS = 300
+
+function prefersReducedMotion() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
 /**
  * ThreadPanel — right-pane view for a single thread.
  *
@@ -30,6 +36,8 @@ export function ThreadPanel() {
   const { roomId, msgId } = useParams<{ roomId: string; msgId: string }>()
   const navigate = useNavigate()
   const setRightPaneMode = useUiStore((s) => s.setRightPaneMode)
+  const [isClosing, setIsClosing] = useState(false)
+  const closeTimerRef = useRef<number | null>(null)
 
   const { data: messagesQuery } = useRoomMessages(roomId)
   const { data: repliesQuery, isLoading } = useThreadReplies(msgId)
@@ -71,14 +79,46 @@ export function ThreadPanel() {
     return () => setRightPaneMode('closed')
   }, [setRightPaneMode])
 
+  useEffect(() => {
+    setIsClosing(false)
+    if (closeTimerRef.current != null) {
+      window.clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = null
+    }
+  }, [msgId])
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current != null) {
+        window.clearTimeout(closeTimerRef.current)
+      }
+    }
+  }, [])
+
+  const navigateToRoom = useCallback(() => {
+    if (roomId) navigate(`/c/${roomId}`)
+  }, [navigate, roomId])
+
+  const closeThread = useCallback(() => {
+    if (!roomId || isClosing) return
+
+    if (prefersReducedMotion()) {
+      navigateToRoom()
+      return
+    }
+
+    setIsClosing(true)
+    closeTimerRef.current = window.setTimeout(navigateToRoom, THREAD_PANEL_ANIMATION_MS)
+  }, [isClosing, navigateToRoom, roomId])
+
   // Escape closes thread
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && roomId) navigate(`/c/${roomId}`)
+      if (e.key === 'Escape') closeThread()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [navigate, roomId])
+  }, [closeThread])
 
   const handleSend = useCallback(
     (content: SerializedEditorState, plainText: string) => {
@@ -88,10 +128,6 @@ export function ThreadPanel() {
     [sendReply, msgId],
   )
 
-  const handleClose = () => {
-    if (roomId) navigate(`/c/${roomId}`)
-  }
-
   // TODO(drafts): composite draft key `${roomId}::thread::${msgId}` collides
   // with RoomId type shape but is tolerated since useDraft keys a Record<string, ...>.
   // Future refactor: introduce `DraftKey = RoomId | { kind: 'thread'; ... }`.
@@ -100,7 +136,10 @@ export function ThreadPanel() {
 
   return (
     <aside
-      className="flex h-full w-96 min-w-96 flex-col border-l border-border bg-card"
+      className={[
+        'thread-panel-shell flex h-full flex-col border-l border-border bg-card',
+        isClosing ? 'thread-panel-shell-exit' : 'thread-panel-shell-enter',
+      ].join(' ')}
       aria-label="Thread"
     >
       <header className="flex h-12 items-center gap-2 border-b border-border px-3">
@@ -111,7 +150,7 @@ export function ThreadPanel() {
           size="icon"
           className="ml-auto h-7 w-7"
           aria-label="Close thread"
-          onClick={handleClose}
+          onClick={closeThread}
         >
           <X className="h-4 w-4" />
         </Button>
