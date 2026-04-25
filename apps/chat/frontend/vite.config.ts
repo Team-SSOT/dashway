@@ -3,10 +3,26 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
 
+const workspaceRoot = path.resolve(__dirname, '../../..')
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
+    dedupe: [
+      '@lexical/code',
+      '@lexical/html',
+      '@lexical/link',
+      '@lexical/list',
+      '@lexical/markdown',
+      '@lexical/react',
+      '@lexical/rich-text',
+      'lexical',
+      'react',
+      'react-dom',
+    ],
     alias: {
+      '@dashway/chat-ui': path.resolve(workspaceRoot, './packages/chat-ui/src/index.ts'),
+      '@dashway/ui': path.resolve(workspaceRoot, './packages/ui/src/index.ts'),
       '@': path.resolve(__dirname, './src'),
     },
   },

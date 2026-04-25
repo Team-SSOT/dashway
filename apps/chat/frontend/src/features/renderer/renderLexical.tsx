@@ -94,10 +94,13 @@ interface SerializedEmojiNode extends SerializedLexicalNode {
 
 interface SerializedMentionNode extends SerializedLexicalNode {
   type: 'mention'
+  targetType?: 'person' | 'document' | 'issue' | 'team' | 'app'
+  targetId?: string
   memberId?: string
   id?: string
   label?: string
   text?: string
+  source?: string
 }
 
 interface SerializedRootNode {
@@ -265,15 +268,18 @@ function walkNode(
 
     case 'mention': {
       const mentionNode = node as SerializedMentionNode
-      const memberId = mentionNode.memberId ?? mentionNode.id ?? ''
-      const label = mentionNode.label ?? mentionNode.text ?? memberId
-      const displayName = opts.membersById?.[memberId]?.name
+      const targetType = mentionNode.targetType ?? 'person'
+      const targetId = mentionNode.targetId ?? mentionNode.memberId ?? mentionNode.id ?? ''
+      const label = mentionNode.label ?? mentionNode.text ?? targetId
+      const displayName = targetType === 'person' ? opts.membersById?.[targetId]?.name : undefined
       return (
         <MentionRender
           key={key}
-          memberId={memberId}
+          targetId={targetId}
+          targetType={targetType}
           label={label}
           displayName={displayName}
+          source={mentionNode.source}
         />
       )
     }
