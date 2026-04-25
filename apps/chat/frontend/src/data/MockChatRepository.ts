@@ -8,6 +8,7 @@ import type {
   ChatError,
   ListMessagesInput,
   SendMessageInput,
+  CreateRoomInput,
   RoomId,
   MessageId,
 } from '@/types/chat'
@@ -241,6 +242,46 @@ export class MockChatRepository implements ChatRepository {
     }, 600)
 
     return { ...created }
+  }
+
+  async createRoom(input: CreateRoomInput): Promise<ChatRoom> {
+    const err = this.checkOneShot('createRoom')
+    if (err) return err
+
+    const name = `#${input.name.trim().toLowerCase().replace(/^#+/, '')}`
+    if (this.rooms.some((r) => r.name.toLowerCase() === name.toLowerCase())) {
+      throw makeChatError('CONFLICT', `Channel ${name} already exists`, false)
+    }
+
+    const now = new Date().toISOString()
+    const room: ChatRoom = {
+      id: `room-${crypto.randomUUID()}`,
+      type: 'CHANNEL',
+      name,
+      description: input.description,
+      memberCount: 1,
+      unreadCount: 0,
+      lastMessageAt: undefined,
+      createdAt: now,
+      updatedAt: now,
+      version: 1,
+    }
+    this.rooms.push(room)
+
+    const ownerMembership: RoomMembership = {
+      roomId: room.id,
+      memberId: currentUserId,
+      role: 'OWNER',
+      joinedAt: now,
+      lastReadAt: now,
+      muted: false,
+    }
+    this.memberships.push(ownerMembership)
+
+    // Reuses existing ChatRealtimeEvent variant — no new types
+    this.bus.publish({ type: 'MEMBERSHIP_CHANGED', membership: ownerMembership })
+
+    return { ...room }
   }
 
   async markRead(roomId: RoomId, lastReadAt: string): Promise<void> {

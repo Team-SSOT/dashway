@@ -29,7 +29,6 @@ import { CHAT_TRANSFORMERS } from '../lexical/markdownTransformers'
 import { ImeGuardPlugin } from '../lexical/plugins/ImeGuardPlugin'
 import { EmojiReplacePlugin } from '../lexical/plugins/EmojiReplacePlugin'
 import { PasteSanitizerPlugin } from '../lexical/plugins/PasteSanitizerPlugin'
-import { ComposerToolbar } from './ComposerToolbar'
 import { useDraft } from '../hooks/useDraft'
 
 const URL_REGEX = /((?:https?:\/\/)[^\s]+)/
@@ -148,53 +147,54 @@ function InnerComposer({ roomId, onSend, placeholder }: Props) {
 
   return (
     <div className="flex flex-col border-t border-border bg-background">
-      <div className="px-3 pt-2">
-        <ComposerToolbar />
-      </div>
-      <div className="relative px-3 py-2">
-        <RichTextPlugin
-          contentEditable={
-            <ContentEditable
-              className={cn(
-                'max-h-[40vh] min-h-[44px] overflow-y-auto rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring',
-              )}
-              aria-label="Message composer"
-            />
-          }
-          placeholder={
-            <div className="pointer-events-none absolute left-6 top-5 text-sm text-muted-foreground">
-              {placeholder}
-            </div>
-          }
-          ErrorBoundary={LexicalErrorBoundary}
-        />
-        <HistoryPlugin />
-        <OnChangePlugin onChange={handleChange} ignoreSelectionChange />
-        <AutoFocusPlugin />
-        <LinkPlugin />
-        <AutoLinkPlugin matchers={AUTO_LINK_MATCHERS} />
-        <ListPlugin />
-        <MarkdownShortcutPlugin transformers={CHAT_TRANSFORMERS} />
-        <ImeGuardPlugin composingRef={composingRef} />
-        <EmojiReplacePlugin />
-        <PasteSanitizerPlugin
-          onImagePasteBlocked={() => setToastMsg('Image paste not supported yet')}
-          onCharLimitExceeded={() => setToastMsg('Message too long (max 50,000 chars)')}
-        />
-      </div>
-      <div className="flex items-center justify-end gap-2 px-3 pb-2">
-        {toastMsg ? (
-          <span
-            role="alert"
-            className="text-xs text-destructive"
-            onAnimationEnd={() => setToastMsg(null)}
-          >
-            {toastMsg}
-          </span>
-        ) : null}
-        <Button size="sm" className="gap-1.5" onClick={handleSendClick}>
-          <Send className="h-3.5 w-3.5" />
-          Send
+      {toastMsg ? (
+        <div
+          role="alert"
+          className="px-3 pt-2 text-xs text-destructive"
+          onAnimationEnd={() => setToastMsg(null)}
+        >
+          {toastMsg}
+        </div>
+      ) : null}
+      <div className="relative flex items-end gap-2 px-3 py-2">
+        <div className="relative flex-1">
+          <RichTextPlugin
+            contentEditable={
+              <ContentEditable
+                className={cn(
+                  'max-h-[40vh] min-h-[44px] overflow-y-auto rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring',
+                )}
+                aria-label="Message composer"
+              />
+            }
+            placeholder={
+              <div className="pointer-events-none absolute left-3 top-[10px] text-sm text-muted-foreground">
+                {placeholder}
+              </div>
+            }
+            ErrorBoundary={LexicalErrorBoundary}
+          />
+          <HistoryPlugin />
+          <OnChangePlugin onChange={handleChange} ignoreSelectionChange />
+          <AutoFocusPlugin />
+          <LinkPlugin />
+          <AutoLinkPlugin matchers={AUTO_LINK_MATCHERS} />
+          <ListPlugin />
+          <MarkdownShortcutPlugin transformers={CHAT_TRANSFORMERS} />
+          <ImeGuardPlugin composingRef={composingRef} />
+          <EmojiReplacePlugin />
+          <PasteSanitizerPlugin
+            onImagePasteBlocked={() => setToastMsg('Image paste not supported yet')}
+            onCharLimitExceeded={() => setToastMsg('Message too long (max 50,000 chars)')}
+          />
+        </div>
+        <Button
+          size="icon"
+          className="h-11 w-11 shrink-0"
+          onClick={handleSendClick}
+          aria-label="Send message"
+        >
+          <Send className="h-4 w-4" />
         </Button>
       </div>
     </div>

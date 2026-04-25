@@ -105,6 +105,13 @@ export interface SendMessageInput {
   clientCreatedAt: string  // ISO, 클라 시계
 }
 
+// §6.2 Create-room input (addchannel scope extension)
+// BE: POST /api/rooms  — see .omc/handoff/chat-frontend-ui-v1-be-spec.md §3
+export interface CreateRoomInput {
+  name: string         // raw user input; server normalizes
+  description?: string // reserved — v1 FE omits, but type accepts
+}
+
 export interface ChatRepository {
   getCurrentUser(): Promise<ChatMember>
 
@@ -118,6 +125,7 @@ export interface ChatRepository {
 
   sendMessage(input: SendMessageInput): Promise<ChatMessage>
   markRead(roomId: RoomId, lastReadAt: string): Promise<void>
+  createRoom(input: CreateRoomInput): Promise<ChatRoom>
 }
 
 // §6.3 ChatRealtime — WS/STOMP 상응 (scoped watcher + connection state)

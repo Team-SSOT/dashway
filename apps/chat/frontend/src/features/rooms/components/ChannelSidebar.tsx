@@ -1,12 +1,18 @@
+import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { Hash, Loader2, AlertCircle } from 'lucide-react'
+import { Hash, Loader2, AlertCircle, Plus } from 'lucide-react'
 import { ScrollArea } from '@/shared/ui/scroll-area'
 import { Separator } from '@/shared/ui/separator'
+import { Button } from '@/shared/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/ui/tooltip'
 import { cn } from '@/shared/lib/cn'
 import { useRooms } from '../hooks/useRooms'
+import { CreateChannelDialog } from './CreateChannelDialog'
 
 export function ChannelSidebar() {
   const { data: rooms, isLoading, isError } = useRooms()
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const existingNames = (rooms ?? []).map((r) => r.name)
 
   return (
     <div className="flex h-full flex-col">
@@ -17,9 +23,31 @@ export function ChannelSidebar() {
       <Separator />
       <ScrollArea className="flex-1">
         <nav className="p-2" aria-label="Channels">
-          <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Channels
-          </p>
+          <div className="flex items-center justify-between px-2 pt-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Channels
+            </p>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    aria-label="Create channel"
+                    onClick={() => setDialogOpen(true)}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>New channel</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <CreateChannelDialog
+            open={dialogOpen}
+            onOpenChange={setDialogOpen}
+            existingNames={existingNames}
+          />
           {isLoading ? (
             <div className="flex items-center gap-2 px-2 py-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
