@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { DEFAULT_CHAT_PATH } from '@/app/chatRoutes'
 import { Button } from '@/shared/ui/button'
 
 export function LoginPlaceholder() {
@@ -11,7 +12,7 @@ export function LoginPlaceholder() {
         <p className="mt-2 text-muted-foreground">
           Real authentication ships in a later milestone. For now, continue as Demo User.
         </p>
-        <Button className="mt-6 w-full" onClick={() => navigate('/c/general')}>
+        <Button className="mt-6 w-full" onClick={() => navigate(DEFAULT_CHAT_PATH)}>
           Continue as Demo User
         </Button>
       </div>

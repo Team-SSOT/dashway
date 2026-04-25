@@ -1,11 +1,7 @@
 import type { SerializedEditorState } from 'lexical'
 import { useParams } from 'react-router-dom'
-import { RoomHeader } from './RoomHeader'
-import { MessageList } from '@/features/messages/components/MessageList'
-import { MessageComposer } from '@/features/composer/components/MessageComposer'
+import { ChatSurface } from './ChatSurface'
 import { LoadingSpinner } from '@/features/messages/components/LoadingSpinner'
-import { EmptyMessages } from '@/features/messages/components/EmptyMessages'
-import { ErrorMessage } from '@/features/messages/components/ErrorMessage'
 import { ThreadPanel } from '@/features/threads/components/ThreadPanel'
 import { useActiveRoom } from '../hooks/useActiveRoom'
 import { useRoomMessages } from '@/features/messages/hooks/useRoomMessages'
@@ -42,7 +38,7 @@ export function RoomView() {
     )
   }
 
-  if (isNotFound || !room) {
+  if (!roomId || isNotFound || !room) {
     return (
       <div className="flex h-full items-center justify-center p-6">
         <div className="text-center">
@@ -66,31 +62,20 @@ export function RoomView() {
   const lastReadAt = currentMembership?.lastReadAt ?? null
 
   return (
-    <div className="flex h-full min-h-0">
-      <div className="flex min-h-0 flex-1 flex-col">
-        <RoomHeader roomName={room.name} topic={room.topic ?? room.description} />
-        <div className="flex min-h-0 flex-1 flex-col">
-          {messagesLoading ? (
-            <LoadingSpinner label="Loading messages" className="flex-1" />
-          ) : messagesError ? (
-            <ErrorMessage message="Failed to load messages" className="flex-1" />
-          ) : messages.length === 0 ? (
-            <EmptyMessages />
-          ) : roomId ? (
-            <MessageList
-              roomId={roomId}
-              flatMessages={messages}
-              members={membersForRender}
-              hasNextPage={hasNextPage}
-              isFetchingNextPage={isFetchingNextPage}
-              fetchNextPage={fetchNextPage}
-              lastReadAt={lastReadAt}
-            />
-          ) : null}
-        </div>
-        {roomId ? <MessageComposer roomId={roomId} onSend={handleSend} /> : null}
-      </div>
-      {msgId ? <ThreadPanel /> : null}
-    </div>
+    <ChatSurface
+      roomId={roomId}
+      roomName={room.name}
+      topic={room.topic ?? room.description}
+      messages={messages}
+      members={membersForRender}
+      lastReadAt={lastReadAt}
+      messagesLoading={messagesLoading}
+      messagesError={messagesError}
+      hasNextPage={hasNextPage}
+      isFetchingNextPage={isFetchingNextPage}
+      fetchNextPage={fetchNextPage}
+      threadPanel={msgId ? <ThreadPanel /> : null}
+      onSend={handleSend}
+    />
   )
 }
