@@ -6,6 +6,7 @@ import { renderLexical } from '@/features/renderer/renderLexical'
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar'
 import { Button } from '@/shared/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { MessageAttachments } from './MessageAttachments'
 import { MessageHoverToolbar } from './MessageHoverToolbar'
 
 interface Props {
@@ -65,9 +66,14 @@ export function MessageItem({ message, author, compact, membersById, roomId }: P
             </span>
           </div>
         )}
-        <div className="text-sm leading-relaxed" dir="auto">
-          {renderLexical(message.content, { membersById })}
-        </div>
+        {message.plainText.trim().length > 0 ? (
+          <div className="text-sm leading-relaxed" dir="auto">
+            {renderLexical(message.content, { membersById })}
+          </div>
+        ) : null}
+        {message.attachments && message.attachments.length > 0 ? (
+          <MessageAttachments attachments={message.attachments} />
+        ) : null}
         {roomId && message.replyCount > 0 ? (
           <Button
             type="button"

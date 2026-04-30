@@ -12,7 +12,7 @@ import { MessageItem } from '@/features/messages/components/MessageItem'
 import { MessageComposer } from '@/features/composer/components/MessageComposer'
 import { AvatarStack } from '@/features/rooms/components/AvatarStack'
 import { useUiStore } from '@/shared/store/uiStore'
-import type { RoomId } from '@/types/chat'
+import type { MessageAttachment, RoomId } from '@/types/chat'
 import { useThreadReplies } from '../hooks/useThreadReplies'
 import { useRealtimeThread } from '../hooks/useRealtimeThread'
 import { ThreadReplyList } from './ThreadReplyList'
@@ -121,9 +121,9 @@ export function ThreadPanel() {
   }, [closeThread])
 
   const handleSend = useCallback(
-    (content: SerializedEditorState, plainText: string) => {
+    (content: SerializedEditorState, plainText: string, attachments?: MessageAttachment[]) => {
       if (!msgId) return
-      sendReply.mutate({ content, plainText, threadParentId: msgId })
+      sendReply.mutate({ content, plainText, threadParentId: msgId, attachments })
     },
     [sendReply, msgId],
   )

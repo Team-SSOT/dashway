@@ -1,5 +1,6 @@
 import type { SerializedEditorState } from 'lexical'
 import { useParams } from 'react-router-dom'
+import type { MessageAttachment } from '@/types/chat'
 import { ChatSurface } from './ChatSurface'
 import { LoadingSpinner } from '@/features/messages/components/LoadingSpinner'
 import { ThreadPanel } from '@/features/threads/components/ThreadPanel'
@@ -26,8 +27,12 @@ export function RoomView() {
   useRealtimeMessages(roomId)
   const sendMessage = useSendMessage(roomId)
 
-  const handleSend = (content: SerializedEditorState, plainText: string) => {
-    sendMessage.mutate({ content, plainText })
+  const handleSend = (
+    content: SerializedEditorState,
+    plainText: string,
+    attachments?: MessageAttachment[],
+  ) => {
+    sendMessage.mutate({ content, plainText, attachments })
   }
 
   if (roomsLoading) {

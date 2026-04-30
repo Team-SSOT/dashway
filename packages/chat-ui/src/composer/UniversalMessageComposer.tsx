@@ -161,7 +161,8 @@ function InnerComposer({
       plainText = $getRoot().getTextContent()
       content = editor.getEditorState().toJSON()
     })
-    if (plainText.trim().length === 0 || content == null) return null
+    if (content == null) return null
+    if (plainText.trim().length === 0 && attachments.length === 0) return null
     return {
       content,
       plainText,

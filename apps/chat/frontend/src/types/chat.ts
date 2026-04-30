@@ -45,6 +45,15 @@ export interface ChatRoom {
   version: number           // optimistic concurrency (v2 edit용)
 }
 
+// 첨부 파일 — mock에서는 blob: URL을 url로 사용 (세션 한정 수명)
+export interface MessageAttachment {
+  id: string
+  name: string
+  size: number
+  mimeType: string
+  url?: string  // image/* 외에는 미리보기 URL 없을 수 있음
+}
+
 // 메시지 — server/client 타임스탬프 분리
 export interface ChatMessage {
   id: MessageId
@@ -61,6 +70,7 @@ export interface ChatMessage {
   clientMsgId: ClientMsgId         // 송신 dedup 키, UNIQUE(roomId, clientMsgId)
   contentVersion: 1                // 포맷 버전 (드리프트 대비)
   version: number                  // optimistic concurrency
+  attachments?: MessageAttachment[]
 }
 
 // 페이징 — 불투명 cursor (ID/시간 노출 금지)
@@ -103,6 +113,7 @@ export interface SendMessageInput {
   clientMsgId: ClientMsgId
   threadParentId?: MessageId
   clientCreatedAt: string  // ISO, 클라 시계
+  attachments?: MessageAttachment[]
 }
 
 // §6.2 Create-room input (addchannel scope extension)

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient, type InfiniteData } from '@tanstack/react-query'
 import type { SerializedEditorState } from 'lexical'
 import { useDataSource } from '@/app/providers/DataSourceProvider'
-import type { ChatMessage, Page, RoomId, SendMessageInput } from '@/types/chat'
+import type { ChatMessage, MessageAttachment, Page, RoomId, SendMessageInput } from '@/types/chat'
 import { roomMessagesQueryKey } from './useRoomMessages'
 import { currentUserId } from '@/data/mockData'
 
@@ -10,6 +10,7 @@ interface SendArgs {
   content: SerializedEditorState
   plainText: string
   threadParentId?: string
+  attachments?: MessageAttachment[]
 }
 
 function makeClientMsgId(): string {
@@ -35,6 +36,7 @@ function makeOptimisticMessage(args: SendArgs, clientMsgId: string): ChatMessage
     clientMsgId,
     contentVersion: 1,
     version: 0,
+    attachments: args.attachments && args.attachments.length > 0 ? args.attachments : undefined,
   }
 }
 
@@ -60,6 +62,7 @@ export function useSendMessage(roomId: RoomId | undefined) {
         clientMsgId,
         threadParentId: args.threadParentId,
         clientCreatedAt: new Date().toISOString(),
+        attachments: args.attachments,
       }
       return repo.sendMessage(input)
     },

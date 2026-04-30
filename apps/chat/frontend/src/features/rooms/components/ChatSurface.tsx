@@ -6,7 +6,7 @@ import { MessageComposer } from '@/features/composer/components/MessageComposer'
 import { LoadingSpinner } from '@/features/messages/components/LoadingSpinner'
 import { EmptyMessages } from '@/features/messages/components/EmptyMessages'
 import { ErrorMessage } from '@/features/messages/components/ErrorMessage'
-import type { ChatMember, ChatMessage, RoomId } from '@/types/chat'
+import type { ChatMember, ChatMessage, MessageAttachment, RoomId } from '@/types/chat'
 
 interface ChatSurfaceProps {
   roomId: RoomId
@@ -21,7 +21,7 @@ interface ChatSurfaceProps {
   isFetchingNextPage?: boolean
   fetchNextPage?: () => void
   threadPanel?: ReactNode
-  onSend: (content: SerializedEditorState, plainText: string) => void
+  onSend: (content: SerializedEditorState, plainText: string, attachments?: MessageAttachment[]) => void
 }
 
 export function ChatSurface({

@@ -219,6 +219,7 @@ export class MockChatRepository implements ChatRepository {
       clientMsgId: input.clientMsgId,
       contentVersion: 1,
       version: 1,
+      attachments: input.attachments && input.attachments.length > 0 ? input.attachments : undefined,
     }
 
     this.messages.push(created)
