@@ -5,30 +5,29 @@ import { defineConfig } from 'vite'
 import relay from 'vite-plugin-relay'
 
 export default defineConfig({
-  root: resolve(__dirname, 'renderer'),
   plugins: [react(), relay, tailwindcss()],
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'renderer/src'),
+      '@': resolve(__dirname, 'src'),
     },
   },
-  // 워크스페이스 패키지는 dev 중 빈번히 수정되므로 pre-bundle 캐시 제외 → 항상 source 그대로 서빙
   optimizeDeps: {
+    // 워크스페이스 패키지는 pre-bundle 캐시 제외(소스 변경 즉시 반영)
     exclude: [
       '@dashway/app-protocol',
       '@dashway/app-sdk',
-      '@dashway/shell-runtime',
-      '@dashway/config-schema',
-      '@dashway/desktop-sdk',
       '@dashway/design-tokens',
-      '@dashway/ui',
     ],
-    // 워크스페이스 패키지가 transitively 가져오는 deps 미리 발견(2차 optimize churn 방지)
+    // 워크스페이스 패키지가 transitively 가져오는 deps는 첫 패스에서 미리 발견되도록 명시
+    // (그래야 두번째 optimize 라운드가 발생해 hash가 churn 되는 걸 막음)
     include: ['zod', 'react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
   },
+  server: {
+    host: '0.0.0.0',
+    port: 5174,
+  },
   build: {
-    rollupOptions: {
-      input: resolve(__dirname, 'renderer/index.html'),
-    },
+    outDir: 'dist',
+    emptyOutDir: true,
   },
 })

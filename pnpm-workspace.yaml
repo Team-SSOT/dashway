@@ -1,4 +1,4 @@
 packages:
   - 'apps/*'
-  - 'apps/issue-tracker/front'
+  - 'apps/issue_tracker/frontend'
   - 'packages/*'

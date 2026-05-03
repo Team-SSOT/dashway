@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const AppManifestSchema = z.object({
+export const RegisteredAppManifestSchema = z.object({
   id: z.string(),
   title: z.string(),
   icon: z.string(),
@@ -8,4 +8,4 @@ export const AppManifestSchema = z.object({
   hasLocalSidebar: z.boolean(),
 })
 
-export type AppManifest = z.infer<typeof AppManifestSchema>
+export type RegisteredAppManifest = z.infer<typeof RegisteredAppManifestSchema>

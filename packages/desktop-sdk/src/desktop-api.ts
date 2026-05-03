@@ -43,9 +43,20 @@ export interface EventsAPI {
   onWindowBlur(callback: () => void): () => void
 }
 
+export interface AppManifestFetchResult {
+  ok: boolean
+  manifest?: unknown
+  error?: string
+}
+
+export interface AppManifestAPI {
+  fetch(url: string): Promise<AppManifestFetchResult>
+}
+
 export interface DesktopAPI {
   shell: ShellAPI
   workspace: WorkspaceAPI
   window: WindowAPI
   events: EventsAPI
+  appManifest: AppManifestAPI
 }

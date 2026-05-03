@@ -1,0 +1,40 @@
+{
+  "protocolVersion": 1,
+  "app": {
+    "id": "issue-tracker",
+    "title": "Issue Tracker",
+    "icon": "list-checks"
+  },
+  "sidebar": {
+    "primaryAction": {
+      "label": "New issue",
+      "appRoute": "/issues/new",
+      "icon": "plus"
+    },
+    "groups": [
+      {
+        "id": "workspace",
+        "title": "Workspace",
+        "collapsible": true,
+        "defaultCollapsed": false,
+        "items": [
+          { "id": "inbox", "label": "Inbox", "icon": "inbox", "appRoute": "/inbox", "badge": { "kind": "count", "value": 3 } },
+          { "id": "board", "label": "Board", "icon": "kanban-square", "appRoute": "/board" },
+          { "id": "table", "label": "Table", "icon": "table-2", "appRoute": "/table" },
+          { "id": "calendar", "label": "Calendar", "icon": "calendar", "appRoute": "/calendar" },
+          { "id": "gantt", "label": "Timeline", "icon": "gantt-chart", "appRoute": "/gantt" }
+        ]
+      },
+      {
+        "id": "favorites",
+        "title": "Favorites",
+        "collapsible": true,
+        "defaultCollapsed": false,
+        "items": [
+          { "id": "fav-landing", "label": "Landing v2 launch", "icon": "star", "appRoute": "/board" },
+          { "id": "fav-context", "label": "Context API roadmap", "icon": "star", "appRoute": "/table" }
+        ]
+      }
+    ]
+  }
+}

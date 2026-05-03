@@ -1,4 +1,4 @@
-export { type AppManifest, AppManifestSchema } from './app-manifest'
+export { type RegisteredAppManifest, RegisteredAppManifestSchema } from './app-manifest'
 export { type BootstrapPayload, BootstrapPayloadSchema } from './bootstrap-payload'
 export {
   type ShellBootstrapReadyResult,

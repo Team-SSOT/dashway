@@ -14,9 +14,11 @@
     "lint": "biome check ."
   },
   "dependencies": {
+    "@dashway/app-protocol": "workspace:*",
     "@dashway/config-schema": "workspace:*",
     "@dashway/design-tokens": "workspace:*",
     "@dashway/desktop-sdk": "workspace:*",
+    "@dashway/shell-runtime": "workspace:*",
     "@dashway/ui": "workspace:*",
     "react": "19.2.3",
     "react-dom": "19.2.3",

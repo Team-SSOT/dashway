@@ -6,7 +6,9 @@ import { RemoteAppFrame } from '../layout/RemoteAppFrame'
 import { useShellStore } from '../model/shell-store'
 
 export function RemoteAppRoute() {
-  const { appId } = useParams()
+  const params = useParams()
+  const appId = params.appId
+  const splat = params['*'] ?? ''
   const { activeAppId, setActiveApp, workspaceConfig } = useShellStore()
 
   const app = workspaceConfig?.apps.find((candidate) => candidate.id === appId) ?? null
@@ -25,5 +27,5 @@ export function RemoteAppRoute() {
     return <NotFoundPage />
   }
 
-  return <RemoteAppFrame app={app} />
+  return <RemoteAppFrame app={app} splat={splat} />
 }

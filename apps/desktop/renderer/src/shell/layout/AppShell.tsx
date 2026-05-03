@@ -2,15 +2,21 @@ import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useShellStore } from '../model/shell-store'
 import { ContentArea } from './ContentArea'
-import { GlobalRail } from './GlobalRail'
-import { LocalSidebar } from './LocalSidebar'
 import { RightPanel } from './RightPanel'
+import { Topbar } from './Topbar'
+import { UnifiedSidebar } from './UnifiedSidebar'
 import '../../shared/styles/shell.css'
 
 export function AppShell() {
   const location = useLocation()
-  const { sidebarCollapsed, rightPanelOpen, activeAppId, activeWorkspaceId, workspaceConfig, currentMember } =
-    useShellStore()
+  const {
+    sidebarCollapsed,
+    rightPanelOpen,
+    activeAppId,
+    activeWorkspaceId,
+    workspaceConfig,
+    currentMember,
+  } = useShellStore()
 
   useEffect(() => {
     console.info('[dashway:shell] app shell rendered', {
@@ -35,8 +41,8 @@ export function AppShell() {
       data-sidebar-collapsed={sidebarCollapsed}
       data-right-panel-open={rightPanelOpen}
     >
-      <GlobalRail />
-      {!sidebarCollapsed && <LocalSidebar />}
+      <Topbar />
+      <UnifiedSidebar />
       <ContentArea />
       {rightPanelOpen && <RightPanel />}
     </div>

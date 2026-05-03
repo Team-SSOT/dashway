@@ -22,6 +22,9 @@ export const IPC = {
   // System
   SYSTEM_GET_PLATFORM: 'system:get-platform',
 
+  // App manifest (.well-known/dashway-app.json)
+  APP_MANIFEST_FETCH: 'app:manifest-fetch',
+
   // Events (main → renderer)
   EVENT_WINDOW_FOCUS: 'event:window-focus',
   EVENT_WINDOW_BLUR: 'event:window-blur',
