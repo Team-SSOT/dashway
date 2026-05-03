@@ -86,8 +86,10 @@ $ grep-way "auth token expiry decision"
 
 ```
 dashway/
-└── apps/
-    └── landing/    # Next.js public landing page
+├── apps/
+│   └── landing/         # Next.js public landing page
+├── context-api/         # Kotlin/Spring context API
+└── neo4j-writer-api/    # Single Spring graph backend (REST API + RabbitMQ ingest)
 ```
 
 ## Commands
@@ -98,6 +100,9 @@ npm run dev      # development server
 npm run build    # production build
 npm run start    # start production server
 npm run lint     # lint
+
+# from neo4j-writer-api
+./gradlew bootRun  # start single graph backend
 ```
 
 ---
