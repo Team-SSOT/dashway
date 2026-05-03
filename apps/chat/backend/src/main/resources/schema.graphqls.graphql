@@ -1,0 +1,116 @@
+schema {
+    query: Query
+    mutation: Mutation
+}
+
+scalar Long
+scalar DateTime
+
+type PageInfo {
+    page: Int!
+    size: Int!
+    totalElements: Int!
+    totalPages: Int!
+}
+
+type Query {
+    chatRooms(input: ChatRoomsInput!): ChatRoomPage!
+    chatMessages(input: ChatMessagesInput!): ChatMessageSlice!
+}
+
+type Mutation {
+    createChatRoom(input: CreateChatRoomInput!): ChatRoom!
+    deleteChatRoom(input: DeleteChatRoomInput!): Boolean!
+    setChatRoomFavorite(input: SetChatRoomFavoriteInput!): ChatRoom!
+}
+
+enum ChatRoomType {
+    DIRECT
+    GROUP
+}
+
+enum ChatRoomRole {
+    OWNER
+    MEMBER
+}
+
+type ChatRoom {
+    id: String!
+    type: ChatRoomType!
+    isPublic: Boolean!
+    title: String
+    isMember: Boolean!
+    isFavorite: Boolean!
+    canDelete: Boolean!
+    memberCount: Int!
+    members: [ChatRoomMember!]!
+    createdDatetime: DateTime!
+    updatedDatetime: DateTime!
+}
+
+type ChatRoomMember {
+    memberId: Long!
+    role: ChatRoomRole!
+    joinedDatetime: DateTime!
+}
+
+type ChatRoomPage {
+    rooms: [ChatRoom!]!
+    pageInfo: PageInfo!
+}
+
+type ChatMessage {
+    id: String!
+    roomId: String!
+    senderMemberId: Long!
+    clientMessageId: String!
+    content: String
+    isDeleted: Boolean!
+    createdDatetime: DateTime!
+    editedDatetime: DateTime
+    deletedDatetime: DateTime
+}
+
+type ChatMessageSlice {
+    messages: [ChatMessage!]!
+    hasNext: Boolean!
+    nextCursor: ChatMessageCursor
+}
+
+type ChatMessageCursor {
+    createdDatetime: DateTime!
+    messageId: String!
+}
+
+input ChatRoomsInput {
+    page: Int!
+    size: Int!
+    favoriteOnly: Boolean
+}
+
+input ChatMessagesInput {
+    roomId: String!
+    cursor: ChatMessageCursorInput
+    size: Int!
+}
+
+input ChatMessageCursorInput {
+    createdDatetime: DateTime!
+    messageId: String!
+}
+
+input CreateChatRoomInput {
+    type: ChatRoomType!
+    isPublic: Boolean!
+    title: String
+    participantMemberIds: [Long!]!
+}
+
+input DeleteChatRoomInput {
+    roomId: String!
+}
+
+input SetChatRoomFavoriteInput {
+    roomId: String!
+    isFavorite: Boolean!
+}
