@@ -1,4 +1,5 @@
 import { contextBridge } from 'electron'
+import { appManifestApi } from './api/app-manifest'
 import { eventsApi } from './api/events'
 import { shellApi } from './api/shell'
 import { windowApi } from './api/window'
@@ -9,4 +10,5 @@ contextBridge.exposeInMainWorld('desktop', {
   workspace: workspaceApi,
   window: windowApi,
   events: eventsApi,
+  appManifest: appManifestApi,
 })
