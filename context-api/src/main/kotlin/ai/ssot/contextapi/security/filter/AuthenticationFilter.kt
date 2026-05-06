@@ -1,5 +1,7 @@
 package ai.ssot.contextapi.security.filter
 
+import ai.ssot.contextapi.domain.auth.repository.TokenRepository
+import ai.ssot.contextapi.security.exception.UnauthenticatedException
 import ai.ssot.contextapi.security.token.TokenService
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
@@ -14,6 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter
 @Component
 class AuthenticationFilter(
     private val tokenService: TokenService,
+    private val tokenRepository: TokenRepository,
 ): OncePerRequestFilter() {
     override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) {
         val accessToken = request.getHeader(TokenService.ACCESS_TOKEN_HEADER)
@@ -22,10 +25,13 @@ class AuthenticationFilter(
         if (accessToken != null) {
             try {
                 tokenService.verify(accessToken)
-                accessToken.replace(TokenService.TOKEN_PREFIX, "")
-                    .apply {
-                        SecurityContextHolder.getContext().authentication = getAuthentication(this)
-                    }
+                val rawAccessToken = accessToken.removePrefix(TokenService.TOKEN_PREFIX)
+
+                if (tokenRepository.existsBlacklistToken(rawAccessToken)) {
+                    throw UnauthenticatedException()
+                }
+
+                SecurityContextHolder.getContext().authentication = getAuthentication(rawAccessToken)
             } catch (exception: AuthenticationException) {
                 SecurityContextHolder.clearContext()
                 throw exception

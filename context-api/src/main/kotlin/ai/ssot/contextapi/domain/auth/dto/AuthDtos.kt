@@ -18,6 +18,10 @@ data class LogoutInput(
     val refreshToken: String,
 )
 
+data class TokenValidateResponse(
+    val memberId: Long,
+)
+
 data class AuthTokenDto(
     val accessToken: String,
     val refreshToken: String,

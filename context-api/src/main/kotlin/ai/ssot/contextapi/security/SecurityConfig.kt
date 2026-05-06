@@ -33,6 +33,7 @@ class SecurityConfig(
                     "/internal/install/health",
                     "/internal/install/bootstrap",
                 ).permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/auth/token/validate").authenticated()
                     .requestMatchers(HttpMethod.GET, "/members/**").authenticated()
                     .anyRequest().denyAll()
             }

@@ -30,6 +30,9 @@ class TokenRepository(
     fun deleteRefreshToken(refreshToken: String): Boolean =
         redisTemplate.delete(getRefreshTokenKey(refreshToken))
 
+    fun existsBlacklistToken(token: String): Boolean =
+        redisTemplate.hasKey(getRefreshTokenKey(getBlackListTokenKey(token))) == true
+
     private fun getRefreshTokenKey(refreshToken: String): String = "refresh:$refreshToken"
     private fun getBlackListTokenKey(token: String): String = "blacklist:$token"
 }
