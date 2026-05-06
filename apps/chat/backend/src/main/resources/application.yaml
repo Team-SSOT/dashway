@@ -1,3 +1,22 @@
 spring:
   application:
     name: chat
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    username: context_api
+    password: context_api
+    url: jdbc:postgresql://localhost:5432/chat
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+
+chat:
+  context-api:
+    base-url: http://localhost:8080
+
+dashway:
+  config:
+    path: ${DASHWAY_CONFIG_PATH:}
