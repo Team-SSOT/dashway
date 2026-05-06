@@ -20,6 +20,7 @@
     "build:desktop": "pnpm build:packages && pnpm --filter @dashway/desktop build",
     "build:issue-tracker": "pnpm build:packages && pnpm --filter @dashway/issue-tracker build",
     "install:stack": "node ./scripts/install-stack.mjs",
+    "uninstall:stack": "node ./scripts/uninstall-stack.mjs",
     "make:desktop": "pnpm build:packages && pnpm --filter @dashway/desktop make",
     "start": "pnpm --filter @dashway/landing start",
     "lint": "biome check .",

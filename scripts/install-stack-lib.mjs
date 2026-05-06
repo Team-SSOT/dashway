@@ -66,6 +66,49 @@ export function parseCliArgs(argv) {
   return options
 }
 
+export function parseUninstallCliArgs(argv) {
+  const options = {
+    help: false,
+    keepImages: false,
+    purgeServiceImages: false,
+    yes: false,
+  }
+  const supportedFlags = new Map([
+    ['help', 'help'],
+    ['keep-images', 'keepImages'],
+    ['purge-service-images', 'purgeServiceImages'],
+    ['yes', 'yes'],
+  ])
+
+  for (const token of argv) {
+    if (token === '-h') {
+      options.help = true
+      continue
+    }
+    if (token === '-y') {
+      options.yes = true
+      continue
+    }
+    if (!token.startsWith('--')) {
+      throw new Error(`Unexpected argument: ${token}`)
+    }
+
+    const flag = token.slice(2)
+    const optionName = supportedFlags.get(flag)
+    if (!optionName) {
+      throw new Error(`Unknown option: --${flag}`)
+    }
+
+    options[optionName] = true
+  }
+
+  if (options.keepImages && options.purgeServiceImages) {
+    throw new Error('--keep-images cannot be used with --purge-service-images.')
+  }
+
+  return options
+}
+
 export function validateInstallerManifest(manifest) {
   if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
     throw new Error('Installer manifest must be a JSON object.')
@@ -101,6 +144,80 @@ export function validateInstallerManifest(manifest) {
 export async function loadInstallerManifest(manifestPath) {
   const manifestSource = await readFile(manifestPath, 'utf8')
   return validateInstallerManifest(JSON.parse(manifestSource))
+}
+
+export async function loadDashwayConfig(configPath) {
+  const configSource = await readFile(configPath, 'utf8')
+  const config = JSON.parse(configSource)
+  if (!config || typeof config !== 'object' || Array.isArray(config)) {
+    throw new Error('dashway.config.json must be a JSON object.')
+  }
+  if (config.schemaVersion !== 1) {
+    throw new Error(`Unsupported dashway.config.json schema version: ${config.schemaVersion}`)
+  }
+  if (!Array.isArray(config.apps)) {
+    throw new Error('dashway.config.json apps must be an array.')
+  }
+  const postgres = normalizePostgresConfig(config.database?.postgres)
+
+  const apps = config.apps.map((app, index) => {
+    const configPath = `apps[${index}]`
+    if (!app || typeof app !== 'object' || Array.isArray(app)) {
+      throw new Error(`dashway.config.json ${configPath} must be an object.`)
+    }
+
+    const name = requireConfigString(app, 'name', `${configPath}.name`)
+    const composeFile = requireConfigString(app, 'composeFile', `${configPath}.composeFile`)
+    const healthUrl = requireConfigString(app, 'healthUrl', `${configPath}.healthUrl`)
+    const port = app.port
+    if (!Number.isInteger(port) || port <= 0) {
+      throw new Error(`dashway.config.json ${configPath}.port must be a positive integer.`)
+    }
+
+    try {
+      new URL(healthUrl)
+    } catch {
+      throw new Error(`dashway.config.json ${configPath}.healthUrl must be a valid URL.`)
+    }
+
+    return {
+      id: name,
+      name,
+      port,
+      composeFile,
+      healthUrl,
+      displayName: name,
+    }
+  })
+
+  const duplicateNames = apps
+    .map((app) => app.name)
+    .filter((name, index, names) => names.indexOf(name) !== index)
+  if (duplicateNames.length > 0) {
+    throw new Error(`dashway.config.json apps contain duplicate names: ${[...new Set(duplicateNames)].join(', ')}`)
+  }
+
+  return {
+    ...config,
+    database: {
+      ...config.database,
+      postgres,
+    },
+    apps,
+  }
+}
+
+export function buildComposeEnvironment(config) {
+  const postgres = config.database.postgres
+  return {
+    DASHWAY_POSTGRES_DB: postgres.databases.contextApi,
+    DASHWAY_POSTGRES_HOST: postgres.host,
+    DASHWAY_POSTGRES_PUBLIC_HOST: postgres.publicHost,
+    DASHWAY_POSTGRES_PUBLIC_PORT: String(postgres.port),
+    DASHWAY_POSTGRES_USER: postgres.username,
+    DASHWAY_POSTGRES_PASSWORD: postgres.password,
+    CHAT_CONTEXT_API_BASE_URL: 'http://context-api:8080',
+  }
 }
 
 export function buildComposeInstallPlan({ manifest, selectedAppUnits }) {
@@ -177,6 +294,43 @@ export function buildInstallExecutionPlan({
       unit: appUnit,
       environment: {},
       wait: false,
+    })),
+  ]
+}
+
+export function buildComposeUninstallPlan({
+  manifest,
+  configApps,
+  purgeServiceImages = false,
+  removeImages = true,
+}) {
+  const appsInShutdownOrder = [...configApps].reverse()
+  const unitsInShutdownOrder = [
+    ...appsInShutdownOrder.map((app) => ({
+      ...app,
+      kind: 'app',
+    })),
+    {
+      ...manifest.core,
+      kind: 'core',
+    },
+    {
+      ...manifest.infra,
+      kind: 'infra',
+    },
+  ]
+
+  return [
+    ...unitsInShutdownOrder.map((unit) => ({
+      type: 'assert-file-exists',
+      composeFile: unit.composeFile,
+      unit,
+    })),
+    ...unitsInShutdownOrder.map((unit) => ({
+      type: 'compose-down',
+      composeFile: unit.composeFile,
+      removeImages: removeImages && (unit.kind !== 'infra' || purgeServiceImages),
+      unit,
     })),
   ]
 }
@@ -311,4 +465,46 @@ function assertAppUnit(app) {
   if (!Number.isInteger(app.catalog.port) || app.catalog.port <= 0) {
     throw new Error(`Installer app "${app.id}" catalog port must be a positive integer.`)
   }
+}
+
+function normalizePostgresConfig(postgres) {
+  if (!postgres || typeof postgres !== 'object' || Array.isArray(postgres)) {
+    throw new Error('dashway.config.json database.postgres must be an object.')
+  }
+
+  const host = requireConfigString(postgres, 'host', 'database.postgres.host')
+  const publicHost = requireConfigString(postgres, 'publicHost', 'database.postgres.publicHost')
+  const username = requireConfigString(postgres, 'username', 'database.postgres.username')
+  const password = requireConfigString(postgres, 'password', 'database.postgres.password')
+  const port = postgres.port
+  if (!Number.isInteger(port) || port <= 0) {
+    throw new Error('dashway.config.json database.postgres.port must be a positive integer.')
+  }
+
+  const databases = postgres.databases
+  if (!databases || typeof databases !== 'object' || Array.isArray(databases)) {
+    throw new Error('dashway.config.json database.postgres.databases must be an object.')
+  }
+  const contextApiDatabase = requireConfigString(databases, 'contextApi', 'database.postgres.databases.contextApi')
+  const chatDatabase = requireConfigString(databases, 'chat', 'database.postgres.databases.chat')
+
+  return {
+    host,
+    publicHost,
+    port,
+    username,
+    password,
+    databases: {
+      contextApi: contextApiDatabase,
+      chat: chatDatabase,
+    },
+  }
+}
+
+function requireConfigString(object, field, configPath) {
+  const value = object[field]
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`dashway.config.json ${configPath} must be a non-empty string.`)
+  }
+  return value.trim()
 }
