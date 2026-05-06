@@ -7,7 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 import java.util.UUID
 
-interface AppRepository : JpaRepository<App, UUID>, QAppRepository
+interface AppRepository : JpaRepository<App, UUID>, QAppRepository {
+    fun findAllByName(name: String): List<App>
+}
 
 interface QAppRepository {
     fun updateIsEnabled(id: UUID, isEnabled: Boolean): Long

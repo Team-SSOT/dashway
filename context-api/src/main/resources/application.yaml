@@ -35,6 +35,10 @@ context-api:
     bootstrap-enabled: false
     bootstrap-secret: ""
 
+dashway:
+  config:
+    path: ${DASHWAY_CONFIG_PATH:}
+
 redis:
   host: localhost
   port: 6379

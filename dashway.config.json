@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "database": {
+    "postgres": {
+      "host": "postgres",
+      "publicHost": "127.0.0.1",
+      "port": 5432,
+      "username": "context_api",
+      "password": "context_api",
+      "databases": {
+        "contextApi": "dashway",
+        "chat": "dashway"
+      }
+    }
+  },
+  "apps": [
+    {
+      "name": "chat",
+      "port": 12001,
+      "composeFile": "apps/chat/docker-compose.yml",
+      "healthUrl": "http://127.0.0.1:12001/"
+    },
+    {
+      "name": "issue-tracker",
+      "port": 12000,
+      "composeFile": "apps/issue_tracker/docker-compose.yml",
+      "healthUrl": "http://127.0.0.1:12000/"
+    }
+  ]
+}

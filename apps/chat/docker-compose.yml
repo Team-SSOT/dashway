@@ -8,5 +8,17 @@ services:
     image: chat-backend:local
     container_name: chat-backend
     restart: unless-stopped
+    environment:
+      DASHWAY_CONFIG_PATH: /etc/dashway/dashway.config.json
+      CHAT_CONTEXT_API_BASE_URL: ${CHAT_CONTEXT_API_BASE_URL:-http://context-api:8080}
     ports:
       - 12001:8080
+    volumes:
+      - ../../dashway.config.json:/etc/dashway/dashway.config.json:ro
+    networks:
+      - dashway-shared
+
+networks:
+  dashway-shared:
+    external: true
+    name: dashway-shared
