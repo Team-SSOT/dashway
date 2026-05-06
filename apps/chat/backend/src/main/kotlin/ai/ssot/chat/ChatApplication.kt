@@ -1,4 +1,4 @@
-package com.example.chat
+package ai.ssot.chat
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
