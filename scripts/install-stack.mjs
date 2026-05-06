@@ -1,20 +1,22 @@
 import { randomBytes } from 'node:crypto'
 import { spawn } from 'node:child_process'
-import { access, readFile } from 'node:fs/promises'
+import { access } from 'node:fs/promises'
 import http from 'node:http'
 import https from 'node:https'
 import path from 'node:path'
+import { clearLine, cursorTo, moveCursor } from 'node:readline'
 import { createInterface } from 'node:readline/promises'
 import { fileURLToPath } from 'node:url'
 import {
   INSTALLER_STATE_VERSION,
   assertRequiredAdminOptions,
+  buildComposeEnvironment,
   buildStatePath,
   loadInstallerManifest,
+  loadDashwayConfig,
   parseAppSelectionValue,
   parseCliArgs,
   readInstallState,
-  toggleSelectedAppIds,
   writeInstallState,
 } from './install-stack-lib.mjs'
 
@@ -121,6 +123,7 @@ function printHelp() {
 Notes:
   - Dashway Infra starts first, then Context API.
   - The installer reads app choices from dashway.config.json before app services start.
+  - Interactive app selection uses a keyboard checklist: Up/Down, Space, Enter.
   - Selected apps are enabled in Context API only after their health checks pass.
   - In an interactive terminal, missing admin fields and app selection are prompted.
   - In a non-interactive terminal, required admin values and --apps must be passed as flags.`)
@@ -136,122 +139,6 @@ async function assertFileExists(filePath) {
 
 function randomBootstrapSecret() {
   return randomBytes(24).toString('hex')
-}
-
-async function loadDashwayConfig(configPath) {
-  const configSource = await readFile(configPath, 'utf8')
-  const config = JSON.parse(configSource)
-  if (!config || typeof config !== 'object' || Array.isArray(config)) {
-    throw new Error('dashway.config.json must be a JSON object.')
-  }
-  if (config.schemaVersion !== 1) {
-    throw new Error(`Unsupported dashway.config.json schema version: ${config.schemaVersion}`)
-  }
-  if (!Array.isArray(config.apps)) {
-    throw new Error('dashway.config.json apps must be an array.')
-  }
-  const postgres = normalizePostgresConfig(config.database?.postgres)
-
-  const apps = config.apps.map((app, index) => {
-    const path = `apps[${index}]`
-    if (!app || typeof app !== 'object' || Array.isArray(app)) {
-      throw new Error(`dashway.config.json ${path} must be an object.`)
-    }
-
-    const name = requireConfigString(app, 'name', `${path}.name`)
-    const composeFile = requireConfigString(app, 'composeFile', `${path}.composeFile`)
-    const healthUrl = requireConfigString(app, 'healthUrl', `${path}.healthUrl`)
-    const port = app.port
-    if (!Number.isInteger(port) || port <= 0) {
-      throw new Error(`dashway.config.json ${path}.port must be a positive integer.`)
-    }
-
-    try {
-      new URL(healthUrl)
-    } catch {
-      throw new Error(`dashway.config.json ${path}.healthUrl must be a valid URL.`)
-    }
-
-    return {
-      id: name,
-      name,
-      port,
-      composeFile,
-      healthUrl,
-      displayName: name,
-    }
-  })
-
-  const duplicateNames = apps
-    .map((app) => app.name)
-    .filter((name, index, names) => names.indexOf(name) !== index)
-  if (duplicateNames.length > 0) {
-    throw new Error(`dashway.config.json apps contain duplicate names: ${[...new Set(duplicateNames)].join(', ')}`)
-  }
-
-  return {
-    ...config,
-    database: {
-      ...config.database,
-      postgres,
-    },
-    apps,
-  }
-}
-
-function normalizePostgresConfig(postgres) {
-  if (!postgres || typeof postgres !== 'object' || Array.isArray(postgres)) {
-    throw new Error('dashway.config.json database.postgres must be an object.')
-  }
-
-  const host = requireConfigString(postgres, 'host', 'database.postgres.host')
-  const publicHost = requireConfigString(postgres, 'publicHost', 'database.postgres.publicHost')
-  const username = requireConfigString(postgres, 'username', 'database.postgres.username')
-  const password = requireConfigString(postgres, 'password', 'database.postgres.password')
-  const port = postgres.port
-  if (!Number.isInteger(port) || port <= 0) {
-    throw new Error('dashway.config.json database.postgres.port must be a positive integer.')
-  }
-
-  const databases = postgres.databases
-  if (!databases || typeof databases !== 'object' || Array.isArray(databases)) {
-    throw new Error('dashway.config.json database.postgres.databases must be an object.')
-  }
-  const contextApiDatabase = requireConfigString(databases, 'contextApi', 'database.postgres.databases.contextApi')
-  const chatDatabase = requireConfigString(databases, 'chat', 'database.postgres.databases.chat')
-
-  return {
-    host,
-    publicHost,
-    port,
-    username,
-    password,
-    databases: {
-      contextApi: contextApiDatabase,
-      chat: chatDatabase,
-    },
-  }
-}
-
-function buildComposeEnvironment(config) {
-  const postgres = config.database.postgres
-  return {
-    DASHWAY_POSTGRES_DB: postgres.databases.contextApi,
-    DASHWAY_POSTGRES_HOST: postgres.host,
-    DASHWAY_POSTGRES_PUBLIC_HOST: postgres.publicHost,
-    DASHWAY_POSTGRES_PUBLIC_PORT: String(postgres.port),
-    DASHWAY_POSTGRES_USER: postgres.username,
-    DASHWAY_POSTGRES_PASSWORD: postgres.password,
-    CHAT_CONTEXT_API_BASE_URL: 'http://context-api:8080',
-  }
-}
-
-function requireConfigString(object, field, path) {
-  const value = object[field]
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    throw new Error(`dashway.config.json ${path} must be a non-empty string.`)
-  }
-  return value.trim()
 }
 
 function buildCoreInstallExecutionPlan({ manifest, installSecret, installerInputs, composeEnvironment }) {
@@ -454,63 +341,158 @@ async function collectConfigAppSelection({ options, configApps, previousState })
     return resolveSelectedConfigApps(configApps, options.apps)
   }
 
-  const rl = createInterface({
+  return promptConfigAppSelection({
     input: process.stdin,
     output: process.stdout,
-    terminal: true,
+    configApps,
+    initialSelectedAppIds: configApps
+      .map((app) => app.id)
+      .filter((appId) => previousState?.selectedAppNames?.includes(appId)),
   })
-  try {
-    return await promptConfigAppSelection(rl, {
-      configApps,
-      initialSelectedAppIds: configApps
+}
+
+async function promptConfigAppSelection({ input, output, configApps, initialSelectedAppIds }) {
+  if (typeof input.setRawMode !== 'function') {
+    throw new Error('Interactive app selection requires a raw TTY. Use --apps to select apps in this terminal.')
+  }
+
+  return new Promise((resolve, reject) => {
+    const selectedAppIds = new Set(
+      configApps
         .map((app) => app.id)
-        .filter((appId) => previousState?.selectedAppNames?.includes(appId)),
-    })
-  } finally {
-    rl.close()
-  }
-}
+        .filter((appId) => initialSelectedAppIds.includes(appId)),
+    )
+    const previousRawMode = input.isRaw === true
+    const wasPaused = typeof input.isPaused === 'function' ? input.isPaused() : false
+    let cursorIndex = 0
+    let renderedLineCount = 0
+    let settled = false
 
-async function promptConfigAppSelection(rl, { configApps, initialSelectedAppIds }) {
-  let selectedAppIds = configApps
-    .map((app) => app.id)
-    .filter((appId) => initialSelectedAppIds.includes(appId))
+    function selectedAppsLabel() {
+      const selectedNames = configApps
+        .filter((app) => selectedAppIds.has(app.id))
+        .map((app) => app.name)
+      return selectedNames.join(', ') || '(none)'
+    }
 
-  console.log('Select apps to install and enable.')
-  console.log('Toggle by entering numbers separated with commas. Press Enter when the selection is complete.')
-
-  while (true) {
-    console.log('')
-    configApps.forEach((app, index) => {
-      const checked = selectedAppIds.includes(app.id) ? 'x' : ' '
-      console.log(`[${checked}] ${index + 1}. ${app.name} (:${app.port})`)
-    })
-
-    const answer = await rl.question('Toggle app numbers, or press Enter to continue: ')
-    const trimmedAnswer = answer.trim()
-    if (trimmedAnswer.length === 0) {
-      console.log(
-        `Selected apps: ${selectedAppIds.length > 0 ? selectedAppIds.map((id) => configApps.find((app) => app.id === id)?.name ?? id).join(', ') : '(none)'}`,
-      )
-      const confirmed = await promptConfirmation(rl, 'Start selected apps after Context API is ready? [Y/n]: ')
-      if (confirmed) {
-        return configApps.filter((app) => selectedAppIds.includes(app.id))
+    function clearRenderedSelection() {
+      if (renderedLineCount === 0) {
+        return
       }
-      continue
+
+      moveCursor(output, 0, -renderedLineCount)
+      for (let index = 0; index < renderedLineCount; index += 1) {
+        clearLine(output, 0)
+        if (index < renderedLineCount - 1) {
+          moveCursor(output, 0, 1)
+        }
+      }
+      if (renderedLineCount > 1) {
+        moveCursor(output, 0, -(renderedLineCount - 1))
+      }
+      cursorTo(output, 0)
+      renderedLineCount = 0
     }
 
-    try {
-      selectedAppIds = toggleSelectedAppIds(selectedAppIds, configApps, trimmedAnswer)
-    } catch (error) {
-      console.log(error.message)
-    }
-  }
-}
+    function renderSelection() {
+      const lines = [
+        'Select apps to install and enable.',
+        '',
+        ...configApps.map((app, index) => {
+          const cursor = index === cursorIndex ? '>' : ' '
+          const checked = selectedAppIds.has(app.id) ? 'x' : ' '
+          return `${cursor} [${checked}] ${app.name} (:${app.port})`
+        }),
+        '',
+        'Space toggle, Enter confirm, Up/Down or j/k move, q cancel',
+      ]
 
-async function promptConfirmation(rl, label) {
-  const answer = await rl.question(label)
-  const normalized = answer.trim().toLowerCase()
-  return normalized === '' || normalized === 'y' || normalized === 'yes'
+      clearRenderedSelection()
+      output.write(`${lines.join('\n')}\n`)
+      renderedLineCount = lines.length
+    }
+
+    function cleanup() {
+      input.off('data', handleKeypress)
+      clearRenderedSelection()
+      output.write('\x1b[?25h')
+      input.setRawMode(previousRawMode)
+      if (wasPaused) {
+        input.pause()
+      }
+    }
+
+    function finish(callback) {
+      if (settled) {
+        return
+      }
+      settled = true
+      cleanup()
+      callback()
+    }
+
+    function moveSelection(direction) {
+      cursorIndex = (cursorIndex + direction + configApps.length) % configApps.length
+      renderSelection()
+    }
+
+    function toggleCurrentSelection() {
+      const currentAppId = configApps[cursorIndex].id
+      if (selectedAppIds.has(currentAppId)) {
+        selectedAppIds.delete(currentAppId)
+      } else {
+        selectedAppIds.add(currentAppId)
+      }
+      renderSelection()
+    }
+
+    function handleKeypress(chunk) {
+      const key = chunk.toString('utf8')
+
+      if (key === '\u0003') {
+        finish(() => {
+          output.write('\n')
+          reject(new Error('Install cancelled.'))
+        })
+        return
+      }
+
+      if (key === '\u001b' || key === 'q') {
+        finish(() => {
+          reject(new Error('App selection cancelled.'))
+        })
+        return
+      }
+
+      if (key === '\r' || key === '\n') {
+        finish(() => {
+          output.write(`Selected apps: ${selectedAppsLabel()}\n`)
+          resolve(configApps.filter((app) => selectedAppIds.has(app.id)))
+        })
+        return
+      }
+
+      if (key === ' ') {
+        toggleCurrentSelection()
+        return
+      }
+
+      if (key === '\u001b[A' || key === 'k') {
+        moveSelection(-1)
+        return
+      }
+
+      if (key === '\u001b[B' || key === 'j') {
+        moveSelection(1)
+      }
+    }
+
+    output.write('\x1b[?25l')
+    input.setRawMode(true)
+    input.resume()
+    input.on('data', handleKeypress)
+    renderSelection()
+  })
 }
 
 function resolveSelectedConfigApps(configApps, rawAppsValue) {
