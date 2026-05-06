@@ -28,6 +28,7 @@ import { cn } from '@/shared/lib/cn'
 import { MessageItem } from './MessageItem'
 import { DateDivider } from './DateDivider'
 import { UnreadDivider } from './UnreadDivider'
+import { shouldForceScrollOnLocalSubmit } from './messageListScrollPolicy'
 
 interface Props {
   roomId: RoomId
@@ -38,6 +39,8 @@ interface Props {
   fetchNextPage?: () => void
   /** Current user's lastReadAt ISO for unread divider. Null = full unread. */
   lastReadAt?: string | null
+  /** When set, scroll to this message id on mount (used for `?m=` deep links). */
+  targetMessageId?: string | null
 }
 
 type Row =
@@ -65,6 +68,7 @@ export function MessageList({
   isFetchingNextPage,
   fetchNextPage,
   lastReadAt,
+  targetMessageId,
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const membersById = useMemo(
@@ -146,6 +150,7 @@ export function MessageList({
   isAtBottomRef.current = isAtBottom
   const prevRowCountRef = useRef(rows.length)
   const prevLastIdRef = useRef<string | undefined>(undefined)
+  const prevRowsRef = useRef<ReadonlyArray<{ key: string }>>([])
 
   const lastRowId =
     rows.length > 0 ? rows[rows.length - 1].key : undefined
@@ -162,13 +167,31 @@ export function MessageList({
   useLayoutEffect(() => {
     const el = scrollRef.current
     if (!el) return
+
+    const nextRows = rows as ReadonlyArray<{ key: string }>
+
     if (prevLastIdRef.current === undefined) {
       // First mount — force to bottom
       virtualizer.scrollToIndex(rows.length - 1, { align: 'end' })
       prevLastIdRef.current = lastRowId
       prevRowCountRef.current = rows.length
+      prevRowsRef.current = nextRows
       return
     }
+
+    // Force-scroll branch: local user just submitted a message (optimistic append).
+    // Runs regardless of isAtBottomRef so a scrolled-up sender still sees their message.
+    if (shouldForceScrollOnLocalSubmit({ prevRows: prevRowsRef.current, nextRows })) {
+      virtualizer.scrollToIndex(rows.length - 1, { align: 'end' })
+      if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+      setIsAtBottom(true)
+      isAtBottomRef.current = true
+      prevLastIdRef.current = lastRowId
+      prevRowCountRef.current = rows.length
+      prevRowsRef.current = nextRows
+      return
+    }
+
     const lastChanged = prevLastIdRef.current !== lastRowId
     const grew = rows.length > prevRowCountRef.current
     if (lastChanged && grew && isAtBottomRef.current) {
@@ -176,8 +199,22 @@ export function MessageList({
     }
     prevLastIdRef.current = lastRowId
     prevRowCountRef.current = rows.length
+    prevRowsRef.current = nextRows
     // virtualizer dep omitted — its identity stays stable per container
   }, [lastRowId, rows.length, virtualizer])
+
+  // ─── `?m=` deep-link target ───────────────────────────────────────────────
+  // Once after rows are first available, scroll to the target message and align center.
+  // Runs after the mount-effect above, so it overrides the bottom-anchor for this case.
+  const targetHandledRef = useRef(false)
+  useLayoutEffect(() => {
+    if (!targetMessageId || targetHandledRef.current) return
+    if (rows.length === 0) return
+    const idx = rows.findIndex((r) => r.key === targetMessageId)
+    if (idx === -1) return
+    virtualizer.scrollToIndex(idx, { align: 'center' })
+    targetHandledRef.current = true
+  }, [targetMessageId, rows, virtualizer])
 
   // ─── Top-sentinel prepend (older-history fetch) + anchor preservation ───────
   const prevTotalSizeRef = useRef<number>(0)

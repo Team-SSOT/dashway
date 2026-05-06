@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@dashway/chat-ui": "workspace:*",
+    "@dashway/design-tokens": "workspace:*",
     "@lexical/code": "0.43.0",
     "@lexical/code-shiki": "0.43.0",
     "@lexical/html": "0.43.0",

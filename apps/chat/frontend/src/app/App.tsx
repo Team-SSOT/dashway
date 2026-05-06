@@ -1,8 +1,8 @@
 import { RouterProvider } from 'react-router-dom'
 import { TooltipProvider } from '@/shared/ui/tooltip'
+import { DataSourceProvider } from './providers/DataSourceProvider'
 import { QueryProvider } from './providers/QueryProvider'
 import { ThemeProvider } from './providers/ThemeProvider'
-import { DataSourceProvider } from './providers/DataSourceProvider'
 import { router } from './router'
 
 export function App() {

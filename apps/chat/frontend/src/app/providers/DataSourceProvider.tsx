@@ -1,12 +1,15 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { ChatRepository, ChatRealtime } from '@/types/chat'
+import type { DirectoryRepository } from '@/data/DirectoryRepository'
 import { MockChatRepository } from '@/data/MockChatRepository'
 import { MockChatRealtime } from '@/data/MockChatRealtime'
+import { MockDirectoryRepository } from '@/data/MockDirectoryRepository'
 import { eventBus } from '@/data/mockEventBus'
 
 interface DataSourceContext {
   repo: ChatRepository
   realtime: ChatRealtime
+  directory: DirectoryRepository
 }
 
 const Context = createContext<DataSourceContext | null>(null)
@@ -15,13 +18,15 @@ interface Props {
   children: ReactNode
   repo?: ChatRepository
   realtime?: ChatRealtime
+  directory?: DirectoryRepository
 }
 
-export function DataSourceProvider({ children, repo: repoProp, realtime: realtimeProp }: Props) {
+export function DataSourceProvider({ children, repo: repoProp, realtime: realtimeProp, directory: directoryProp }: Props) {
   const [instances] = useState(() => {
     const realtime = new MockChatRealtime(eventBus)
     const repo = new MockChatRepository(eventBus)
-    return { repo, realtime }
+    const directory = new MockDirectoryRepository()
+    return { repo, realtime, directory }
   })
 
   // Debug: expose runtime hooks on `window.__chatMocks` for devtools perf
@@ -55,8 +60,12 @@ export function DataSourceProvider({ children, repo: repoProp, realtime: realtim
   }, [instances])
 
   const value = useMemo(
-    () => ({ repo: repoProp ?? instances.repo, realtime: realtimeProp ?? instances.realtime }),
-    [repoProp, realtimeProp, instances]
+    () => ({
+      repo: repoProp ?? instances.repo,
+      realtime: realtimeProp ?? instances.realtime,
+      directory: directoryProp ?? instances.directory,
+    }),
+    [repoProp, realtimeProp, directoryProp, instances]
   )
   return <Context.Provider value={value}>{children}</Context.Provider>
 }
@@ -65,4 +74,10 @@ export function useDataSource(): DataSourceContext {
   const ctx = useContext(Context)
   if (!ctx) throw new Error('useDataSource must be used within <DataSourceProvider>')
   return ctx
+}
+
+export function useDirectory(): DirectoryRepository {
+  const ctx = useContext(Context)
+  if (!ctx) throw new Error('useDirectory must be used within <DataSourceProvider>')
+  return ctx.directory
 }

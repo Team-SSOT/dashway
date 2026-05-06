@@ -11,7 +11,6 @@ import { MOCK_MEMBERS } from '@/data/mockData'
 import { MessageItem } from '@/features/messages/components/MessageItem'
 import { MessageComposer } from '@/features/composer/components/MessageComposer'
 import { AvatarStack } from '@/features/rooms/components/AvatarStack'
-import { useUiStore } from '@/shared/store/uiStore'
 import type { MessageAttachment, RoomId } from '@/types/chat'
 import { useThreadReplies } from '../hooks/useThreadReplies'
 import { useRealtimeThread } from '../hooks/useRealtimeThread'
@@ -35,7 +34,6 @@ function prefersReducedMotion() {
 export function ThreadPanel() {
   const { roomId, msgId } = useParams<{ roomId: string; msgId: string }>()
   const navigate = useNavigate()
-  const setRightPaneMode = useUiStore((s) => s.setRightPaneMode)
   const [isClosing, setIsClosing] = useState(false)
   const closeTimerRef = useRef<number | null>(null)
 
@@ -72,12 +70,6 @@ export function ThreadPanel() {
       .map((id) => membersById[id])
       .filter((x): x is NonNullable<typeof x> => !!x)
   }, [parentMessage, replies, membersById])
-
-  // Keep uiStore in sync for sidebar/header consumers.
-  useEffect(() => {
-    setRightPaneMode('thread')
-    return () => setRightPaneMode('closed')
-  }, [setRightPaneMode])
 
   useEffect(() => {
     setIsClosing(false)

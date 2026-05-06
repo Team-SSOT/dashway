@@ -7,6 +7,9 @@ const workspaceRoot = path.resolve(__dirname, '../../..')
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  optimizeDeps: {
+    exclude: ['@dashway/design-tokens'],
+  },
   resolve: {
     dedupe: [
       '@lexical/code',

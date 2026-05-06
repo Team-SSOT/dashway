@@ -1,13 +1,22 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MessageSquare } from 'lucide-react'
 import type { ChatMessage, ChatMember, RoomId } from '@/types/chat'
+import { currentUserId } from '@/data/mockData'
 import { formatMessageTimestamp } from '@/shared/lib/date'
 import { renderLexical } from '@/features/renderer/renderLexical'
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar'
 import { Button } from '@/shared/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { canDeleteMessage } from '@/features/rooms/permissions'
+import { useRoomMemberships } from '@/features/rooms/hooks/useRoomMemberships'
+import { useToggleReaction } from '../hooks/useToggleReaction'
+import { useDeleteMessage } from '../hooks/useDeleteMessage'
 import { MessageAttachments } from './MessageAttachments'
 import { MessageHoverToolbar } from './MessageHoverToolbar'
+import { MoreMenu } from './MoreMenu'
+import { ReactionChips } from './ReactionChips'
+import { ReactionPicker } from './ReactionPicker'
 
 interface Props {
   message: ChatMessage
@@ -21,16 +30,42 @@ interface Props {
 }
 
 /* eslint-disable no-console */
-// Non-thread action stubs — wired in later milestones.
-const stubReact = (id: string) => console.log('[react]', id)
 const stubBookmark = (id: string) => console.log('[bookmark]', id)
-const stubMore = (id: string) => console.log('[more]', id)
 /* eslint-enable no-console */
 
 export function MessageItem({ message, author, compact, membersById, roomId }: Props) {
   const navigate = useNavigate()
   const openThread = () => {
     if (roomId) navigate(`/c/${roomId}/thread/${message.id}`)
+  }
+
+  const toggle = useToggleReaction(message.roomId)
+  const deleteMutation = useDeleteMessage(message.roomId)
+  const { data: memberships } = useRoomMemberships(message.roomId)
+  const myMembership = memberships?.find((m) => m.memberId === currentUserId)
+  const canDelete = canDeleteMessage({
+    role: myMembership?.role,
+    authorId: message.authorId,
+    currentUserId,
+  })
+  const isDeleted = message.deletedAt !== null
+
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
+  const reactedByMeFor = (emoji: string): boolean =>
+    message.reactions?.find((r) => r.emoji === emoji)?.userIds.includes(currentUserId) ?? false
+  const handleToggleReaction = (emoji: string, hasMine: boolean) => {
+    toggle.mutate({ messageId: message.id, emoji, hasMine })
+  }
+  const handlePickReaction = (emoji: string) => {
+    handleToggleReaction(emoji, reactedByMeFor(emoji))
+  }
+  const handleDelete = () => {
+    if (typeof window !== 'undefined') {
+      const ok = window.confirm('Delete this message?')
+      if (!ok) return
+    }
+    deleteMutation.mutate({ messageId: message.id })
   }
 
   return (
@@ -66,14 +101,23 @@ export function MessageItem({ message, author, compact, membersById, roomId }: P
             </span>
           </div>
         )}
-        {message.plainText.trim().length > 0 ? (
-          <div className="text-sm leading-relaxed" dir="auto">
-            {renderLexical(message.content, { membersById })}
+        {isDeleted ? (
+          <div className="text-sm italic text-muted-foreground" dir="auto">
+            This message was deleted.
           </div>
-        ) : null}
-        {message.attachments && message.attachments.length > 0 ? (
-          <MessageAttachments attachments={message.attachments} />
-        ) : null}
+        ) : (
+          <>
+            {message.plainText.trim().length > 0 ? (
+              <div className="text-sm leading-relaxed" dir="auto">
+                {renderLexical(message.content, { membersById })}
+              </div>
+            ) : null}
+            {message.attachments && message.attachments.length > 0 ? (
+              <MessageAttachments attachments={message.attachments} />
+            ) : null}
+            <ReactionChips reactions={message.reactions} onToggle={handleToggleReaction} />
+          </>
+        )}
         {roomId && message.replyCount > 0 ? (
           <Button
             type="button"
@@ -87,13 +131,30 @@ export function MessageItem({ message, author, compact, membersById, roomId }: P
           </Button>
         ) : null}
       </div>
-      <MessageHoverToolbar
-        messageId={message.id}
-        onReact={stubReact}
-        onReplyInThread={roomId ? openThread : undefined}
-        onBookmark={stubBookmark}
-        onMore={stubMore}
-      />
+      {isDeleted ? null : (
+        <MessageHoverToolbar
+          messageId={message.id}
+          forceVisible={pickerOpen || moreOpen}
+          reactionTrigger={
+            <ReactionPicker
+              onPick={handlePickReaction}
+              open={pickerOpen}
+              onOpenChange={setPickerOpen}
+            />
+          }
+          moreMenuTrigger={
+            <MoreMenu
+              message={message}
+              canDelete={canDelete}
+              onDelete={handleDelete}
+              open={moreOpen}
+              onOpenChange={setMoreOpen}
+            />
+          }
+          onReplyInThread={roomId ? openThread : undefined}
+          onBookmark={stubBookmark}
+        />
+      )}
     </article>
   )
 }

@@ -41,4 +41,39 @@
   --rail-w: 44px;
   --sidebar-w: 220px;
   --right-panel-w: 320px;
+
+  /* Issue tracker / shared palette */
+  --color-bg: #07090c;
+  --color-bg-1: #0a0d14;
+  --color-bg-2: #0e1220;
+  --color-bg-3: #121828;
+  --color-surface: rgba(255, 255, 255, 0.04);
+  --color-surface-hi: rgba(255, 255, 255, 0.07);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-hi: rgba(255, 255, 255, 0.14);
+  --color-t1: #f0f4ff;
+  --color-t2: #7a8aab;
+  --color-t3: #3d4a63;
+  --color-accent-blue: #3b82f6;
+  --color-accent-violet: #8b5cf6;
+  --color-accent-fuchsia: #d946ef;
+  --color-ok: #10b981;
+  --color-warn: #f59e0b;
+  --color-err: #ef4444;
+
+  --color-status-backlog: #64748b;
+  --color-status-todo: #94a3b8;
+  --color-status-in-progress: #3b82f6;
+  --color-status-in-review: #8b5cf6;
+  --color-status-done: #10b981;
+  --color-status-cancelled: #475569;
+
+  --color-priority-urgent: #ef4444;
+  --color-priority-high: #f59e0b;
+  --color-priority-medium: #3b82f6;
+  --color-priority-low: #64748b;
+  --color-priority-none: #3d4a63;
+
+  --radius-card: 12px;
+  --radius-pill: 9999px;
 }

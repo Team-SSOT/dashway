@@ -10,6 +10,7 @@ import type {
   SendMessageInput,
   CreateRoomInput,
   RoomId,
+  MemberId,
   MessageId,
 } from '@/types/chat'
 import type { MockEventBus } from '@/data/mockEventBus'
@@ -200,6 +201,12 @@ export class MockChatRepository implements ChatRepository {
   }
 
   async sendMessage(input: SendMessageInput): Promise<ChatMessage> {
+    // Yield a macrotask so React can commit the optimistic insert (onMutate)
+    // before this resolves and onSuccess swaps the pending row for the server
+    // row. Without it, both setQueryData calls flush in one render and any
+    // consumer keying off the optimistic id (e.g. scroll policy) misses it.
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
     const err = this.checkOneShot('sendMessage')
     if (err) return err
 
@@ -301,6 +308,169 @@ export class MockChatRepository implements ChatRepository {
       memberId: currentUserId,
       lastReadAt,
     })
+  }
+
+  async addMembers(roomId: RoomId, memberIds: MemberId[]): Promise<RoomMembership[]> {
+    const err = this.checkOneShot('addMembers')
+    if (err) return err
+
+    const callerMs = this.memberships.find(
+      (ms) => ms.roomId === roomId && ms.memberId === currentUserId
+    )
+    if (!callerMs || (callerMs.role !== 'OWNER' && callerMs.role !== 'ADMIN')) {
+      return Promise.reject(makeChatError('FORBIDDEN', 'Only OWNER or ADMIN can add members', false))
+    }
+
+    const now = new Date().toISOString()
+    const added: RoomMembership[] = []
+
+    for (const memberId of memberIds) {
+      const alreadyMember = this.memberships.some(
+        (ms) => ms.roomId === roomId && ms.memberId === memberId
+      )
+      if (alreadyMember) continue
+
+      const membership: RoomMembership = {
+        roomId,
+        memberId,
+        role: 'MEMBER',
+        joinedAt: now,
+        lastReadAt: null,
+        muted: false,
+      }
+      this.memberships.push(membership)
+      added.push(membership)
+
+      const room = this.rooms.find((r) => r.id === roomId)
+      if (room) {
+        room.memberCount += 1
+        room.updatedAt = now
+      }
+    }
+
+    for (const membership of added) {
+      this.bus.publish({ type: 'MEMBERSHIP_CHANGED', membership: { ...membership } })
+    }
+
+    return added.map((ms) => ({ ...ms }))
+  }
+
+  async deleteMessage(messageId: MessageId): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    const err = this.checkOneShot('deleteMessage')
+    if (err) return err
+    const msg = this.messages.find((m) => m.id === messageId)
+    if (!msg) {
+      throw makeChatError('MESSAGE_NOT_FOUND', `Message ${messageId} not found`, false)
+    }
+    if (msg.authorId !== currentUserId) {
+      const callerMs = this.memberships.find(
+        (ms) => ms.roomId === msg.roomId && ms.memberId === currentUserId,
+      )
+      if (!callerMs || (callerMs.role !== 'OWNER' && callerMs.role !== 'ADMIN')) {
+        return Promise.reject(
+          makeChatError('FORBIDDEN', 'Only author or OWNER/ADMIN can delete a message', false),
+        )
+      }
+    }
+    const now = new Date().toISOString()
+    msg.deletedAt = now
+    msg.version += 1
+    setTimeout(() => {
+      this.bus.publish({
+        type: 'MESSAGE_DELETED',
+        messageId: msg.id,
+        roomId: msg.roomId,
+        deletedAt: now,
+      })
+    }, 100)
+  }
+
+  async addReaction(messageId: MessageId, emoji: string): Promise<ChatMessage> {
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    const err = this.checkOneShot('addReaction')
+    if (err) return err
+    return this.toggleReaction(messageId, emoji, 'add')
+  }
+
+  async removeReaction(messageId: MessageId, emoji: string): Promise<ChatMessage> {
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    const err = this.checkOneShot('removeReaction')
+    if (err) return err
+    return this.toggleReaction(messageId, emoji, 'remove')
+  }
+
+  private toggleReaction(
+    messageId: MessageId,
+    emoji: string,
+    op: 'add' | 'remove',
+  ): ChatMessage {
+    const msg = this.messages.find((m) => m.id === messageId)
+    if (!msg) throw makeChatError('MESSAGE_NOT_FOUND', `Message ${messageId} not found`, false)
+    const current = msg.reactions ?? []
+    const existing = current.find((r) => r.emoji === emoji)
+    let next: typeof current
+    if (op === 'add') {
+      if (existing) {
+        if (existing.userIds.includes(currentUserId)) {
+          next = current
+        } else {
+          next = current.map((r) =>
+            r.emoji === emoji ? { ...r, userIds: [...r.userIds, currentUserId] } : r,
+          )
+        }
+      } else {
+        next = [...current, { emoji, userIds: [currentUserId] }]
+      }
+    } else {
+      if (!existing) {
+        next = current
+      } else {
+        const filtered = existing.userIds.filter((id) => id !== currentUserId)
+        if (filtered.length === 0) {
+          next = current.filter((r) => r.emoji !== emoji)
+        } else {
+          next = current.map((r) =>
+            r.emoji === emoji ? { ...r, userIds: filtered } : r,
+          )
+        }
+      }
+    }
+    msg.reactions = next.length > 0 ? next : undefined
+    msg.version += 1
+    const updated = { ...msg, reactions: msg.reactions ? msg.reactions.map((r) => ({ ...r, userIds: [...r.userIds] })) : undefined }
+    setTimeout(() => {
+      this.bus.publish({ type: 'MESSAGE_UPDATED', message: { ...updated } })
+    }, 100)
+    return updated
+  }
+
+  async removeMember(roomId: RoomId, memberId: MemberId): Promise<void> {
+    const err = this.checkOneShot('removeMember')
+    if (err) return err
+
+    const callerMs = this.memberships.find(
+      (ms) => ms.roomId === roomId && ms.memberId === currentUserId
+    )
+    if (!callerMs || (callerMs.role !== 'OWNER' && callerMs.role !== 'ADMIN')) {
+      return Promise.reject(makeChatError('FORBIDDEN', 'Only OWNER or ADMIN can remove members', false))
+    }
+
+    const idx = this.memberships.findIndex(
+      (ms) => ms.roomId === roomId && ms.memberId === memberId
+    )
+    if (idx === -1) return
+
+    const [removed] = this.memberships.splice(idx, 1)
+
+    const now = new Date().toISOString()
+    const room = this.rooms.find((r) => r.id === roomId)
+    if (room) {
+      room.memberCount = Math.max(0, room.memberCount - 1)
+      room.updatedAt = now
+    }
+
+    this.bus.publish({ type: 'MEMBERSHIP_CHANGED', membership: { ...removed } })
   }
 
   // ─── Debug hooks ──────────────────────────────────────────────────────────

@@ -45,6 +45,7 @@ export function createMainWindow(): BrowserWindow {
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     win.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL)
+    win.webContents.openDevTools({ mode: 'detach' })
   } else {
     win.loadFile(join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`))
   }

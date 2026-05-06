@@ -20,6 +20,9 @@ importers:
       '@dashway/chat-ui':
         specifier: workspace:*
         version: link:../../../packages/chat-ui
+      '@dashway/design-tokens':
+        specifier: workspace:*
+        version: link:../../../packages/design-tokens
       '@lexical/code':
         specifier: 0.43.0
         version: 0.43.0

@@ -5,6 +5,9 @@ import type { ChatMessage, MessageAttachment, Page, RoomId, SendMessageInput } f
 import { roomMessagesQueryKey } from './useRoomMessages'
 import { currentUserId } from '@/data/mockData'
 
+// Consumed by MessageList scroll policy (messageListScrollPolicy.ts).
+export const OPTIMISTIC_ID_PREFIX = 'pending-'
+
 interface SendArgs {
   roomId: RoomId
   content: SerializedEditorState
@@ -22,7 +25,7 @@ function makeClientMsgId(): string {
 function makeOptimisticMessage(args: SendArgs, clientMsgId: string): ChatMessage {
   const now = new Date().toISOString()
   return {
-    id: `pending-${clientMsgId}`,
+    id: `${OPTIMISTIC_ID_PREFIX}${clientMsgId}`,
     roomId: args.roomId,
     authorId: currentUserId,
     content: args.content,

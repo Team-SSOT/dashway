@@ -1,9 +1,10 @@
 import { Button, cn } from '@dashway/ui'
-import { AutoLinkPlugin } from '@lexical/react/LexicalAutoLinkPlugin'
+import type { LinkMatcher } from '@lexical/link'
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin'
-import { ContentEditable } from '@lexical/react/LexicalContentEditable'
+import { AutoLinkPlugin } from '@lexical/react/LexicalAutoLinkPlugin'
 import { LexicalComposer as LexicalComposerProvider } from '@lexical/react/LexicalComposer'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary'
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin'
@@ -11,24 +12,23 @@ import { ListPlugin } from '@lexical/react/LexicalListPlugin'
 import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
-import type { LinkMatcher } from '@lexical/link'
 import {
   $getRoot,
   CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_HIGH,
-  KEY_ENTER_COMMAND,
   type EditorState,
+  KEY_ENTER_COMMAND,
   type SerializedEditorState,
 } from 'lexical'
 import { File as FileIcon, FileText, Image, Paperclip, Plus, Send, X } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
-import type { ComposerAttachment, ComposerSendPayload, MentionQuery, MentionTarget } from './types'
+import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createEditorConfig } from './lexical/editorConfig'
 import { CHAT_TRANSFORMERS } from './lexical/markdownTransformers'
 import { EmojiReplacePlugin } from './lexical/plugins/EmojiReplacePlugin'
 import { ImeGuardPlugin } from './lexical/plugins/ImeGuardPlugin'
 import { MentionTypeaheadPlugin } from './lexical/plugins/MentionTypeaheadPlugin'
 import { PasteSanitizerPlugin } from './lexical/plugins/PasteSanitizerPlugin'
+import type { ComposerAttachment, ComposerSendPayload, MentionQuery, MentionTarget } from './types'
 
 const URL_REGEX = /((?:https?:\/\/)[^\s]+)/
 

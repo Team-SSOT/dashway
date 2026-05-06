@@ -45,8 +45,19 @@ export function useRealtimeMessages(roomId: RoomId | undefined) {
           }))
           return { ...old, pages }
         })
+      } else if (event.type === 'MESSAGE_DELETED') {
+        qc.setQueryData<InfiniteData<Page<ChatMessage>>>(key, (old) => {
+          if (!old) return old
+          const pages = old.pages.map((page) => ({
+            ...page,
+            items: page.items.map((m) =>
+              m.id === event.messageId ? { ...m, deletedAt: event.deletedAt } : m,
+            ),
+          }))
+          return { ...old, pages }
+        })
       }
-      // MESSAGE_DELETED, ROOM_READ, MEMBERSHIP_CHANGED — later milestones
+      // ROOM_READ, MEMBERSHIP_CHANGED — later milestones
     })
 
     return unsubscribe

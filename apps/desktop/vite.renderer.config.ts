@@ -14,6 +14,10 @@ export default defineConfig({
   },
   // 워크스페이스 패키지는 dev 중 빈번히 수정되므로 pre-bundle 캐시 제외 → 항상 source 그대로 서빙
   optimizeDeps: {
+    // electron-forge plugin-vite + Vite 6의 dep-scanner가 라이프사이클 충돌로 "Request is outdated"
+    // 에러를 일으키며 Vite 서버를 종료시킨다 → Electron 메인이 함께 죽는다.
+    // include 목록만으로 pre-bundle을 결정하도록 dep-scanner를 비활성화.
+    noDiscovery: true,
     exclude: [
       '@dashway/app-protocol',
       '@dashway/app-sdk',
@@ -23,8 +27,19 @@ export default defineConfig({
       '@dashway/design-tokens',
       '@dashway/ui',
     ],
-    // 워크스페이스 패키지가 transitively 가져오는 deps 미리 발견(2차 optimize churn 방지)
-    include: ['zod', 'react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
+    include: [
+      'zod',
+      'react',
+      'react-dom',
+      'react/jsx-runtime',
+      'react/jsx-dev-runtime',
+      'react-dom/client',
+      'react-router',
+      'react-router-dom',
+      'react-relay',
+      'relay-runtime',
+      'zustand',
+    ],
   },
   build: {
     rollupOptions: {

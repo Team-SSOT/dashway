@@ -1,16 +1,8 @@
 import type { MentionQuery, MentionTarget } from '@dashway/chat-ui'
-import { MOCK_MEMBERS } from '@/data/mockData'
+import type { DirectoryRepository } from '@/data/DirectoryRepository'
+import { MockDirectoryRepository } from '@/data/MockDirectoryRepository'
 
-const PEOPLE_TARGETS: MentionTarget[] = MOCK_MEMBERS.map((member) => ({
-  type: 'person',
-  id: member.id,
-  label: member.name,
-  description: `${member.name} from the current workspace`,
-  source: 'People',
-}))
-
-const MOCK_TARGETS: MentionTarget[] = [
-  ...PEOPLE_TARGETS,
+const STATIC_TARGETS: MentionTarget[] = [
   {
     type: 'document',
     id: 'doc-chat-fe-handoff',
@@ -77,26 +69,33 @@ const RECENT_TARGET_IDS = new Set([
   'team-platform',
 ])
 
-export async function searchMockMentionTargets({
-  query,
-  limit,
-}: MentionQuery): Promise<MentionTarget[]> {
-  await new Promise((resolve) => window.setTimeout(resolve, 80))
+export async function buildMentionTargets(
+  directory: DirectoryRepository,
+  query: MentionQuery,
+): Promise<MentionTarget[]> {
+  const normalizedQuery = query.query.trim().toLowerCase()
 
-  const normalizedQuery = query.trim().toLowerCase()
-  const candidates =
-    normalizedQuery.length === 0
-      ? MOCK_TARGETS.filter((target) => RECENT_TARGET_IDS.has(target.id))
-      : MOCK_TARGETS
+  const { items } = await directory.searchMembers({ q: normalizedQuery, limit: query.limit ?? 20 })
+  const personTargets: MentionTarget[] = items.map((m) => ({
+    type: 'person',
+    id: m.id,
+    label: m.name,
+    description: `${m.name} from the current workspace`,
+    source: 'People',
+  }))
 
-  return candidates
-    .map((target) => ({
-      target,
-      score: scoreTarget(target, normalizedQuery),
-    }))
+  if (normalizedQuery.length === 0) {
+    const recentPersons = personTargets.filter((t) => RECENT_TARGET_IDS.has(t.id))
+    const recentStatic = STATIC_TARGETS.filter((t) => RECENT_TARGET_IDS.has(t.id))
+    return [...recentPersons, ...recentStatic]
+  }
+
+  const allCandidates = [...personTargets, ...STATIC_TARGETS]
+  return allCandidates
+    .map((target) => ({ target, score: scoreTarget(target, normalizedQuery) }))
     .filter(({ score }) => score > 0)
     .sort((a, b) => b.score - a.score || a.target.label.localeCompare(b.target.label))
-    .slice(0, limit)
+    .slice(0, query.limit ?? 20)
     .map(({ target }) => target)
 }
 
@@ -118,4 +117,11 @@ function scoreTarget(target: MentionTarget, query: string): number {
   if (target.id.toLowerCase().startsWith(query)) return 70
   if (haystack.includes(query)) return 40
   return 0
+}
+
+let _mockDirectory: MockDirectoryRepository | undefined
+
+export async function searchMockMentionTargets(query: MentionQuery): Promise<MentionTarget[]> {
+  if (!_mockDirectory) _mockDirectory = new MockDirectoryRepository()
+  return buildMentionTargets(_mockDirectory, query)
 }

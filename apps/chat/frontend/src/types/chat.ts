@@ -40,6 +40,7 @@ export interface ChatRoom {
   memberCount: number       // 서버 제공 (멤버십 조회 분리)
   unreadCount: number       // 현재 사용자 기준 (서버 계산)
   lastMessageAt?: string
+  peerMemberId?: MemberId   // For DM rooms — references the other party's MemberId. FE-only field; BE notification when DM protocol lands.
   createdAt: string
   updatedAt: string
   version: number           // optimistic concurrency (v2 edit용)
@@ -52,6 +53,14 @@ export interface MessageAttachment {
   size: number
   mimeType: string
   url?: string  // image/* 외에는 미리보기 URL 없을 수 있음
+}
+
+// 리액션 — viewer-agnostic. Per-viewer count/reactedByMe는 selector에서 파생.
+// BE notification: 실제 서버 도입 시 wire shape는 그대로 유지하고
+// addReaction/removeReaction을 HTTP로만 교체할 것.
+export interface Reaction {
+  emoji: string
+  userIds: MemberId[]
 }
 
 // 메시지 — server/client 타임스탬프 분리
@@ -71,6 +80,7 @@ export interface ChatMessage {
   contentVersion: 1                // 포맷 버전 (드리프트 대비)
   version: number                  // optimistic concurrency
   attachments?: MessageAttachment[]
+  reactions?: Reaction[]
 }
 
 // 페이징 — 불투명 cursor (ID/시간 노출 금지)
@@ -137,6 +147,19 @@ export interface ChatRepository {
   sendMessage(input: SendMessageInput): Promise<ChatMessage>
   markRead(roomId: RoomId, lastReadAt: string): Promise<void>
   createRoom(input: CreateRoomInput): Promise<ChatRoom>
+
+  // Idempotent toggle: 같은 (messageId, emoji, userId) 조합으로 중복 호출해도 한 번만 반영.
+  // BE notification required when implementing real transport.
+  addReaction(messageId: MessageId, emoji: string): Promise<ChatMessage>
+  removeReaction(messageId: MessageId, emoji: string): Promise<ChatMessage>
+
+  // Soft delete: deletedAt 설정. authorId !== currentUser AND role ∉ {OWNER, ADMIN}이면 FORBIDDEN.
+  // BE notification required when implementing real transport.
+  deleteMessage(messageId: MessageId): Promise<void>
+
+  // BE notification required when implementing real transport
+  addMembers(roomId: RoomId, memberIds: MemberId[]): Promise<RoomMembership[]>
+  removeMember(roomId: RoomId, memberId: MemberId): Promise<void>
 }
 
 // §6.3 ChatRealtime — WS/STOMP 상응 (scoped watcher + connection state)

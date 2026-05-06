@@ -262,6 +262,26 @@ export const MOCK_MEMBERS: ChatMember[] = [
   { id: 'bob', name: 'Bob Lee' },
   { id: 'charlie', name: 'Charlie Park' },
   { id: 'dave', name: 'Dave Han' },
+  { id: 'eve', name: 'Eve Choi' },
+  { id: 'frank', name: 'Frank Oh' },
+  { id: 'grace', name: 'Grace Yoon' },
+  { id: 'henry', name: 'Henry Shin' },
+  { id: 'iris', name: 'Iris Jang' },
+  { id: 'jack', name: 'Jack Kwon' },
+  { id: 'kelly', name: 'Kelly Lim' },
+  { id: 'leo', name: 'Leo Kang' },
+  { id: 'mia', name: 'Mia Seo' },
+  { id: 'nick', name: 'Nick Bae' },
+  { id: 'olivia', name: 'Olivia Song' },
+  { id: 'peter', name: 'Peter Moon' },
+  { id: 'queen', name: 'Queen Ahn' },
+  { id: 'rachel', name: 'Rachel Hong' },
+  { id: 'sam', name: 'Sam Cho' },
+  { id: 'tina', name: 'Tina Jung' },
+  { id: 'uma', name: 'Uma Hwang' },
+  { id: 'victor', name: 'Victor Nam' },
+  { id: 'wendy', name: 'Wendy Ryu' },
+  { id: 'xavier', name: 'Xavier Im' },
 ]
 
 // Base timestamps — 2025-01-15 00:00 UTC
@@ -308,6 +328,55 @@ export const MOCK_ROOMS: ChatRoom[] = [
     updatedAt: ts(-3 * 24 * 60 * 60_000),
     version: 1,
   },
+  // DM rooms
+  {
+    id: 'room-dm-alice',
+    type: 'DM',
+    name: 'Alice',
+    peerMemberId: 'alice',
+    memberCount: 2,
+    unreadCount: 2,
+    lastMessageAt: ts(62 * 60_000),
+    createdAt: ts(-5 * 24 * 60 * 60_000),
+    updatedAt: ts(62 * 60_000),
+    version: 1,
+  },
+  {
+    id: 'room-dm-bob',
+    type: 'DM',
+    name: 'Bob',
+    peerMemberId: 'bob',
+    memberCount: 2,
+    unreadCount: 0,
+    lastMessageAt: ts(58 * 60_000),
+    createdAt: ts(-4 * 24 * 60 * 60_000),
+    updatedAt: ts(58 * 60_000),
+    version: 1,
+  },
+  {
+    id: 'room-dm-charlie',
+    type: 'DM',
+    name: 'Charlie',
+    peerMemberId: 'charlie',
+    memberCount: 2,
+    unreadCount: 5,
+    lastMessageAt: ts(65 * 60_000),
+    createdAt: ts(-3 * 24 * 60 * 60_000),
+    updatedAt: ts(65 * 60_000),
+    version: 1,
+  },
+  {
+    id: 'room-dm-dave',
+    type: 'DM',
+    name: 'Dave',
+    peerMemberId: 'dave',
+    memberCount: 2,
+    unreadCount: 0,
+    lastMessageAt: ts(55 * 60_000),
+    createdAt: ts(-2 * 24 * 60 * 60_000),
+    updatedAt: ts(55 * 60_000),
+    version: 1,
+  },
 ]
 
 export const MOCK_MEMBERSHIPS: RoomMembership[] = [
@@ -326,6 +395,15 @@ export const MOCK_MEMBERSHIPS: RoomMembership[] = [
   { roomId: 'room-general', memberId: 'charlie', role: 'MEMBER', joinedAt: ts(-4 * 24 * 60 * 60_000), lastReadAt: null, muted: false },
   // dave
   { roomId: 'room-general', memberId: 'dave', role: 'GUEST', joinedAt: ts(-2 * 24 * 60 * 60_000), lastReadAt: null, muted: false },
+  // DM memberships
+  { roomId: 'room-dm-alice', memberId: 'demo-user', role: 'MEMBER', joinedAt: ts(-5 * 24 * 60 * 60_000), lastReadAt: ts(60 * 60_000), muted: false },
+  { roomId: 'room-dm-alice', memberId: 'alice', role: 'MEMBER', joinedAt: ts(-5 * 24 * 60 * 60_000), lastReadAt: ts(62 * 60_000), muted: false },
+  { roomId: 'room-dm-bob', memberId: 'demo-user', role: 'MEMBER', joinedAt: ts(-4 * 24 * 60 * 60_000), lastReadAt: ts(58 * 60_000), muted: false },
+  { roomId: 'room-dm-bob', memberId: 'bob', role: 'MEMBER', joinedAt: ts(-4 * 24 * 60 * 60_000), lastReadAt: ts(58 * 60_000), muted: false },
+  { roomId: 'room-dm-charlie', memberId: 'demo-user', role: 'MEMBER', joinedAt: ts(-3 * 24 * 60 * 60_000), lastReadAt: ts(60 * 60_000), muted: false },
+  { roomId: 'room-dm-charlie', memberId: 'charlie', role: 'MEMBER', joinedAt: ts(-3 * 24 * 60 * 60_000), lastReadAt: ts(65 * 60_000), muted: false },
+  { roomId: 'room-dm-dave', memberId: 'demo-user', role: 'MEMBER', joinedAt: ts(-2 * 24 * 60 * 60_000), lastReadAt: ts(55 * 60_000), muted: false },
+  { roomId: 'room-dm-dave', memberId: 'dave', role: 'MEMBER', joinedAt: ts(-2 * 24 * 60 * 60_000), lastReadAt: ts(55 * 60_000), muted: false },
 ]
 
 // ─── #general messages (50) ───────────────────────────────────────────────────
@@ -358,6 +436,10 @@ const generalMessages: ChatMessage[] = [
     clientMsgId: 'cmid-gen-001',
     contentVersion: 1,
     version: 1,
+    reactions: [
+      { emoji: '👍', userIds: ['alice', 'bob', 'demo-user'] },
+      { emoji: '🎉', userIds: ['charlie'] },
+    ],
   },
   // msg 2 — bold text
   {
@@ -375,6 +457,7 @@ const generalMessages: ChatMessage[] = [
     clientMsgId: 'cmid-gen-002',
     contentVersion: 1,
     version: 1,
+    reactions: [{ emoji: '❤️', userIds: ['alice'] }],
   },
   // msg 3 — italic text
   {

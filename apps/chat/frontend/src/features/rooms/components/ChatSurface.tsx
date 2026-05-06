@@ -6,11 +6,13 @@ import { MessageComposer } from '@/features/composer/components/MessageComposer'
 import { LoadingSpinner } from '@/features/messages/components/LoadingSpinner'
 import { EmptyMessages } from '@/features/messages/components/EmptyMessages'
 import { ErrorMessage } from '@/features/messages/components/ErrorMessage'
-import type { ChatMember, ChatMessage, MessageAttachment, RoomId } from '@/types/chat'
+import type { ChatMember, ChatMessage, MessageAttachment, RoomId, RoomType } from '@/types/chat'
 
 interface ChatSurfaceProps {
   roomId: RoomId
   roomName: string
+  roomType?: RoomType
+  peerMember?: ChatMember
   topic?: string
   messages: ChatMessage[]
   members: ChatMember[]
@@ -22,11 +24,17 @@ interface ChatSurfaceProps {
   fetchNextPage?: () => void
   threadPanel?: ReactNode
   onSend: (content: SerializedEditorState, plainText: string, attachments?: MessageAttachment[]) => void
+  onMembersToggle?: () => void
+  membersOpen?: boolean
+  /** Optional message id from `?m=` query param — MessageList scrolls + flashes on mount. */
+  targetMessageId?: string | null
 }
 
 export function ChatSurface({
   roomId,
   roomName,
+  roomType,
+  peerMember,
   topic,
   messages,
   members,
@@ -38,11 +46,14 @@ export function ChatSurface({
   fetchNextPage,
   threadPanel,
   onSend,
+  onMembersToggle,
+  membersOpen,
+  targetMessageId,
 }: ChatSurfaceProps) {
   return (
     <div className="flex h-full min-h-0">
       <div className="flex min-h-0 flex-1 flex-col">
-        <RoomHeader roomName={roomName} topic={topic} />
+        <RoomHeader roomName={roomName} roomType={roomType} peerMember={peerMember} topic={topic} onMembersToggle={onMembersToggle} membersOpen={membersOpen} />
         <div className="flex min-h-0 flex-1 flex-col">
           {messagesLoading ? (
             <LoadingSpinner label="Loading messages" className="flex-1" />
@@ -52,6 +63,7 @@ export function ChatSurface({
             <EmptyMessages />
           ) : (
             <MessageList
+              key={roomId}
               roomId={roomId}
               flatMessages={messages}
               members={members}
@@ -59,6 +71,7 @@ export function ChatSurface({
               isFetchingNextPage={isFetchingNextPage}
               fetchNextPage={fetchNextPage}
               lastReadAt={lastReadAt}
+              targetMessageId={targetMessageId}
             />
           )}
         </div>

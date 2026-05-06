@@ -1,12 +1,14 @@
-import { useCallback, useRef } from 'react'
 import {
-  UniversalMessageComposer,
   type ComposerSendPayload,
+  type MentionQuery,
+  UniversalMessageComposer,
 } from '@dashway/chat-ui'
 import type { SerializedEditorState } from 'lexical'
+import { useCallback, useRef } from 'react'
+import { useDirectory } from '@/app/providers/DataSourceProvider'
 import type { MessageAttachment, RoomId } from '@/types/chat'
 import { useDraft } from '../hooks/useDraft'
-import { searchMockMentionTargets } from '../mock/mockMentionTargets'
+import { buildMentionTargets } from '../mock/mockMentionTargets'
 
 interface Props {
   roomId: RoomId
@@ -22,9 +24,19 @@ interface Props {
 // the source File around and mint message-owned blob URLs at send time.
 const fileKey = (name: string, size: number) => `${name}|${size}`
 
-export function MessageComposer({ roomId, onSend, placeholder = 'Message this channel...' }: Props) {
+export function MessageComposer({
+  roomId,
+  onSend,
+  placeholder = 'Message this channel...',
+}: Props) {
+  const directory = useDirectory()
   const { savedDraft, debouncedSave } = useDraft(roomId)
   const fileCacheRef = useRef<Map<string, File>>(new Map())
+
+  const mentionSearch = useCallback(
+    (query: MentionQuery) => buildMentionTargets(directory, query),
+    [directory],
+  )
 
   const handleFilesSelected = useCallback((files: File[]) => {
     for (const f of files) {
@@ -46,7 +58,11 @@ export function MessageComposer({ roomId, onSend, placeholder = 'Message this ch
           url,
         }
       })
-      return onSend(payload.content, payload.plainText, attachments.length > 0 ? attachments : undefined)
+      return onSend(
+        payload.content,
+        payload.plainText,
+        attachments.length > 0 ? attachments : undefined,
+      )
     },
     [onSend],
   )
@@ -55,7 +71,7 @@ export function MessageComposer({ roomId, onSend, placeholder = 'Message this ch
     <UniversalMessageComposer
       composerId={`composer-${roomId}`}
       initialState={savedDraft}
-      mentionSearch={searchMockMentionTargets}
+      mentionSearch={mentionSearch}
       onDraftChange={debouncedSave}
       onFilesSelected={handleFilesSelected}
       onSend={handleSend}
