@@ -1,3 +1,5 @@
+server.port: 12001
+
 spring:
   application:
     name: chat
@@ -6,7 +8,7 @@ spring:
     driver-class-name: org.postgresql.Driver
     username: context_api
     password: context_api
-    url: jdbc:postgresql://localhost:5432/chat
+    url: jdbc:postgresql://localhost:5432/dashway
 
   jpa:
     hibernate:
@@ -20,3 +22,6 @@ chat:
 dashway:
   config:
     path: ${DASHWAY_CONFIG_PATH:}
+logging:
+  level:
+    root: debug

@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat WebSocket Test</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111315;
+      --panel: #1b1f23;
+      --panel-2: #232830;
+      --border: #38414a;
+      --text: #e8edf2;
+      --muted: #aab3bd;
+      --accent: #4f8cff;
+      --ok: #31c48d;
+      --warn: #f9b115;
+      --bad: #f05252;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(1120px, calc(100vw - 32px));
+      margin: 24px auto;
+      display: grid;
+      gap: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 10px 12px;
+      font: inherit;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 86px;
+      resize: vertical;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgb(79 140 255 / 20%);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 9px 12px;
+      font: inherit;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: white;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      background: var(--panel-2);
+      font-weight: 650;
+    }
+
+    .status.open {
+      border-color: rgb(49 196 141 / 50%);
+      color: var(--ok);
+    }
+
+    .status.error {
+      border-color: rgb(240 82 82 / 50%);
+      color: var(--bad);
+    }
+
+    pre {
+      min-height: 320px;
+      max-height: 520px;
+      overflow: auto;
+      margin: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #0b0d10;
+      color: #d7dde5;
+      padding: 12px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .incoming {
+      color: var(--ok);
+    }
+
+    .outgoing {
+      color: var(--warn);
+    }
+
+    .error-line {
+      color: var(--bad);
+    }
+
+    @media (max-width: 760px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Chat WebSocket Test</h1>
+
+  <section class="panel">
+    <div class="grid">
+      <label>
+        WebSocket URL
+        <input id="wsUrl" value="">
+      </label>
+      <label>
+        Room ID
+        <input id="roomId" placeholder="181beed4-d5e1-468a-ac85-fde9b45cf5ff">
+      </label>
+    </div>
+
+    <label>
+      Authorization
+      <input id="authorization" placeholder="Bearer access-token">
+    </label>
+
+    <label>
+      Message
+      <textarea id="content">hello</textarea>
+    </label>
+
+    <div class="actions">
+      <button id="connectBtn" class="primary">Connect WS</button>
+      <button id="stompConnectBtn" disabled>STOMP CONNECT</button>
+      <button id="subscribeBtn" disabled>SUBSCRIBE</button>
+      <button id="sendBtn" disabled>SEND</button>
+      <button id="disconnectBtn" disabled>Disconnect</button>
+      <button id="clearBtn">Clear</button>
+      <span id="status" class="status">idle</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <pre id="log"></pre>
+  </section>
+</main>
+
+<script>
+  const wsUrlInput = document.querySelector("#wsUrl");
+  const authorizationInput = document.querySelector("#authorization");
+  const roomIdInput = document.querySelector("#roomId");
+  const contentInput = document.querySelector("#content");
+  const connectBtn = document.querySelector("#connectBtn");
+  const stompConnectBtn = document.querySelector("#stompConnectBtn");
+  const subscribeBtn = document.querySelector("#subscribeBtn");
+  const sendBtn = document.querySelector("#sendBtn");
+  const disconnectBtn = document.querySelector("#disconnectBtn");
+  const clearBtn = document.querySelector("#clearBtn");
+  const statusEl = document.querySelector("#status");
+  const logEl = document.querySelector("#log");
+
+  const defaultWsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
+  wsUrlInput.value = `${defaultWsProtocol}//${location.host}/ws/chat`;
+
+  let ws = null;
+  let stompConnected = false;
+
+  function setStatus(text, type) {
+    statusEl.textContent = text;
+    statusEl.className = `status ${type || ""}`.trim();
+  }
+
+  function escapeHtml(value) {
+    return value
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;");
+  }
+
+  function appendLog(label, data, className) {
+    const cleanData = String(data).replaceAll("\x00", "\\0");
+    const time = new Date().toLocaleTimeString();
+    logEl.innerHTML += `<span class="${className || ""}">[${time}] ${label}</span>\n${escapeHtml(cleanData)}\n\n`;
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function normalizeAuthorization(value) {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return "";
+    }
+    return trimmed.toLowerCase().startsWith("bearer ") ? trimmed : `Bearer ${trimmed}`;
+  }
+
+  function stompFrame(command, headers, body) {
+    const headerLines = Object.entries(headers)
+      .filter(([, value]) => value !== undefined && value !== null && String(value).length > 0)
+      .map(([key, value]) => `${key}:${value}`)
+      .join("\n");
+
+    return `${command}\n${headerLines}\n\n${body || ""}\x00`;
+  }
+
+  function currentRoomId() {
+    return roomIdInput.value.trim();
+  }
+
+  function ensureSocket() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      appendLog("ERROR", "WebSocket is not open.", "error-line");
+      return false;
+    }
+    return true;
+  }
+
+  function sendFrame(command, headers, body) {
+    if (!ensureSocket()) {
+      return;
+    }
+    const frame = stompFrame(command, headers, body);
+    ws.send(frame);
+    appendLog("OUT", frame, "outgoing");
+  }
+
+  connectBtn.addEventListener("click", () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      appendLog("ERROR", "WebSocket is already open.", "error-line");
+      return;
+    }
+
+    ws = new WebSocket(wsUrlInput.value.trim());
+    setStatus("connecting", "");
+
+    ws.addEventListener("open", () => {
+      setStatus("ws open", "open");
+      stompConnectBtn.disabled = false;
+      disconnectBtn.disabled = false;
+      connectBtn.disabled = true;
+      appendLog("INFO", `Connected to ${ws.url}`);
+    });
+
+    ws.addEventListener("message", (event) => {
+      appendLog("IN", event.data, "incoming");
+      if (String(event.data).startsWith("CONNECTED")) {
+        stompConnected = true;
+        subscribeBtn.disabled = false;
+        sendBtn.disabled = false;
+        setStatus("stomp connected", "open");
+      }
+      if (String(event.data).startsWith("ERROR")) {
+        setStatus("stomp error", "error");
+      }
+    });
+
+    ws.addEventListener("error", () => {
+      setStatus("ws error", "error");
+      appendLog("ERROR", "WebSocket error.", "error-line");
+    });
+
+    ws.addEventListener("close", (event) => {
+      stompConnected = false;
+      connectBtn.disabled = false;
+      stompConnectBtn.disabled = true;
+      subscribeBtn.disabled = true;
+      sendBtn.disabled = true;
+      disconnectBtn.disabled = true;
+      setStatus(`closed ${event.code}`, event.code === 1000 ? "" : "error");
+      appendLog("INFO", `Closed: code=${event.code}, reason=${event.reason || "(empty)"}`);
+    });
+  });
+
+  stompConnectBtn.addEventListener("click", () => {
+    const authorization = normalizeAuthorization(authorizationInput.value);
+    if (!authorization) {
+      appendLog("ERROR", "Authorization is required.", "error-line");
+      return;
+    }
+
+    sendFrame("CONNECT", {
+      "accept-version": "1.2",
+      "host": location.host || "localhost",
+      "Authorization": authorization,
+    });
+  });
+
+  subscribeBtn.addEventListener("click", () => {
+    if (!stompConnected) {
+      appendLog("ERROR", "STOMP is not connected.", "error-line");
+      return;
+    }
+    const roomId = currentRoomId();
+    if (!roomId) {
+      appendLog("ERROR", "Room ID is required.", "error-line");
+      return;
+    }
+
+    sendFrame("SUBSCRIBE", {
+      "id": "sub-0",
+      "destination": `/topic/chat/rooms/${roomId}/messages`,
+    });
+  });
+
+  sendBtn.addEventListener("click", () => {
+    if (!stompConnected) {
+      appendLog("ERROR", "STOMP is not connected.", "error-line");
+      return;
+    }
+    const roomId = currentRoomId();
+    if (!roomId) {
+      appendLog("ERROR", "Room ID is required.", "error-line");
+      return;
+    }
+
+    sendFrame("SEND", {
+      "destination": `/app/chat/rooms/${roomId}/messages`,
+      "content-type": "application/json",
+    }, JSON.stringify({ content: contentInput.value }));
+  });
+
+  disconnectBtn.addEventListener("click", () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      if (stompConnected) {
+        sendFrame("DISCONNECT", {});
+      }
+      ws.close(1000, "manual close");
+    }
+  });
+
+  clearBtn.addEventListener("click", () => {
+    logEl.textContent = "";
+  });
+</script>
+</body>
+</html>

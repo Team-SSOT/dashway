@@ -1,15 +1,7 @@
 package ai.ssot.chat.domain.chat.service
 
-import ai.ssot.chat.domain.chat.dto.ChatRoomDto
-import ai.ssot.chat.domain.chat.dto.CreateChatRoomDto
-import ai.ssot.chat.domain.chat.dto.ChatRoomMemberDto
-import ai.ssot.chat.domain.chat.dto.toDto
-import ai.ssot.chat.domain.chat.dto.toDtos
-import ai.ssot.chat.domain.chat.entity.ChatRoom
-import ai.ssot.chat.domain.chat.entity.ChatRoomMember
-import ai.ssot.chat.domain.chat.entity.ChatRoomMemberId
-import ai.ssot.chat.domain.chat.entity.ChatRoomRole
-import ai.ssot.chat.domain.chat.entity.ChatRoomType
+import ai.ssot.chat.domain.chat.dto.*
+import ai.ssot.chat.domain.chat.entity.*
 import ai.ssot.chat.domain.chat.exception.InvalidChatRoomRequestException
 import ai.ssot.chat.domain.chat.repository.ChatRoomMemberRepository
 import ai.ssot.chat.domain.chat.repository.ChatRoomRepository
@@ -19,8 +11,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.time.OffsetDateTime
-import java.util.HexFormat
-import java.util.UUID
+import java.util.*
 
 @Service
 class ChatRoomService(
@@ -60,6 +51,17 @@ class ChatRoomService(
         return chatRoomMemberRepository.findAllByRoomIds(roomIds)
             .groupBy { it.id.roomId }
             .mapValues { (_, members) -> members.toDtos() }
+    }
+
+    @Transactional(readOnly = true)
+    fun validateActiveRoomMember(roomId: UUID, memberId: Long) {
+        if (!chatRoomRepository.existsByIdAndIsEnabledTrueAndIsDeletedFalse(roomId)) {
+            throw InvalidChatRoomRequestException("Chat room not found.")
+        }
+
+        if (!chatRoomMemberRepository.existsByIdRoomIdAndIdMemberId(roomId, memberId)) {
+            throw InvalidChatRoomRequestException("Chat room member is required.")
+        }
     }
 
     private fun validateParticipants(creatorMemberId: Long, participantMemberIds: List<Long>) {
