@@ -17,6 +17,12 @@ importers:
 
   apps/chat/frontend:
     dependencies:
+      '@dashway/app-protocol':
+        specifier: workspace:*
+        version: link:../../../packages/app-protocol
+      '@dashway/app-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/app-sdk
       '@dashway/chat-ui':
         specifier: workspace:*
         version: link:../../../packages/chat-ui

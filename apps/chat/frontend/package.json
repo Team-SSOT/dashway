@@ -11,6 +11,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@dashway/app-protocol": "workspace:*",
+    "@dashway/app-sdk": "workspace:*",
     "@dashway/chat-ui": "workspace:*",
     "@dashway/design-tokens": "workspace:*",
     "@lexical/code": "0.43.0",
