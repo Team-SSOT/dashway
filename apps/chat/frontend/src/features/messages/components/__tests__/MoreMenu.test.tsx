@@ -31,7 +31,7 @@ describe('buildMessageLink', () => {
       { id: 'msg-x', roomId: 'room-general', threadParentId: null },
       'http://localhost:5173',
     )
-    expect(url).toBe('http://localhost:5173/c/room-general?m=msg-x')
+    expect(url).toBe('http://localhost:5173/chat/room-general?m=msg-x')
   })
 
   it('uses /thread/:parentId for thread replies', () => {
@@ -39,7 +39,7 @@ describe('buildMessageLink', () => {
       { id: 'msg-r1', roomId: 'room-general', threadParentId: 'msg-parent' },
       'http://localhost:5173',
     )
-    expect(url).toBe('http://localhost:5173/c/room-general/thread/msg-parent')
+    expect(url).toBe('http://localhost:5173/chat/room-general/thread/msg-parent')
   })
 })
 

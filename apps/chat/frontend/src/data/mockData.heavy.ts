@@ -124,7 +124,7 @@ pnpm --filter chat-frontend dev
 # In devtools console:
 __chatMocks.loadHeavyDataset()
 
-# Navigate to /c/heavy and record a performance trace
+# Navigate to /chat/heavy and record a performance trace
 # Target: long tasks < 5% of scroll duration`,
   },
   {

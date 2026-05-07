@@ -29,7 +29,7 @@ function prefersReducedMotion() {
  * the room messages cache, subscribes to thread realtime, and renders:
  *   [header with participants stack] [parent message] [replies] [composer].
  *
- * Escape closes the panel and navigates back to `/c/:roomId`.
+ * Escape closes the panel and navigates back to `/chat/:roomId`.
  */
 export function ThreadPanel() {
   const { roomId, msgId } = useParams<{ roomId: string; msgId: string }>()
@@ -88,7 +88,7 @@ export function ThreadPanel() {
   }, [])
 
   const navigateToRoom = useCallback(() => {
-    if (roomId) navigate(`/c/${roomId}`)
+    if (roomId) navigate(`/chat/${roomId}`)
   }, [navigate, roomId])
 
   const closeThread = useCallback(() => {

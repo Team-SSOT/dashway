@@ -62,7 +62,7 @@ export function CreateChannelDialog({
     setError(null)
     try {
       const room = await createChannel.mutateAsync({ name: raw })
-      navigate(`/c/${room.id}`)
+      navigate(`/chat/${room.id}`)
       handleOpenChange(false)
     } catch (err) {
       const chatErr = err as { message?: string }

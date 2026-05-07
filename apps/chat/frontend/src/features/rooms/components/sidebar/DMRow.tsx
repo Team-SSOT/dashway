@@ -12,7 +12,7 @@ export function DMRow({ room }: { room: ChatRoom }) {
 
   return (
     <NavLink
-      to={`/c/${room.id}`}
+      to={`/chat/${room.id}`}
       className={({ isActive }) =>
         cn(
           'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',

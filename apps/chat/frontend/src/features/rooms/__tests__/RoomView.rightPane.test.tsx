@@ -17,8 +17,8 @@ function makeQC() {
 }
 
 const routes = [
-  { path: '/c/:roomId', element: <RoomView /> },
-  { path: '/c/:roomId/thread/:msgId', element: <RoomView /> },
+  { path: '/chat/:roomId', element: <RoomView /> },
+  { path: '/chat/:roomId/thread/:msgId', element: <RoomView /> },
 ]
 
 function renderWithRouter(initialPath: string, qc = makeQC()) {
@@ -47,7 +47,7 @@ describe('RoomView right-pane arbitration', () => {
 
   // AC#1: Members button toggles MembersPanel and rightPaneMode
   it('AC#1: clicking Members button opens panel and sets rightPaneMode to members; clicking again closes', async () => {
-    renderWithRouter('/c/room-general')
+    renderWithRouter('/chat/room-general')
 
     expect(useUiStore.getState().rightPaneMode).toBe('closed')
 
@@ -66,7 +66,7 @@ describe('RoomView right-pane arbitration', () => {
 
   // AC#2: members open → navigate to thread → rightPaneMode becomes 'thread'
   it('AC#2: navigating to thread route while members open switches rightPaneMode to thread', async () => {
-    const { router } = renderWithRouter('/c/room-general')
+    const { router } = renderWithRouter('/chat/room-general')
 
     // Open members panel
     const membersBtn = await screen.findByRole('button', { name: 'Members' })
@@ -74,7 +74,7 @@ describe('RoomView right-pane arbitration', () => {
     await waitFor(() => expect(useUiStore.getState().rightPaneMode).toBe('members'))
 
     // Navigate imperatively to thread route — same router instance, no remount
-    await router.navigate('/c/room-general/thread/msg-general-005')
+    await router.navigate('/chat/room-general/thread/msg-general-005')
 
     await waitFor(() => expect(useUiStore.getState().rightPaneMode).toBe('thread'))
     await waitFor(() => expect(screen.queryByRole('heading', { name: /^members/i })).toBeNull())
@@ -84,18 +84,18 @@ describe('RoomView right-pane arbitration', () => {
 
   // AC#3: thread → back to room → rightPaneMode becomes 'closed'
   it('AC#3: navigating from thread back to room sets rightPaneMode to closed', async () => {
-    const { router } = renderWithRouter('/c/room-general/thread/msg-general-005')
+    const { router } = renderWithRouter('/chat/room-general/thread/msg-general-005')
 
     await waitFor(() => expect(useUiStore.getState().rightPaneMode).toBe('thread'))
 
-    await router.navigate('/c/room-general')
+    await router.navigate('/chat/room-general')
 
     await waitFor(() => expect(useUiStore.getState().rightPaneMode).toBe('closed'))
   })
 
   // AC#3 supplement: rightPaneMode ends up in 'thread' only via RoomView's effect (not ThreadPanel)
   it('ThreadPanel does not write rightPaneMode directly — store reaches thread only via RoomView effect', async () => {
-    renderWithRouter('/c/room-general/thread/msg-general-005')
+    renderWithRouter('/chat/room-general/thread/msg-general-005')
     await waitFor(() => expect(useUiStore.getState().rightPaneMode).toBe('thread'))
     expect(useUiStore.getState().rightPaneMode).toBe('thread')
   })

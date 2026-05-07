@@ -24,7 +24,7 @@ interface Props {
   compact: boolean
   membersById?: Record<string, ChatMember>
   /** Room the message lives in. When provided, reply-in-thread + "N replies"
-   *  navigate to `/c/:roomId/thread/:msgId`. Omitted in thread panel rendering
+   *  navigate to `/chat/:roomId/thread/:msgId`. Omitted in thread panel rendering
    *  (the parent + replies inside a thread don't start a second nested one). */
   roomId?: RoomId
 }
@@ -36,7 +36,7 @@ const stubBookmark = (id: string) => console.log('[bookmark]', id)
 export function MessageItem({ message, author, compact, membersById, roomId }: Props) {
   const navigate = useNavigate()
   const openThread = () => {
-    if (roomId) navigate(`/c/${roomId}/thread/${message.id}`)
+    if (roomId) navigate(`/chat/${roomId}/thread/${message.id}`)
   }
 
   const toggle = useToggleReaction(message.roomId)

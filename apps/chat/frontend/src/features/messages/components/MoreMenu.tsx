@@ -20,9 +20,9 @@ interface Props {
 
 export function buildMessageLink(message: Pick<ChatMessage, 'id' | 'roomId' | 'threadParentId'>, origin: string): string {
   if (message.threadParentId) {
-    return `${origin}/c/${message.roomId}/thread/${message.threadParentId}`
+    return `${origin}/chat/${message.roomId}/thread/${message.threadParentId}`
   }
-  return `${origin}/c/${message.roomId}?m=${message.id}`
+  return `${origin}/chat/${message.roomId}?m=${message.id}`
 }
 
 async function copy(text: string): Promise<void> {
