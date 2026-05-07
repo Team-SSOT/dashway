@@ -1,4 +1,4 @@
-import { Bell, Search } from '@dashway/ui/icons'
+import { Bell, Search, Settings } from '@dashway/ui/icons'
 import { useShellStore } from '../model/shell-store'
 
 const TRAFFIC_LIGHT_RESERVE_PX = 80
@@ -12,8 +12,17 @@ function detectPlatform(): 'darwin' | 'win32' | 'linux' {
 }
 
 export function Topbar() {
-  const { workspaces, activeWorkspaceId, currentMember, toggleCommandPalette } = useShellStore()
+  const {
+    workspaces,
+    activeWorkspaceId,
+    currentMember,
+    rightPanelOpen,
+    rightPanelContent,
+    toggleCommandPalette,
+    toggleRightPanel,
+  } = useShellStore()
   const platform = detectPlatform()
+  const settingsActive = rightPanelOpen && rightPanelContent === 'settings'
 
   const reserveLeft = platform === 'darwin' ? TRAFFIC_LIGHT_RESERVE_PX : 0
   const activeWorkspace = workspaces.find((ws) => ws.id === activeWorkspaceId)
@@ -48,6 +57,16 @@ export function Topbar() {
       <div className="topbar__right no-drag">
         <button type="button" className="topbar__icon-btn" aria-label="Notifications">
           <Bell size={16} />
+        </button>
+        <button
+          type="button"
+          className="topbar__icon-btn"
+          data-active={settingsActive}
+          onClick={() => toggleRightPanel('settings')}
+          aria-label="Settings"
+          aria-pressed={settingsActive}
+        >
+          <Settings size={16} />
         </button>
         <button type="button" className="topbar__avatar" aria-label="Account">
           {currentMember?.name?.charAt(0).toUpperCase() ?? '?'}

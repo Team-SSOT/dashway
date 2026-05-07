@@ -2,6 +2,7 @@ export const IPC = {
   // Shell
   SHELL_GET_BOOTSTRAP: 'shell:get-bootstrap',
   SHELL_LOGIN: 'shell:login',
+  SHELL_SIGNUP: 'shell:signup',
   SHELL_LOGOUT: 'shell:logout',
   SHELL_GRAPHQL: 'shell:graphql',
   SHELL_SET_THEME: 'shell:set-theme',

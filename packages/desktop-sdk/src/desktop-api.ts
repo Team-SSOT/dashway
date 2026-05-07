@@ -4,6 +4,8 @@ import type {
   ShellGraphqlRequest,
   ShellGraphqlResponse,
   ShellLoginInput,
+  ShellMember,
+  ShellSignupInput,
   ThemeMode,
   WorkspaceConfig,
 } from '@dashway/config-schema'
@@ -16,6 +18,7 @@ export interface ServerProbeResult {
 export interface ShellAPI {
   getBootstrap(): Promise<ShellBootstrapResult>
   login(input: ShellLoginInput): Promise<ShellBootstrapReadyResult>
+  signup(input: ShellSignupInput): Promise<ShellMember>
   logout(): Promise<void>
   graphql(request: ShellGraphqlRequest): Promise<ShellGraphqlResponse>
   setTheme(mode: ThemeMode): Promise<void>

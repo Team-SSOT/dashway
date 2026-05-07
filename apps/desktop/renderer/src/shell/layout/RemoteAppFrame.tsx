@@ -28,8 +28,6 @@ export function RemoteAppFrame({ app, splat }: Props) {
   const [loadError, setLoadError] = useState<string | null>(null)
 
   const navigate = useNavigate()
-  const setSidebarSpec = useShellStore((s) => s.setSidebarSpec)
-  const applySidebarPatch = useShellStore((s) => s.applySidebarPatch)
   const setAppRoute = useShellStore((s) => s.setAppRoute)
 
   const targetAppRoute = splatToAppRoute(splat)
@@ -62,8 +60,6 @@ export function RemoteAppFrame({ app, splat }: Props) {
         host.navigate(route)
         lastSentRef.current = route
       },
-      onSidebarReplace: (sidebar) => setSidebarSpec(app.id, sidebar),
-      onSidebarPatch: (ops) => applySidebarPatch(app.id, ops),
       onRouteChanged: (appRoute) => {
         lastReceivedRef.current = appRoute
         setAppRoute(app.id, appRoute)
@@ -81,7 +77,7 @@ export function RemoteAppFrame({ app, splat }: Props) {
       host.destroy()
       hostRef.current = null
     }
-  }, [app.id, app.entryUrl, applySidebarPatch, navigate, setAppRoute, setSidebarSpec])
+  }, [app.id, app.entryUrl, navigate, setAppRoute])
 
   // ② URL splat 변경 시 iframe에 navigate 송신.
   //    핸드셰이크 전/후 무관하게 시도(미수신은 onHello가 한 번 더 보냄).

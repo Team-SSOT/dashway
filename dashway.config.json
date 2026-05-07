@@ -19,6 +19,12 @@
       "port": 12001,
       "composeFile": "apps/chat/docker-compose.yml",
       "healthUrl": "http://127.0.0.1:12001/"
+    },
+    {
+      "name": "issue-tracker",
+      "port": 12000,
+      "composeFile": "apps/issue_tracker/docker-compose.yml",
+      "healthUrl": "http://127.0.0.1:12000/"
     }
   ]
 }

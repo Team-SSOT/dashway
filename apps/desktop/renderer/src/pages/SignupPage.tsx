@@ -1,15 +1,16 @@
-import type { ShellLoginInput } from '@dashway/config-schema'
+import type { ShellSignupInput } from '@dashway/config-schema'
 import type { FormEvent } from 'react'
 import { useEffect, useState } from 'react'
 
 interface Props {
   error?: string | null
   submitting?: boolean
-  onSubmit: (input: ShellLoginInput) => Promise<void>
-  onSwitchToSignup: () => void
+  onSubmit: (input: ShellSignupInput) => Promise<void>
+  onSwitchToSignin: () => void
 }
 
-export function LoginPage({ error, submitting = false, onSubmit, onSwitchToSignup }: Props) {
+export function SignupPage({ error, submitting = false, onSubmit, onSwitchToSignin }: Props) {
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [formError, setFormError] = useState<string | null>(error ?? null)
@@ -22,19 +23,20 @@ export function LoginPage({ error, submitting = false, onSubmit, onSwitchToSignu
     event.preventDefault()
     setFormError(null)
 
-    if (!email.trim() || !password) {
-      setFormError('Email and password are required.')
+    if (!name.trim() || !email.trim() || !password) {
+      setFormError('Name, email, and password are required.')
       return
     }
 
     try {
       await onSubmit({
+        name: name.trim(),
         email: email.trim(),
         password,
       })
     } catch (submitError) {
       const message =
-        submitError instanceof Error ? submitError.message : 'Could not complete sign in.'
+        submitError instanceof Error ? submitError.message : 'Could not complete sign up.'
       setFormError(message)
     }
   }
@@ -84,7 +86,7 @@ export function LoginPage({ error, submitting = false, onSubmit, onSwitchToSignu
             letterSpacing: '-0.05em',
           }}
         >
-          Sign in to load your graph
+          Create your account
         </h1>
         <p
           style={{
@@ -93,9 +95,38 @@ export function LoginPage({ error, submitting = false, onSubmit, onSwitchToSignu
             lineHeight: 1.6,
           }}
         >
-          The shell signs in first, restores your session in Electron main, then loads teams and
-          workspace state before rendering apps.
+          Sign up to provision a new member, then we'll sign you in and load your workspace.
         </p>
+
+        <label
+          htmlFor="name"
+          style={{
+            display: 'block',
+            fontSize: 14,
+            fontWeight: 600,
+            marginBottom: 8,
+          }}
+        >
+          Name
+        </label>
+        <input
+          id="name"
+          autoComplete="name"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          disabled={submitting}
+          style={{
+            width: '100%',
+            height: 46,
+            borderRadius: 14,
+            border: '1px solid color-mix(in srgb, var(--fg-3) 16%, transparent)',
+            background: 'color-mix(in srgb, var(--bg) 86%, transparent)',
+            color: 'var(--fg)',
+            padding: '0 14px',
+            marginBottom: 18,
+            outline: 'none',
+          }}
+        />
 
         <label
           htmlFor="email"
@@ -110,6 +141,7 @@ export function LoginPage({ error, submitting = false, onSubmit, onSwitchToSignu
         </label>
         <input
           id="email"
+          type="email"
           autoComplete="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
@@ -141,7 +173,7 @@ export function LoginPage({ error, submitting = false, onSubmit, onSwitchToSignu
         <input
           id="password"
           type="password"
-          autoComplete="current-password"
+          autoComplete="new-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           disabled={submitting}
@@ -185,7 +217,7 @@ export function LoginPage({ error, submitting = false, onSubmit, onSwitchToSignu
             cursor: submitting ? 'default' : 'pointer',
           }}
         >
-          {submitting ? 'Signing in...' : 'Sign in'}
+          {submitting ? 'Creating account...' : 'Create account'}
         </button>
 
         <p
@@ -196,10 +228,10 @@ export function LoginPage({ error, submitting = false, onSubmit, onSwitchToSignu
             fontSize: 14,
           }}
         >
-          Don't have an account?{' '}
+          Already have an account?{' '}
           <button
             type="button"
-            onClick={onSwitchToSignup}
+            onClick={onSwitchToSignin}
             disabled={submitting}
             style={{
               background: 'none',
@@ -212,7 +244,7 @@ export function LoginPage({ error, submitting = false, onSubmit, onSwitchToSignu
               fontSize: 'inherit',
             }}
           >
-            Sign up
+            Sign in
           </button>
         </p>
       </form>

@@ -1,0 +1,17 @@
+**/node_modules
+**/dist
+**/build
+**/.next
+**/out
+**/.gradle
+**/target
+**/.vite
+**/.cache
+.git
+.gitignore
+.vscode
+.idea
+**/*.log
+.env
+.env.*
+!.env.example
