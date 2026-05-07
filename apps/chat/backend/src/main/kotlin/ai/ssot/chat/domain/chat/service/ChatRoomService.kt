@@ -6,6 +6,7 @@ import ai.ssot.chat.domain.chat.exception.InvalidChatRoomRequestException
 import ai.ssot.chat.domain.chat.repository.ChatRoomMemberRepository
 import ai.ssot.chat.domain.chat.repository.ChatRoomRepository
 import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.nio.charset.StandardCharsets
@@ -43,14 +44,21 @@ class ChatRoomService(
     }
 
     @Transactional(readOnly = true)
-    fun getChatRoomMembers(roomIds: Set<UUID>): Map<UUID, List<ChatRoomMemberDto>> {
-        if (roomIds.isEmpty()) {
-            return emptyMap()
-        }
+    fun getChatRooms(memberId: Long, dto: ChatRoomSearchDto,): ChatRoomSearchResult {
 
-        return chatRoomMemberRepository.findAllByRoomIds(roomIds)
-            .groupBy { it.id.roomId }
-            .mapValues { (_, members) -> members.toDtos() }
+        val rooms = chatRoomRepository.findJoinedChatRooms(
+            memberId = memberId,
+            favoriteOnly = dto.favoriteOnly,
+            pageable = PageRequest.of(dto.page, dto.size),
+        )
+
+        return ChatRoomSearchResult(
+            rooms = rooms.content,
+            page = dto.page,
+            size = dto.size,
+            totalElements = rooms.totalElements,
+            totalPages = rooms.totalPages,
+        )
     }
 
     @Transactional(readOnly = true)
@@ -87,7 +95,7 @@ class ChatRoomService(
 
         val participantKeyHash = createParticipantKeyHash(participantMemberIds)
         chatRoomRepository.findByParticipantKeyHashAndIsDeletedFalse(participantKeyHash)
-            ?.let { return loadRoomDtoWithMembers(it) }
+            ?.let { return loadRoomDto(it) }
 
         return try {
             createRoomWithMembers(
@@ -100,7 +108,7 @@ class ChatRoomService(
             )
         } catch (exception: DataIntegrityViolationException) {
             chatRoomRepository.findByParticipantKeyHashAndIsDeletedFalse(participantKeyHash)
-                ?.let(::loadRoomDtoWithMembers)
+                ?.let { loadRoomDto(it) }
                 ?: throw exception
         }
     }
@@ -158,11 +166,13 @@ class ChatRoomService(
         }
         chatRoomMemberRepository.saveAllAndFlush(members)
 
-        return room.toDto(members)
+        return room.toDto()
     }
 
-    private fun loadRoomDtoWithMembers(room: ChatRoom): ChatRoomDto =
-        room.toDto(chatRoomMemberRepository.findAllByIdRoomId(requireNotNull(room.id)))
+    private fun loadRoomDto(
+        room: ChatRoom,
+    ): ChatRoomDto =
+        room.toDto()
 
     private fun createParticipantKeyHash(participantMemberIds: List<Long>): String {
         val key = participantMemberIds.sorted().joinToString(separator = ":")
@@ -171,3 +181,5 @@ class ChatRoomService(
         return HexFormat.of().formatHex(digest)
     }
 }
+
+private const val MAX_CHAT_ROOM_SEARCH_SIZE = 100

@@ -5,6 +5,7 @@ plugins {
     kotlin("plugin.jpa") version "2.2.21"
     id("org.springframework.boot") version "4.0.5"
     id("io.spring.dependency-management") version "1.1.7"
+    id("com.google.devtools.ksp") version "2.2.21-2.0.5"
 }
 
 group = "ai.ssot"
@@ -31,6 +32,9 @@ dependencies {
     implementation("com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("tools.jackson.module:jackson-module-kotlin")
+    implementation("io.github.openfeign.querydsl:querydsl-jpa:7.0")
+    ksp("io.github.openfeign.querydsl:querydsl-ksp-codegen:7.0")
+    annotationProcessor("io.github.openfeign.querydsl:querydsl-apt:7.0:jakarta")
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")

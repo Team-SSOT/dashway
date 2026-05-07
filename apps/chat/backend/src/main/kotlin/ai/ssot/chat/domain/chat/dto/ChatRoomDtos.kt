@@ -1,11 +1,12 @@
 package ai.ssot.chat.domain.chat.dto
 
-import ai.ssot.chat.domain.chat.entity.ChatRoomRole
-import ai.ssot.chat.domain.chat.entity.ChatRoomType
 import ai.ssot.chat.domain.chat.entity.ChatRoom
 import ai.ssot.chat.domain.chat.entity.ChatRoomMember
+import ai.ssot.chat.domain.chat.entity.ChatRoomRole
+import ai.ssot.chat.domain.chat.entity.ChatRoomType
+import com.querydsl.core.annotations.QueryProjection
 import java.time.OffsetDateTime
-import java.util.UUID
+import java.util.*
 
 data class CreateChatRoomDto(
     val type: ChatRoomType,
@@ -14,12 +15,26 @@ data class CreateChatRoomDto(
     val participantMemberIds: List<Long>,
 )
 
-data class ChatRoomDto(
+data class ChatRoomSearchDto(
+    val page: Int,
+    val size: Int,
+    val favoriteOnly: Boolean,
+)
+
+data class ChatRoomSearchResult(
+    val rooms: List<ChatRoomDto>,
+    val page: Int,
+    val size: Int,
+    val totalElements: Long,
+    val totalPages: Int,
+)
+
+data class ChatRoomDto @QueryProjection constructor(
     val id: UUID,
     val type: ChatRoomType,
     val isPublic: Boolean,
     val title: String?,
-    val members: List<ChatRoomMemberDto>,
+    val isFavorite: Boolean,
     val createdDatetime: OffsetDateTime,
     val updatedDatetime: OffsetDateTime,
 )
@@ -30,13 +45,13 @@ data class ChatRoomMemberDto(
     val joinedDatetime: OffsetDateTime,
 )
 
-fun ChatRoom.toDto(members: List<ChatRoomMember>): ChatRoomDto =
+fun ChatRoom.toDto(isFavorite: Boolean = false): ChatRoomDto =
     ChatRoomDto(
         id = requireNotNull(id),
         type = type,
         isPublic = isPublic,
         title = title,
-        members = members.toDtos(),
+        isFavorite = isFavorite,
         createdDatetime = createdDatetime,
         updatedDatetime = updatedDatetime,
     )

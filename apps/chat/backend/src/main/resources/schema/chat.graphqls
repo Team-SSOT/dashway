@@ -39,7 +39,6 @@ type ChatRoom {
     type: ChatRoomType!
     isPublic: Boolean!
     title: String
-    isMember: Boolean!
     isFavorite: Boolean!
     canDelete: Boolean!
     memberCount: Int!
