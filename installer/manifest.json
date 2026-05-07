@@ -12,5 +12,16 @@
     "healthUrl": "http://127.0.0.1:8080/internal/install/health",
     "bootstrapUrl": "http://127.0.0.1:8080/internal/install/bootstrap"
   },
-  "apps": []
+  "apps": [
+    {
+      "id": "chat",
+      "displayName": "Chat",
+      "composeFile": "apps/chat/docker-compose.yml",
+      "catalog": {
+        "id": "de7db37f-0800-4403-9735-6fbb5b45243f",
+        "name": "chat",
+        "port": 12001
+      }
+    }
+  ]
 }
