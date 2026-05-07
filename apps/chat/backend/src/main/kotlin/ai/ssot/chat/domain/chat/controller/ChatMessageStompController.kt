@@ -2,7 +2,6 @@ package ai.ssot.chat.domain.chat.controller
 
 import ai.ssot.chat.config.auth.memberId
 import ai.ssot.chat.domain.chat.dto.ChatMessageDto
-import ai.ssot.chat.domain.chat.dto.CreateChatMessageDto
 import ai.ssot.chat.domain.chat.service.ChatMessageService
 import org.springframework.messaging.handler.annotation.DestinationVariable
 import org.springframework.messaging.handler.annotation.MessageMapping
@@ -27,7 +26,7 @@ class ChatMessageStompController(
         val message = chatMessageService.createChatMessage(
             memberId = principal.memberId(),
             roomId = roomId,
-            dto = command.toDto(),
+            content = command.content?.trim() ?: "",
         )
 
         messagingTemplate.convertAndSend(
@@ -54,16 +53,13 @@ data class ChatMessagePayload(
     val createdDatetime: OffsetDateTime,
 )
 
-fun SendChatMessageCommand.toDto(): CreateChatMessageDto =
-    CreateChatMessageDto(content = content.orEmpty())
-
 fun ChatMessageDto.toCreatedPayload(): ChatMessageCreatedPayload =
     ChatMessageCreatedPayload(
         eventType = MESSAGE_CREATED_EVENT_TYPE,
         message = ChatMessagePayload(
             id = id.toString(),
             roomId = roomId.toString(),
-            senderMemberId = senderMemberId,
+            senderMemberId = memberId,
             content = content,
             createdDatetime = createdDatetime,
         ),

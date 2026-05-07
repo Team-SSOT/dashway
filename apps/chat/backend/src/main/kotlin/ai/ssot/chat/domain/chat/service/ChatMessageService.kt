@@ -1,7 +1,7 @@
 package ai.ssot.chat.domain.chat.service
 
+import ai.ssot.chat.domain.chat.dto.ChatMessageCursorResult
 import ai.ssot.chat.domain.chat.dto.ChatMessageDto
-import ai.ssot.chat.domain.chat.dto.CreateChatMessageDto
 import ai.ssot.chat.domain.chat.dto.toDto
 import ai.ssot.chat.domain.chat.entity.ChatMessage
 import ai.ssot.chat.domain.chat.exception.InvalidChatRoomRequestException
@@ -17,13 +17,11 @@ class ChatMessageService(
     private val chatMessageRepository: ChatMessageRepository,
 ) {
     @Transactional
-    fun createChatMessage(
-        memberId: Long,
-        roomId: UUID,
-        dto: CreateChatMessageDto,
-    ): ChatMessageDto {
-        val content = dto.content.trim()
-        validateContent(content)
+    fun createChatMessage(memberId: Long, roomId: UUID, content: String, ): ChatMessageDto {
+        if (content.isBlank()) {
+            throw InvalidChatRoomRequestException("content is required.")
+        }
+
         chatRoomService.validateActiveRoomMember(roomId = roomId, memberId = memberId)
 
         return chatMessageRepository.saveAndFlush(
@@ -36,15 +34,8 @@ class ChatMessageService(
         ).toDto()
     }
 
-    private fun validateContent(content: String) {
-        if (content.isBlank()) {
-            throw InvalidChatRoomRequestException("content is required.")
-        }
-
-        if (content.length > MAX_MESSAGE_CONTENT_LENGTH) {
-            throw InvalidChatRoomRequestException("content must be 4000 characters or less.")
-        }
+    fun findCursorResult(roomId: UUID, size: Int, cursor: Long? = null): ChatMessageCursorResult {
+        return chatMessageRepository.findCursorResultByRoomId(roomId, size, cursor)
     }
 }
 
-private const val MAX_MESSAGE_CONTENT_LENGTH = 4000

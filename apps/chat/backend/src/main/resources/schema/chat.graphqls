@@ -59,7 +59,7 @@ type ChatRoomPage {
 }
 
 type ChatMessage {
-    id: String!
+    id: Long!
     roomId: String!
     memberId: Long!
     content: String

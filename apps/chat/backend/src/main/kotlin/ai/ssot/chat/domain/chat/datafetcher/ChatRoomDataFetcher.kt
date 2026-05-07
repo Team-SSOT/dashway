@@ -14,7 +14,7 @@ import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
 
 @DgsComponent
-class ChatDataFetcher(
+class ChatRoomDataFetcher(
     private val chatRoomService: ChatRoomService,
 ) {
     @DgsQuery
