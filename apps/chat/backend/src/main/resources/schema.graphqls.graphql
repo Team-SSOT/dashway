@@ -15,7 +15,7 @@ type PageInfo {
 
 type Query {
     chatRooms(input: ChatRoomsInput!): ChatRoomPage!
-    chatMessages(input: ChatMessagesInput!): ChatMessageSlice!
+    chatMessages(input: ChatMessagesInput!): ChatMessageCursor!
 }
 
 type Mutation {
@@ -39,7 +39,6 @@ type ChatRoom {
     type: ChatRoomType!
     isPublic: Boolean!
     title: String
-    isMember: Boolean!
     isFavorite: Boolean!
     canDelete: Boolean!
     memberCount: Int!
@@ -62,24 +61,16 @@ type ChatRoomPage {
 type ChatMessage {
     id: String!
     roomId: String!
-    senderMemberId: Long!
-    clientMessageId: String!
+    memberId: Long!
     content: String
-    isDeleted: Boolean!
     createdDatetime: DateTime!
     editedDatetime: DateTime
-    deletedDatetime: DateTime
-}
-
-type ChatMessageSlice {
-    messages: [ChatMessage!]!
-    hasNext: Boolean!
-    nextCursor: ChatMessageCursor
 }
 
 type ChatMessageCursor {
-    createdDatetime: DateTime!
-    messageId: String!
+    messages: [ChatMessage!]!
+    hasNext: Boolean!
+    nextCursor: Long
 }
 
 input ChatRoomsInput {
@@ -90,13 +81,8 @@ input ChatRoomsInput {
 
 input ChatMessagesInput {
     roomId: String!
-    cursor: ChatMessageCursorInput
     size: Int!
-}
-
-input ChatMessageCursorInput {
-    createdDatetime: DateTime!
-    messageId: String!
+    cursor: Long
 }
 
 input CreateChatRoomInput {
