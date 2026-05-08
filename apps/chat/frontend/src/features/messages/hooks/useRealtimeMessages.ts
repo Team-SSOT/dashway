@@ -17,21 +17,22 @@ export function useRealtimeMessages(roomId: RoomId | undefined) {
     const unsubscribe = realtime.watchRoom(roomId, (event) => {
       if (event.type === 'MESSAGE_CREATED') {
         if (isLive) {
-          // FE-inferred dedup: match pending row by clientMsgId, falling back
-          // to (authorId, plainText, ±5s) until BE echoes clientMessageId
-          // (V1.2 BE work). Other users' messages won't have a pending row so
-          // they fall through to append.
+          // FE-inferred dedup: match optimistic row by clientMsgId or, when
+          // BE has not yet echoed clientMessageId (V1.2 BE work), by
+          // (optimistic authorId='0' from getCurrentUser sentinel + plainText
+          // + ±5s). Skipping the authorId-equality check on the BE side stops
+          // mismatches because optimistic rows carry '0' until V1.2 lands a
+          // me-query for AuthProvider.memberId. Already server-confirmed rows
+          // (authorId !== '0') are never re-replaced.
           const isPendingMatch = (m: ChatMessage): boolean => {
-            if (m.clientMsgId === event.message.clientMsgId) return true
+            if (m.clientMsgId && m.clientMsgId === event.message.clientMsgId) return true
+            if (m.authorId !== '0') return false
+            if (m.plainText !== event.message.plainText) return false
             const timeDiff = Math.abs(
               new Date(m.clientCreatedAt).getTime() -
                 new Date(event.message.serverCreatedAt).getTime(),
             )
-            return (
-              m.authorId === event.message.authorId &&
-              m.plainText === event.message.plainText &&
-              timeDiff <= 5000
-            )
+            return timeDiff <= 5000
           }
 
           qc.setQueryData<InfiniteData<Page<ChatMessage>>>(key, (old) => {
