@@ -78,6 +78,7 @@ export function AuthProvider({ children }: Props) {
             right: 8,
             padding: '6px 10px',
             fontSize: 12,
+            color: '#92400e',
             background: '#fffbe6',
             border: '1px solid #ffe58f',
             borderRadius: 4,
