@@ -32,8 +32,14 @@ function decodeMemberIdFromJwt(token: string | null): string | null {
   try {
     const padded = parts[1].replace(/-/g, '+').replace(/_/g, '/')
     const json = atob(padded + '==='.slice((padded.length + 3) % 4))
-    const payload = JSON.parse(json) as { id?: string | number; sub?: string | number }
-    const claim = payload.id ?? payload.sub
+    // context-api stores memberId in the JWT 'jti' claim via Jwts.claims().id();
+    // some libraries surface the same value as 'id' or 'sub' so we accept all three.
+    const payload = JSON.parse(json) as {
+      jti?: string | number
+      id?: string | number
+      sub?: string | number
+    }
+    const claim = payload.jti ?? payload.id ?? payload.sub
     return claim != null ? String(claim) : null
   } catch {
     return null
