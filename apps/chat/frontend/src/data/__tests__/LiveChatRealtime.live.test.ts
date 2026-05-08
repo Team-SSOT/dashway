@@ -36,7 +36,7 @@ describe.skipIf(!RUN_LIVE)('LiveChatRealtime [LIVE]', () => {
     const { LiveChatRealtime } = await import('@/data/LiveChatRealtime')
     const { LiveChatRepository } = await import('@/data/LiveChatRepository')
     const realtime = new LiveChatRealtime(() => token)
-    const repo = new LiveChatRepository(realtime, () => token)
+    const repo = new LiveChatRepository(realtime, () => token, () => null)
     const rooms = await repo.listRooms()
     expect(rooms.length).toBeGreaterThan(0)
     const roomId = rooms[0].id

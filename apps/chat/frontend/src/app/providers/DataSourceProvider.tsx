@@ -31,15 +31,22 @@ function LiveSources({ children, repoProp, realtimeProp, directoryProp }: {
   realtimeProp?: ChatRealtime
   directoryProp?: DirectoryRepository
 }) {
-  const { token, version } = useAuthToken()
+  const { token, memberId, version } = useAuthToken()
   const shellClient = useDashwayShell()
   const tokenRef = useRef(token)
   tokenRef.current = token
+  const memberIdRef = useRef(memberId)
+  memberIdRef.current = memberId
 
   const [instances] = useState(() => {
     const realtime = new LiveChatRealtime(() => tokenRef.current)
     // 401 응답 시 shell에 session invalid 통보 (app-sdk notifySessionInvalid)
-    const repo = new LiveChatRepository(realtime, () => tokenRef.current, () => shellClient.notifySessionInvalid())
+    const repo = new LiveChatRepository(
+      realtime,
+      () => tokenRef.current,
+      () => memberIdRef.current,
+      () => shellClient.notifySessionInvalid(),
+    )
     const directory = new MockDirectoryRepository() // V1: directory not live yet
     return { repo, realtime, directory }
   })

@@ -76,6 +76,7 @@ export class LiveChatRepository implements ChatRepository {
   constructor(
     private readonly realtime: LiveChatRealtime,
     private readonly getToken: () => string | null,
+    private readonly getMemberId: () => string | null,
     private readonly onSessionInvalid?: () => void
   ) {
     const endpoint = import.meta.env.VITE_CHAT_GRAPHQL_URL ?? new URL('/graphql', window.location.origin).toString()
@@ -107,8 +108,12 @@ export class LiveChatRepository implements ChatRepository {
   }
 
   async getCurrentUser(): Promise<ChatMember> {
-    // V1.1: no getCurrentUser GraphQL op on BE. memberId is null.
-    return { id: '0', name: '', avatarUrl: undefined }
+    // V1.1: no getCurrentUser GraphQL op on BE. memberId is parsed from JWT
+    // by AuthProvider; pass it through here so optimistic rows carry the
+    // real authorId and consecutive-author grouping doesn't flicker on
+    // BE-echo replacement.
+    const id = this.getMemberId() ?? '0'
+    return { id, name: '', avatarUrl: undefined }
   }
 
   async listRooms(): Promise<ChatRoom[]> {
@@ -175,7 +180,7 @@ export class LiveChatRepository implements ChatRepository {
     const optimistic: ChatMessage = {
       id: input.clientMsgId,
       roomId: input.roomId,
-      authorId: '0',
+      authorId: this.getMemberId() ?? '0',
       content: input.content,
       plainText: input.plainText,
       clientCreatedAt: input.clientCreatedAt,

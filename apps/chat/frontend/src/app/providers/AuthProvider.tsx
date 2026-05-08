@@ -24,6 +24,22 @@ function readToken(): string | null {
   }
 }
 
+function decodeMemberIdFromJwt(token: string | null): string | null {
+  if (!token) return null
+  const raw = token.startsWith('Bearer ') ? token.slice(7) : token
+  const parts = raw.split('.')
+  if (parts.length < 2) return null
+  try {
+    const padded = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const json = atob(padded + '==='.slice((padded.length + 3) % 4))
+    const payload = JSON.parse(json) as { id?: string | number; sub?: string | number }
+    const claim = payload.id ?? payload.sub
+    return claim != null ? String(claim) : null
+  } catch {
+    return null
+  }
+}
+
 interface Props {
   children: ReactNode
 }
@@ -67,8 +83,10 @@ export function AuthProvider({ children }: Props) {
     setVersion((v) => v + 1)
   }
 
+  const memberId = decodeMemberIdFromJwt(token)
+
   return (
-    <Context.Provider value={{ token, memberId: null, version, refresh, setTokenFromShell }}>
+    <Context.Provider value={{ token, memberId, version, refresh, setTokenFromShell }}>
       {token === null && (
         <div
           role="alert"
