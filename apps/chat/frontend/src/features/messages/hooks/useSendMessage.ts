@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient, type InfiniteData } from '@tanstack/react-query'
 import type { SerializedEditorState } from 'lexical'
 import { useDataSource } from '@/app/providers/DataSourceProvider'
+import { useAuthToken } from '@/app/providers/AuthProvider'
 import type { ChatMessage, MessageAttachment, Page, RoomId, SendMessageInput } from '@/types/chat'
 import { roomMessagesQueryKey } from './useRoomMessages'
 import { currentUserId } from '@/data/mockData'
@@ -22,12 +23,12 @@ function makeClientMsgId(): string {
     : `c-${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
 
-function makeOptimisticMessage(args: SendArgs, clientMsgId: string): ChatMessage {
+function makeOptimisticMessage(args: SendArgs, clientMsgId: string, authorId: string): ChatMessage {
   const now = new Date().toISOString()
   return {
     id: `${OPTIMISTIC_ID_PREFIX}${clientMsgId}`,
     roomId: args.roomId,
-    authorId: currentUserId,
+    authorId,
     content: args.content,
     plainText: args.plainText,
     clientCreatedAt: now,
@@ -47,6 +48,7 @@ type MutationArgs = Omit<SendArgs, 'roomId'> & { __clientMsgId?: string }
 
 export function useSendMessage(roomId: RoomId | undefined) {
   const { repo } = useDataSource()
+  const { memberId } = useAuthToken()
   const qc = useQueryClient()
 
   return useMutation<
@@ -76,7 +78,11 @@ export function useSendMessage(roomId: RoomId | undefined) {
       const previous = qc.getQueryData<InfiniteData<Page<ChatMessage>>>(key)
       const clientMsgId = makeClientMsgId()
       args.__clientMsgId = clientMsgId
-      const optimistic = makeOptimisticMessage({ ...args, roomId }, clientMsgId)
+      const optimistic = makeOptimisticMessage(
+        { ...args, roomId },
+        clientMsgId,
+        memberId ?? currentUserId,
+      )
 
       qc.setQueryData<InfiniteData<Page<ChatMessage>>>(key, (old) => {
         if (!old || old.pages.length === 0) {

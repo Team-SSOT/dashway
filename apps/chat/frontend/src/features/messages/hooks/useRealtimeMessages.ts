@@ -18,16 +18,17 @@ export function useRealtimeMessages(roomId: RoomId | undefined) {
       if (event.type === 'MESSAGE_CREATED') {
         if (isLive) {
           // FE-inferred dedup: match by clientMsgId when BE echoes it (V1.2),
-          // otherwise treat any row whose id still equals its clientMsgId as
-          // 'pending' and only replace it when authorId, plainText, and a 5s
-          // timestamp window all match. The id===clientMsgId guard means a
-          // server-confirmed row (id replaced with the BE uuid) cannot be
-          // overwritten a second time, and the authorId check prevents a
-          // sibling user's same-text echo from claiming someone else's
-          // pending optimistic row.
+          // otherwise treat optimistic rows (id === clientMsgId or id ===
+          // 'pending-${clientMsgId}' depending on which layer created them)
+          // as pending and only replace when authorId, plainText, and a 5s
+          // timestamp window all match. The pending-id guard means a server-
+          // confirmed row cannot be overwritten a second time, and the
+          // authorId check prevents a sibling user's same-text echo from
+          // claiming someone else's pending optimistic row.
           const isPendingMatch = (m: ChatMessage): boolean => {
             if (m.clientMsgId && m.clientMsgId === event.message.clientMsgId) return true
-            if (m.id !== m.clientMsgId) return false
+            const isPending = m.id === m.clientMsgId || m.id === `pending-${m.clientMsgId}`
+            if (!isPending) return false
             if (m.authorId !== event.message.authorId) return false
             if (m.plainText !== event.message.plainText) return false
             const timeDiff = Math.abs(
