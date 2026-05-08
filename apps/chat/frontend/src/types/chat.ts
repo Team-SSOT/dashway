@@ -41,6 +41,7 @@ export interface ChatRoom {
   topic?: string
   memberCount: number       // 서버 제공 (멤버십 조회 분리)
   unreadCount: number       // 현재 사용자 기준 (서버 계산)
+  isFavorite: boolean       // BE chatRooms 응답에서 전달, setChatRoomFavorite mutation으로 토글 (V1.2 BE 작업)
   lastMessageAt?: string
   // FE-only metadata; populated by adapter for DIRECT rooms (first non-self member).
   peerMemberId?: MemberId   // For DM rooms — references the other party's MemberId. FE-only field; BE notification when DM protocol lands.

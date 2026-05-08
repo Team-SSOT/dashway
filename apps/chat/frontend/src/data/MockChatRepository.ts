@@ -269,6 +269,7 @@ export class MockChatRepository implements ChatRepository {
       description: input.description,
       memberCount: 1,
       unreadCount: 0,
+      isFavorite: false,
       lastMessageAt: undefined,
       createdAt: now,
       updatedAt: now,

@@ -29,6 +29,7 @@ export const MOCK_ROOMS_HEAVY: ChatRoom = {
   topic: 'FE-M2 virtualization spike — do not use for real conversation',
   memberCount: MOCK_MEMBERS.length,
   unreadCount: 0,
+  isFavorite: false,
   lastMessageAt: undefined,
   createdAt: new Date(Date.UTC(2025, 0, 10, 0, 0, 0)).toISOString(),
   updatedAt: new Date(Date.UTC(2025, 0, 13, 23, 59, 0)).toISOString(),

@@ -71,6 +71,7 @@ export function adaptChatRoom(wire: WireRoom, currentMemberId?: string): ChatRoo
     topic: undefined,
     memberCount: wire.memberCount,
     unreadCount: 0,
+    isFavorite: wire.isFavorite,
     lastMessageAt: undefined,
     peerMemberId: isDirect ? peerMember?.memberId : undefined,
     createdAt: wire.createdDatetime,
