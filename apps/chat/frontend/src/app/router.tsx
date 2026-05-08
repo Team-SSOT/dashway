@@ -4,6 +4,7 @@ import { AppShell } from './AppShell'
 import { DEFAULT_CHAT_PATH } from './chatRoutes'
 import { NotFound } from '@/pages/NotFound'
 import { RoomView } from '@/features/rooms/components/RoomView'
+import { useRooms } from '@/features/rooms/hooks/useRooms'
 import { useIsLive } from './featureFlags'
 
 function ThreadRoute() {
@@ -13,13 +14,32 @@ function ThreadRoute() {
   return <RoomView />
 }
 
+function DefaultRoomRedirect() {
+  const { data: rooms, isLoading } = useRooms()
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+        Loading…
+      </div>
+    )
+  }
+  if (!rooms || rooms.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+        No rooms yet — create one from the sidebar.
+      </div>
+    )
+  }
+  return <Navigate to={`/chat/${rooms[0].id}`} replace />
+}
+
 const routes = [
   { path: '/', element: <Navigate to={DEFAULT_CHAT_PATH} replace /> },
   {
     path: '/chat',
     element: <AppShell />,
     children: [
-      { index: true, element: <Navigate to={DEFAULT_CHAT_PATH} replace /> },
+      { index: true, element: <DefaultRoomRedirect /> },
       { path: ':roomId', element: <RoomView /> },
       { path: ':roomId/thread/:msgId', element: <ThreadRoute /> },
     ],
