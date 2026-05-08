@@ -10,6 +10,7 @@ WORKDIR /repo
 COPY . .
 
 RUN pnpm install --filter chat-frontend... --frozen-lockfile
+ENV VITE_CHAT_DATA_SOURCE=live
 RUN pnpm --filter chat-frontend build
 
 # 2단계: Backend Build Stage
