@@ -293,6 +293,17 @@ export class MockChatRepository implements ChatRepository {
     return { ...room }
   }
 
+  async setRoomFavorite(roomId: RoomId, isFavorite: boolean): Promise<ChatRoom> {
+    const err = this.checkOneShot('setRoomFavorite')
+    if (err) return err
+    const idx = this.rooms.findIndex((r) => r.id === roomId)
+    if (idx < 0) {
+      throw makeChatError('ROOM_NOT_FOUND', `Room ${roomId} not found`, false)
+    }
+    this.rooms[idx] = { ...this.rooms[idx], isFavorite }
+    return { ...this.rooms[idx] }
+  }
+
   async markRead(roomId: RoomId, lastReadAt: string): Promise<void> {
     const err = this.checkOneShot('markRead')
     if (err) return err

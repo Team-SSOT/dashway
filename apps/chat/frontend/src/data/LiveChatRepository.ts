@@ -59,6 +59,16 @@ const CREATE_CHAT_ROOM_MUTATION = /* GraphQL */ `
   }
 `
 
+const SET_CHAT_ROOM_FAVORITE_MUTATION = /* GraphQL */ `
+  mutation setChatRoomFavorite($input: SetChatRoomFavoriteInput!) {
+    setChatRoomFavorite(input: $input) {
+      id type isPublic title isFavorite canDelete memberCount
+      members { memberId role joinedDatetime }
+      createdDatetime updatedDatetime
+    }
+  }
+`
+
 export class LiveChatRepository implements ChatRepository {
   private gql: GraphQLClient
   private roomsCache: WireRoom[] | null = null
@@ -180,6 +190,20 @@ export class LiveChatRepository implements ChatRepository {
       attachments: input.attachments,
     }
     return Promise.resolve(optimistic)
+  }
+
+  async setRoomFavorite(roomId: RoomId, isFavorite: boolean): Promise<ChatRoom> {
+    try {
+      const data = await this.gql.request<{ setChatRoomFavorite: WireRoom }>(
+        SET_CHAT_ROOM_FAVORITE_MUTATION,
+        { input: { roomId, isFavorite } }
+      )
+      const room = adaptChatRoom(data.setChatRoomFavorite)
+      this.roomsCache = null
+      return room
+    } catch (err) {
+      return this.mapGraphQLError(err)
+    }
   }
 
   listMessages(_input: ListMessagesInput): Promise<Page<ChatMessage>> {

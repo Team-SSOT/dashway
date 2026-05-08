@@ -152,6 +152,11 @@ export interface ChatRepository {
   markRead(roomId: RoomId, lastReadAt: string): Promise<void>
   createRoom(input: CreateRoomInput): Promise<ChatRoom>
 
+  // Toggle per-user favorite mark on a room. Live mode requires the V1.2
+  // setChatRoomFavorite mutation; until it lands, live calls will reject with
+  // a 'not implemented' error and the optimistic UI must roll back.
+  setRoomFavorite(roomId: RoomId, isFavorite: boolean): Promise<ChatRoom>
+
   // Idempotent toggle: 같은 (messageId, emoji, userId) 조합으로 중복 호출해도 한 번만 반영.
   // BE notification required when implementing real transport.
   addReaction(messageId: MessageId, emoji: string): Promise<ChatMessage>
