@@ -1,14 +1,12 @@
 import { useEffect } from 'react'
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query'
 import { useDataSource } from '@/app/providers/DataSourceProvider'
-import { useAuthToken } from '@/app/providers/AuthProvider'
 import { useIsLive } from '@/app/featureFlags'
 import type { ChatMessage, Page, RoomId } from '@/types/chat'
 import { roomMessagesQueryKey } from './useRoomMessages'
 
 export function useRealtimeMessages(roomId: RoomId | undefined) {
   const { realtime } = useDataSource()
-  const { memberId: currentMemberId } = useAuthToken()
   const qc = useQueryClient()
   const isLive = useIsLive()
 
@@ -19,15 +17,10 @@ export function useRealtimeMessages(roomId: RoomId | undefined) {
     const unsubscribe = realtime.watchRoom(roomId, (event) => {
       if (event.type === 'MESSAGE_CREATED') {
         if (isLive) {
-          // V1.1: only append self-echo to cache (optimistic row replacement).
-          // Other senders' messages are intentionally skipped until V1.2 when
-          // useRoomMessages live wiring is complete.
-          const isSelfEcho =
-            currentMemberId !== null &&
-            event.message.authorId === currentMemberId
-          // FE-inferred dedup: match pending row by (authorId, plainText, ±5s)
-          // when BE doesn't echo clientMsgId yet (V1.1). Replaced by exact
-          // clientMsgId match once BE adds echo (V1.2 BE work).
+          // FE-inferred dedup: match pending row by clientMsgId, falling back
+          // to (authorId, plainText, ±5s) until BE echoes clientMessageId
+          // (V1.2 BE work). Other users' messages won't have a pending row so
+          // they fall through to append.
           const isPendingMatch = (m: ChatMessage): boolean => {
             if (m.clientMsgId === event.message.clientMsgId) return true
             const timeDiff = Math.abs(
@@ -40,8 +33,6 @@ export function useRealtimeMessages(roomId: RoomId | undefined) {
               timeDiff <= 5000
             )
           }
-
-          if (!isSelfEcho) return
 
           qc.setQueryData<InfiniteData<Page<ChatMessage>>>(key, (old) => {
             if (!old || old.pages.length === 0) {
@@ -113,5 +104,5 @@ export function useRealtimeMessages(roomId: RoomId | undefined) {
     })
 
     return unsubscribe
-  }, [roomId, realtime, qc, isLive, currentMemberId])
+  }, [roomId, realtime, qc, isLive])
 }
