@@ -19,6 +19,7 @@
 
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useDataSource } from '@/app/providers/DataSourceProvider'
+import { useIsLive } from '@/app/featureFlags'
 import type { ChatMessage, Cursor, Page, RoomId } from '@/types/chat'
 
 export const roomMessagesQueryKey = (roomId: RoomId) => ['messages', roomId] as const
@@ -30,6 +31,7 @@ export interface RoomMessagesSelection {
 
 export function useRoomMessages(roomId: RoomId | undefined) {
   const { repo } = useDataSource()
+  const isLive = useIsLive()
   return useInfiniteQuery<
     Page<ChatMessage>,
     Error,
@@ -37,7 +39,8 @@ export function useRoomMessages(roomId: RoomId | undefined) {
     readonly unknown[],
     Cursor | undefined
   >({
-    enabled: !!roomId,
+    // Live mode: chatMessages resolver not yet deployed on BE — disable fetching entirely.
+    enabled: !!roomId && !isLive,
     queryKey: roomId ? roomMessagesQueryKey(roomId) : ['messages', 'none'],
     initialPageParam: undefined,
     queryFn: ({ pageParam }) =>

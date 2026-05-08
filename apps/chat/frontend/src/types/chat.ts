@@ -19,6 +19,7 @@ export interface ChatMember {
 }
 
 // 룸 멤버십 (멤버-룸 N:M, 역할 포함)
+// FE viewmodel labels including ADMIN/GUEST (mock-only). BE enum: OWNER|MEMBER (chat.graphqls:32-35).
 export type RoomRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'GUEST'
 export interface RoomMembership {
   roomId: RoomId
@@ -30,6 +31,7 @@ export interface RoomMembership {
 }
 
 // 룸
+// FE viewmodel labels. Wire boundary: see wire/adapters.ts. BE enum: DIRECT|GROUP.
 export type RoomType = 'CHANNEL' | 'DM'
 export interface ChatRoom {
   id: RoomId
@@ -40,6 +42,7 @@ export interface ChatRoom {
   memberCount: number       // 서버 제공 (멤버십 조회 분리)
   unreadCount: number       // 현재 사용자 기준 (서버 계산)
   lastMessageAt?: string
+  // FE-only metadata; populated by adapter for DIRECT rooms (first non-self member).
   peerMemberId?: MemberId   // For DM rooms — references the other party's MemberId. FE-only field; BE notification when DM protocol lands.
   createdAt: string
   updatedAt: string

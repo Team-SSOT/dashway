@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { currentUserId } from '@/data/mockData'
 import { cn } from '@/shared/lib/cn'
 import type { Reaction } from '@/types/chat'
+import { useIsLive } from '@/app/featureFlags'
 
 interface ChipSummary {
   emoji: string
@@ -27,6 +28,7 @@ function summarize(reactions: Reaction[] | undefined, viewerId: string): ChipSum
 
 export function ReactionChips({ reactions, onToggle }: Props) {
   const chips = useMemo(() => summarize(reactions, currentUserId), [reactions])
+  const isLive = useIsLive()
   if (chips.length === 0) return null
   return (
     <div className="mt-1 flex flex-wrap gap-1" role="group" aria-label="Reactions">
@@ -34,7 +36,8 @@ export function ReactionChips({ reactions, onToggle }: Props) {
         <button
           key={chip.emoji}
           type="button"
-          onClick={() => onToggle(chip.emoji, chip.reactedByMe)}
+          onClick={() => !isLive && onToggle(chip.emoji, chip.reactedByMe)}
+          disabled={isLive}
           aria-pressed={chip.reactedByMe}
           aria-label={`${chip.emoji} ${chip.count} ${chip.reactedByMe ? '— remove your reaction' : '— add your reaction'}`}
           className={cn(
@@ -42,6 +45,7 @@ export function ReactionChips({ reactions, onToggle }: Props) {
             chip.reactedByMe
               ? 'border-primary/40 bg-primary/10 text-primary hover:bg-primary/15'
               : 'border-border bg-muted/40 text-foreground hover:bg-muted/60',
+            isLive && 'cursor-not-allowed opacity-50',
           )}
         >
           <span className="text-sm leading-none">{chip.emoji}</span>

@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 // TODO(M3): replace with useCurrentUser/useMembersByIds hook when BE lands; do not let this leak into prod paths
 import { currentUserId, MOCK_MEMBERS } from '@/data/mockData'
+import { useIsLive } from '@/app/featureFlags'
 import { Avatar, AvatarFallback } from '@/shared/ui/avatar'
 import { Button } from '@/shared/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
@@ -37,6 +38,7 @@ export function AddMembersDialog({
   existingMemberIds,
   triggerRef,
 }: AddMembersDialogProps) {
+  const isLive = useIsLive()
   const [q, setQ] = useState('')
   const [debouncedQ, setDebouncedQ] = useState('')
   const [selectedIds, setSelectedIds] = useState<Set<MemberId>>(new Set())
@@ -124,6 +126,8 @@ export function AddMembersDialog({
     onOpenChange(next)
     if (!next) focusTriggerAfterClose()
   }
+
+  if (isLive) return null
 
   if (!canManageMembers(currentMembership?.role)) {
     return (

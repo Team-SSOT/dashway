@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Smile } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover'
+import { useIsLive } from '@/app/featureFlags'
 
 export const REACTION_PRESET = ['👍', '❤️', '😂', '😮', '😢', '🎉'] as const
 
@@ -14,7 +15,9 @@ interface Props {
 }
 
 export function ReactionPicker({ onPick, triggerClassName, open: openProp, onOpenChange }: Props) {
+  const isLive = useIsLive()
   const [internalOpen, setInternalOpen] = useState(false)
+  if (isLive) return null
   const open = openProp ?? internalOpen
   const setOpen = (v: boolean) => {
     if (openProp === undefined) setInternalOpen(v)

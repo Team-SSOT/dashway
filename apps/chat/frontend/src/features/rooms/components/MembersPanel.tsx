@@ -10,6 +10,7 @@ import { AddMembersDialog } from './AddMembersDialog'
 // TODO(M3): replace with useCurrentUser/useMembersByIds hook when BE lands; do not let this leak into prod paths
 import { MOCK_MEMBERS, currentUserId } from '@/data/mockData'
 import type { RoomId, RoomRole } from '@/types/chat'
+import { useIsLive } from '@/app/featureFlags'
 
 interface MembersPanelProps {
   roomId: RoomId
@@ -25,18 +26,19 @@ function initials(name: string): string {
     .toUpperCase()
 }
 
+// viewmodel-only — BE enum is OWNER|MEMBER; ADMIN/GUEST are mock-only values
 const ROLE_LABEL: Record<RoomRole, string> = {
   OWNER: 'Owner',
-  ADMIN: 'Admin',
+  ADMIN: 'Admin',   // viewmodel-only — BE enum is OWNER|MEMBER
   MEMBER: 'Member',
-  GUEST: 'Guest',
+  GUEST: 'Guest',   // viewmodel-only — BE enum is OWNER|MEMBER
 }
 
 const ROLE_CLASS: Record<RoomRole, string> = {
   OWNER: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
-  ADMIN: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  ADMIN: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300', // viewmodel-only — BE enum is OWNER|MEMBER
   MEMBER: 'bg-muted text-muted-foreground',
-  GUEST: 'bg-muted text-muted-foreground',
+  GUEST: 'bg-muted text-muted-foreground', // viewmodel-only — BE enum is OWNER|MEMBER
 }
 
 export function MembersPanel({ roomId, onClose }: MembersPanelProps) {
@@ -50,6 +52,7 @@ export function MembersPanel({ roomId, onClose }: MembersPanelProps) {
   const currentMembership = (memberships ?? []).find((m) => m.memberId === currentUserId)
   const canManage = canManageMembers(currentMembership?.role)
 
+  const isLive = useIsLive()
   const existingMemberIds = new Set((memberships ?? []).map((m) => m.memberId))
 
   return (
@@ -69,7 +72,7 @@ export function MembersPanel({ roomId, onClose }: MembersPanelProps) {
         </Button>
       </header>
 
-      {canManage && (
+      {canManage && !isLive && (
         <div className="shrink-0 border-b border-border px-3 py-2">
           <Button
             ref={addButtonRef}
@@ -116,7 +119,7 @@ export function MembersPanel({ roomId, onClose }: MembersPanelProps) {
                   >
                     {ROLE_LABEL[ms.role]}
                   </span>
-                  {showRemove && (
+                  {showRemove && !isLive && (
                     <Button
                       variant="ghost"
                       size="icon"

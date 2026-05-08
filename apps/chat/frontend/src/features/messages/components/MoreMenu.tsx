@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu'
 import type { ChatMessage } from '@/types/chat'
+import { useIsLive } from '@/app/featureFlags'
 
 interface Props {
   message: ChatMessage
@@ -31,6 +32,7 @@ async function copy(text: string): Promise<void> {
 }
 
 export function MoreMenu({ message, canDelete, onDelete, open, onOpenChange }: Props) {
+  const isLive = useIsLive()
   return (
     <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
@@ -52,7 +54,7 @@ export function MoreMenu({ message, canDelete, onDelete, open, onOpenChange }: P
           <Type />
           Copy text
         </DropdownMenuItem>
-        {canDelete ? (
+        {canDelete && !isLive ? (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem

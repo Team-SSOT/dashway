@@ -1,9 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { RoomView } from '../components/RoomView'
+import { AuthProvider } from '@/app/providers/AuthProvider'
 import { DataSourceProvider } from '@/app/providers/DataSourceProvider'
 import { MockChatRepository } from '@/data/MockChatRepository'
 import { MockChatRealtime } from '@/data/MockChatRealtime'
@@ -11,6 +12,12 @@ import { MockDirectoryRepository } from '@/data/MockDirectoryRepository'
 import { eventBus } from '@/data/mockEventBus'
 import { useUiStore } from '@/shared/store/uiStore'
 import { TooltipProvider } from '@/shared/ui/tooltip'
+
+vi.mock('@dashway/app-sdk', () => ({ isShellMode: vi.fn(() => false) }))
+vi.mock('@dashway/app-sdk/react', () => ({
+  useDashwayShell: vi.fn(() => ({ notifySessionInvalid: vi.fn() })),
+  ShellModeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
 
 function makeQC() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -29,11 +36,13 @@ function renderWithRouter(initialPath: string, qc = makeQC()) {
 
   render(
     <QueryClientProvider client={qc}>
-      <DataSourceProvider repo={repo} realtime={realtime} directory={directory}>
-        <TooltipProvider>
-          <RouterProvider router={router} />
-        </TooltipProvider>
-      </DataSourceProvider>
+      <AuthProvider>
+        <DataSourceProvider repo={repo} realtime={realtime} directory={directory}>
+          <TooltipProvider>
+            <RouterProvider router={router} />
+          </TooltipProvider>
+        </DataSourceProvider>
+      </AuthProvider>
     </QueryClientProvider>,
   )
 
