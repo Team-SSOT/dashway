@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { isShellMode } from '@dashway/app-sdk'
-import { useDashwayShell } from '@dashway/app-sdk/react'
+import { useDashwayShell, useShellAuthToken } from '@dashway/app-sdk/react'
 
 export interface AuthTokenContext {
   token: string | null
@@ -78,6 +78,20 @@ export function AuthProvider({ children }: Props) {
     }
   }, [token, shellMode, shellClient])
 
+  // V1.2 app-protocol token injection: shell pushes the access token via
+  // dashway:auth.token after the iframe handshake. Mirror it into local
+  // state and persist for hard reloads inside the same iframe origin.
+  useShellAuthToken((next) => {
+    setToken(next)
+    setVersion((v) => v + 1)
+    try {
+      if (next === null) localStorage.removeItem('chatAuthToken')
+      else localStorage.setItem('chatAuthToken', next)
+    } catch {
+      /* localStorage may be unavailable inside partitioned iframes */
+    }
+  })
+
   const refresh = () => {
     const next = readToken()
     setToken(next)
@@ -110,7 +124,7 @@ export function AuthProvider({ children }: Props) {
           }}
         >
           {shellMode
-            ? 'iframe 모드: 토큰은 V1.2에서 shell이 자동 주입할 예정. 현재는 dev 콘솔에서 localStorage.chatAuthToken 설정 필요.'
+            ? 'shell 토큰 주입 대기 중...'
             : '단독 dev 모드: dev 콘솔에서 localStorage.chatAuthToken 설정 필요.'}
         </div>
       )}

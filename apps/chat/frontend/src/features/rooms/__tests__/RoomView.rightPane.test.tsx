@@ -16,6 +16,7 @@ import { TooltipProvider } from '@/shared/ui/tooltip'
 vi.mock('@dashway/app-sdk', () => ({ isShellMode: vi.fn(() => false) }))
 vi.mock('@dashway/app-sdk/react', () => ({
   useDashwayShell: vi.fn(() => ({ notifySessionInvalid: vi.fn() })),
+  useShellAuthToken: vi.fn(),
   ShellModeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 

@@ -61,5 +61,9 @@ export const MessageToAppSchema = z.discriminatedUnion('type', [
     type: z.literal('dashway:theme.changed'),
     mode: ThemeModeSchema,
   }),
+  z.object({
+    type: z.literal('dashway:auth.token'),
+    token: z.string().nullable(),
+  }),
 ])
 export type MessageToApp = z.infer<typeof MessageToAppSchema>

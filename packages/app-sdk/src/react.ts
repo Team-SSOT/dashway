@@ -75,3 +75,14 @@ export function useShellTheme(onThemeChange: (mode: ThemeMode) => void): void {
     return client.onThemeChange((mode) => handlerRef.current(mode))
   }, [client])
 }
+
+export function useShellAuthToken(onAuthToken: (token: string | null) => void): void {
+  const client = useContext(ShellContext)
+  const handlerRef = useRef(onAuthToken)
+  handlerRef.current = onAuthToken
+
+  useEffect(() => {
+    if (!client) return
+    return client.onAuthToken((token) => handlerRef.current(token))
+  }, [client])
+}

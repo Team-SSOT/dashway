@@ -68,7 +68,7 @@ describe('AuthProvider', () => {
 
   it('shows iframe dev banner when in shell mode and token is null', () => {
     renderWithShell(true)
-    expect(screen.getByRole('alert').textContent).toMatch(/iframe 모드/)
+    expect(screen.getByRole('alert').textContent).toMatch(/shell 토큰 주입 대기 중/)
   })
 
   it('does not show banner when token is present', () => {

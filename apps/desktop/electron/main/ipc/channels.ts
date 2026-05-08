@@ -9,6 +9,7 @@ export const IPC = {
   SHELL_GET_SERVER_URL: 'shell:get-server-url',
   SHELL_SET_SERVER_URL: 'shell:set-server-url',
   SHELL_PROBE_SERVER: 'shell:probe-server',
+  SHELL_GET_ACCESS_TOKEN: 'shell:get-access-token',
 
   // Workspace
   WORKSPACE_GET_CONFIG: 'workspace:get-config',

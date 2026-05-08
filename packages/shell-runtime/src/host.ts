@@ -22,6 +22,7 @@ export interface IframeHostOptions {
 export interface IframeHost {
   navigate(appRoute: string): void
   setTheme(mode: ThemeMode): void
+  setAuthToken(token: string | null): void
   destroy(): void
 }
 
@@ -109,6 +110,9 @@ export function attachIframe(options: IframeHostOptions): IframeHost {
     },
     setTheme(mode) {
       send({ type: 'dashway:theme.changed', mode })
+    },
+    setAuthToken(token) {
+      send({ type: 'dashway:auth.token', token })
     },
     destroy() {
       window.removeEventListener('message', handleMessage)
