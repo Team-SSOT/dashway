@@ -37,6 +37,15 @@ export default defineConfig({
         target: 'http://localhost:12001',
         changeOrigin: true,
       },
+      '/graphql': {
+        target: 'http://localhost:12001',
+        changeOrigin: true,
+      },
+      '/ws/chat': {
+        target: 'ws://localhost:12001',
+        ws: true,
+        changeOrigin: true,
+      },
     },
   },
 })
