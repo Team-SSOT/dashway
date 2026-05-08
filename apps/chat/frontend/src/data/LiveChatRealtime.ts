@@ -2,12 +2,18 @@ import { Client, type StompSubscription } from '@stomp/stompjs'
 import type { ChatRealtime, ChatRealtimeEvent, ConnectionState, MessageId, RoomId } from '@/types/chat'
 
 // Wire shape from BE: /topic/chat/rooms/{roomId}/messages
-interface WireMessageFrame {
+// BE wraps in { eventType: "MESSAGE_CREATED", message: { ... } }
+interface WireMessagePayload {
   id: string
   roomId: string
-  senderMemberId: string
+  senderMemberId: number | string
   content: string
   createdDatetime: string
+}
+
+interface WireMessageFrame {
+  eventType: string
+  message: WireMessagePayload
 }
 
 export class LiveChatRealtime implements ChatRealtime {
@@ -96,14 +102,16 @@ export class LiveChatRealtime implements ChatRealtime {
 
     const frameHandler = (frame: { body: string }) => {
       try {
-        const wire = JSON.parse(frame.body) as WireMessageFrame
+        const parsed = JSON.parse(frame.body) as WireMessageFrame
+        if (parsed.eventType !== 'MESSAGE_CREATED') return
+        const wire = parsed.message
         // Minimal ChatMessage shape for realtime echo; full history via ChatRepository
         const event: ChatRealtimeEvent = {
           type: 'MESSAGE_CREATED',
           message: {
             id: wire.id,
             roomId: wire.roomId,
-            authorId: wire.senderMemberId,
+            authorId: String(wire.senderMemberId),
             plainText: wire.content,
             // Lexical content: cast to avoid strict SerializedLexicalNode type (element vs leaf node split)
             content: {
