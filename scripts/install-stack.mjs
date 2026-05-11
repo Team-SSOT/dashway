@@ -9,8 +9,10 @@ import { createInterface } from 'node:readline/promises'
 import { fileURLToPath } from 'node:url'
 import {
   INSTALLER_STATE_VERSION,
+  buildAppComposeEnvironment,
   assertRequiredAdminOptions,
   buildComposeEnvironment,
+  buildContextApiComposeEnvironment,
   buildStatePath,
   loadInstallerManifest,
   loadDashwayConfig,
@@ -36,6 +38,7 @@ async function main() {
   const manifest = await loadInstallerManifest(manifestPath)
   const dashwayConfig = await loadDashwayConfig(dashwayConfigPath)
   const composeEnvironment = buildComposeEnvironment(dashwayConfig)
+  const contextApiEnvironment = buildContextApiComposeEnvironment(dashwayConfig)
   const installRoot = process.cwd()
   const statePath = buildStatePath(installRoot)
   const previousState = await readInstallState(statePath)
@@ -54,6 +57,8 @@ async function main() {
     installSecret,
     installerInputs,
     composeEnvironment,
+    contextApiEnvironment,
+    configApps: dashwayConfig.apps,
   })
 
   let bootstrapResponse = null
@@ -65,7 +70,7 @@ async function main() {
     throw new Error('Installer bootstrap step did not run.')
   }
 
-  for (const step of buildSelectedConfigAppPlan(selectedConfigApps, composeEnvironment)) {
+  for (const step of buildSelectedConfigAppPlan(selectedConfigApps, dashwayConfig)) {
     await executeInstallStep(step, null)
   }
 
@@ -124,7 +129,7 @@ Notes:
   - Dashway Infra starts first, then Context API.
   - The installer reads app choices from dashway.config.json before app services start.
   - Interactive app selection uses a keyboard checklist: Up/Down, Space, Enter.
-  - Selected apps are enabled in Context API only after their health checks pass.
+  - Selected apps are enabled in Context API after their services are started.
   - In an interactive terminal, missing admin fields and app selection are prompted.
   - In a non-interactive terminal, required admin values and --apps must be passed as flags.`)
 }
@@ -141,7 +146,14 @@ function randomBootstrapSecret() {
   return randomBytes(24).toString('hex')
 }
 
-function buildCoreInstallExecutionPlan({ manifest, installSecret, installerInputs, composeEnvironment }) {
+function buildCoreInstallExecutionPlan({
+  manifest,
+  installSecret,
+  installerInputs,
+  composeEnvironment,
+  contextApiEnvironment,
+  configApps,
+}) {
   return [
     {
       type: 'assert-file-exists',
@@ -163,7 +175,7 @@ function buildCoreInstallExecutionPlan({ manifest, installSecret, installerInput
       type: 'compose-up',
       unit: manifest.core,
       environment: {
-        ...composeEnvironment,
+        ...contextApiEnvironment,
         CONTEXT_API_INSTALL_BOOTSTRAP_ENABLED: 'true',
         CONTEXT_API_INSTALL_BOOTSTRAP_SECRET: installSecret,
       },
@@ -188,14 +200,18 @@ function buildCoreInstallExecutionPlan({ manifest, installSecret, installerInput
           email: installerInputs.adminEmail,
           password: installerInputs.adminPassword,
         },
-        apps: [],
+        apps: configApps.map((app) => ({
+          id: app.id,
+          name: app.name,
+          port: app.port,
+        })),
         selectedAppIds: [],
       },
     },
   ]
 }
 
-function buildSelectedConfigAppPlan(selectedApps, composeEnvironment) {
+function buildSelectedConfigAppPlan(selectedApps, dashwayConfig) {
   return [
     ...selectedApps.map((app) => ({
       type: 'assert-file-exists',
@@ -205,14 +221,8 @@ function buildSelectedConfigAppPlan(selectedApps, composeEnvironment) {
     ...selectedApps.map((app) => ({
       type: 'compose-up',
       unit: app,
-      environment: composeEnvironment,
+      environment: buildAppComposeEnvironment(dashwayConfig, app),
       wait: false,
-    })),
-    ...selectedApps.map((app) => ({
-      type: 'wait-for-healthy',
-      unit: app,
-      url: app.healthUrl,
-      timeoutMs: 120_000,
     })),
   ]
 }
@@ -346,8 +356,8 @@ async function collectConfigAppSelection({ options, configApps, previousState })
     output: process.stdout,
     configApps,
     initialSelectedAppIds: configApps
-      .map((app) => app.id)
-      .filter((appId) => previousState?.selectedAppNames?.includes(appId)),
+      .filter((app) => previousState?.selectedAppNames?.includes(app.name))
+      .map((app) => app.id),
   })
 }
 

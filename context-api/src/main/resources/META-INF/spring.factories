@@ -1,2 +1,0 @@
-org.springframework.boot.EnvironmentPostProcessor=\
-ai.ssot.contextapi.config.runtime.DashwayConfigDataSourceEnvironmentPostProcessor
