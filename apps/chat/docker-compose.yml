@@ -15,7 +15,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-context_api}
       CHAT_CONTEXT_API_BASE_URL: ${CHAT_CONTEXT_API_BASE_URL:-http://context-api:8080}
     ports:
-      - 12001:8080
+      - 12001:12001
     networks:
       - dashway-shared
 

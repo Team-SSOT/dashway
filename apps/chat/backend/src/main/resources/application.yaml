@@ -25,4 +25,6 @@ chat:
 
 logging:
   level:
-    root: info
+    web: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
