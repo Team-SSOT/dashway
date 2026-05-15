@@ -18,6 +18,8 @@ import java.util.*
 interface ChatRoomRepository : JpaRepository<ChatRoom, UUID>, QChatRoomRepository {
     fun findByParticipantKeyHashAndIsDeletedFalse(participantKeyHash: String): ChatRoom?
 
+    fun findByIdAndIsEnabledTrueAndIsDeletedFalse(id: UUID): ChatRoom?
+
     fun existsByIdAndIsEnabledTrueAndIsDeletedFalse(id: UUID): Boolean
 }
 

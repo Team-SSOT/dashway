@@ -3,6 +3,8 @@ package ai.ssot.chat.domain.chat.dto
 import ai.ssot.chat.domain.chat.entity.ChatRoomType
 import ai.ssot.chat.generated.types.ChatRoomsInput
 import ai.ssot.chat.generated.types.CreateChatRoomInput
+import ai.ssot.chat.generated.types.DeleteChatRoomInput
+import ai.ssot.chat.generated.types.SetChatRoomFavoriteInput
 import ai.ssot.chat.generated.types.ChatRoom as GraphQlChatRoom
 import ai.ssot.chat.generated.types.ChatRoomMember as GraphQlChatRoomMember
 import ai.ssot.chat.generated.types.ChatRoomPage as GraphQlChatRoomPage
@@ -23,6 +25,17 @@ fun ChatRoomsInput.toDto(): ChatRoomSearchDto =
         page = page,
         size = size,
         favoriteOnly = favoriteOnly ?: false,
+    )
+
+fun DeleteChatRoomInput.toDto(): DeleteChatRoomDto =
+    DeleteChatRoomDto(
+        roomId = roomId,
+    )
+
+fun SetChatRoomFavoriteInput.toDto(): SetChatRoomFavoriteDto =
+    SetChatRoomFavoriteDto(
+        roomId = roomId,
+        isFavorite = isFavorite,
     )
 
 fun ChatRoomSearchResult.toGraphQL(): GraphQlChatRoomPage =

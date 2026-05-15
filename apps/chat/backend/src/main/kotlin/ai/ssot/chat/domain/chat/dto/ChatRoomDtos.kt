@@ -29,6 +29,15 @@ data class ChatRoomSearchResult(
     val totalPages: Int,
 )
 
+data class DeleteChatRoomDto(
+    val roomId: String,
+)
+
+data class SetChatRoomFavoriteDto(
+    val roomId: String,
+    val isFavorite: Boolean,
+)
+
 data class ChatRoomDto @QueryProjection constructor(
     val id: UUID,
     val type: ChatRoomType,

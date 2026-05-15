@@ -11,6 +11,8 @@ import ai.ssot.chat.generated.types.ChatRoom
 import ai.ssot.chat.generated.types.ChatRoomPage
 import ai.ssot.chat.generated.types.ChatRoomsInput
 import ai.ssot.chat.generated.types.CreateChatRoomInput
+import ai.ssot.chat.generated.types.DeleteChatRoomInput
+import ai.ssot.chat.generated.types.SetChatRoomFavoriteInput
 import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsMutation
 import com.netflix.graphql.dgs.DgsQuery
@@ -51,6 +53,30 @@ class ChatDataFetcher(
     ): ChatRoom {
         return withMemberId { memberId ->
             chatRoomService.createChatRoom(
+                memberId = memberId,
+                dto = input.toDto(),
+            ).toGraphQL()
+        }
+    }
+
+    @DgsMutation
+    fun deleteChatRoom(
+        @InputArgument input: DeleteChatRoomInput,
+    ): Boolean {
+        return withMemberId { memberId ->
+            chatRoomService.deleteChatRoom(
+                memberId = memberId,
+                dto = input.toDto(),
+            )
+        }
+    }
+
+    @DgsMutation
+    fun setChatRoomFavorite(
+        @InputArgument input: SetChatRoomFavoriteInput,
+    ): ChatRoom {
+        return withMemberId { memberId ->
+            chatRoomService.setChatRoomFavorite(
                 memberId = memberId,
                 dto = input.toDto(),
             ).toGraphQL()
