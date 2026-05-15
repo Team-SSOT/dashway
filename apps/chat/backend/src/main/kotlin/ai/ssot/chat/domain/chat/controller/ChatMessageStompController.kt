@@ -24,20 +24,25 @@ class ChatMessageStompController(
         @Payload command: SendChatMessageCommand,
         principal: Principal,
     ) {
-        val message = chatMessageService.createChatMessage(
+        val result = chatMessageService.createChatMessage(
             memberId = principal.memberId(),
             roomId = roomId,
             dto = command.toDto(),
         )
 
+        if (!result.created) {
+            return
+        }
+
         messagingTemplate.convertAndSend(
             chatRoomMessageDestination(roomId),
-            message.toCreatedPayload(),
+            result.message.toCreatedPayload(),
         )
     }
 }
 
 data class SendChatMessageCommand(
+    val clientMessageId: String? = null,
     val content: String? = null,
 )
 
@@ -50,12 +55,19 @@ data class ChatMessagePayload(
     val id: String,
     val roomId: String,
     val senderMemberId: Long,
-    val content: String,
+    val clientMessageId: String,
+    val content: String?,
+    val isDeleted: Boolean,
     val createdDatetime: OffsetDateTime,
+    val editedDatetime: OffsetDateTime?,
+    val deletedDatetime: OffsetDateTime?,
 )
 
 fun SendChatMessageCommand.toDto(): CreateChatMessageDto =
-    CreateChatMessageDto(content = content.orEmpty())
+    CreateChatMessageDto(
+        clientMessageId = clientMessageId.orEmpty(),
+        content = content.orEmpty(),
+    )
 
 fun ChatMessageDto.toCreatedPayload(): ChatMessageCreatedPayload =
     ChatMessageCreatedPayload(
@@ -64,8 +76,12 @@ fun ChatMessageDto.toCreatedPayload(): ChatMessageCreatedPayload =
             id = id.toString(),
             roomId = roomId.toString(),
             senderMemberId = senderMemberId,
+            clientMessageId = clientMessageId,
             content = content,
+            isDeleted = isDeleted,
             createdDatetime = createdDatetime,
+            editedDatetime = editedDatetime,
+            deletedDatetime = deletedDatetime,
         ),
     )
 

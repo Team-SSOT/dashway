@@ -58,6 +58,7 @@ CREATE TABLE chat.chat_message(
 	id			        SERIAL          PRIMARY KEY,
 	room_id				UUID            NOT NULL,
 	member_id	        BIGINT          NOT NULL,
+	client_message_id	TEXT            NOT NULL,
 	content				TEXT            NOT NULL,
 
     is_enabled			BOOLEAN         NOT NULL DEFAULT TRUE,
@@ -69,5 +70,11 @@ CREATE TABLE chat.chat_message(
 
 	CONSTRAINT fk_chat_messages_sender_member
 		FOREIGN KEY (room_id, member_id)
-		REFERENCES chat.chat_room_members (room_id, member_id)
+		REFERENCES chat.chat_room_members (room_id, member_id),
+
+	CONSTRAINT uq_chat_messages_client_message_id
+		UNIQUE (room_id, member_id, client_message_id)
 );
+
+CREATE INDEX idx_chat_messages_room_created_id
+	ON chat.chat_message (room_id, created_datetime DESC, id DESC);
