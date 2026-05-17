@@ -35,6 +35,9 @@ class SecurityConfig(
                 ).permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/auth/token/validate").authenticated()
                     .requestMatchers(HttpMethod.GET, "/members/**").authenticated()
+                    .requestMatchers(HttpMethod.GET, "/files", "/files/**").authenticated()
+                    .requestMatchers(HttpMethod.POST, "/files", "/files/**").authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/files/**").authenticated()
                     .anyRequest().denyAll()
             }
             .addFilterBefore(authenticationFilter, AuthorizationFilter::class.java)
@@ -55,10 +58,19 @@ class SecurityConfig(
             allowedMethods = listOf("GET", "POST", "OPTIONS")
             allowedHeaders = listOf("Authorization", "Content-Type")
         }
+        val fileConfiguration = CorsConfiguration().apply {
+            allowCredentials = false
+            allowedOrigins = authProperties.corsAllowedOrigins
+            allowedMethods = listOf("GET", "POST", "DELETE", "OPTIONS")
+            allowedHeaders = listOf("Authorization", "Content-Type")
+            exposedHeaders = listOf("Content-Length", "Content-Type", "Content-Disposition", "ETag")
+        }
 
         return UrlBasedCorsConfigurationSource().apply {
             registerCorsConfiguration("/graphql", configuration)
             registerCorsConfiguration("/members/**", configuration)
+            registerCorsConfiguration("/files", fileConfiguration)
+            registerCorsConfiguration("/files/**", fileConfiguration)
         }
     }
 }

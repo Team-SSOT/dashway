@@ -160,6 +160,7 @@ export async function loadDashwayConfig(configPath) {
   if (!Array.isArray(config.apps)) {
     throw new Error('dashway.config.json apps must be an array.')
   }
+  const filepath = requireConfigString(config, 'filepath', 'filepath')
   const postgres = normalizePostgresConfig(config.database?.postgres)
 
   const apps = config.apps.map((app, index) => {
@@ -198,6 +199,7 @@ export async function loadDashwayConfig(configPath) {
 
   return {
     ...config,
+    filepath,
     database: {
       ...config.database,
       postgres,
@@ -218,8 +220,11 @@ export function buildComposeEnvironment(config) {
   }
 }
 
-export function buildContextApiComposeEnvironment(config) {
-  return buildSpringDatasourceEnvironment(config, 'contextApi')
+export function buildContextApiComposeEnvironment(config, repoRoot) {
+  return {
+    ...buildSpringDatasourceEnvironment(config, 'contextApi'),
+    CONTEXT_API_STORAGE_HOST_PATH: path.resolve(repoRoot, config.filepath),
+  }
 }
 
 export function buildAppComposeEnvironment(config, app) {

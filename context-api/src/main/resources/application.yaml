@@ -14,6 +14,8 @@ logging:
     org.springframework.security: debug
 
 context-api:
+  storage:
+    local-root: ${CONTEXT_API_STORAGE_LOCAL_ROOT:${user.home}/dashway/files}
   search:
     meilisearch:
       host: http://localhost:7700

@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import { spawn } from 'node:child_process'
-import { access } from 'node:fs/promises'
+import { access, mkdir } from 'node:fs/promises'
 import http from 'node:http'
 import https from 'node:https'
 import path from 'node:path'
@@ -38,7 +38,8 @@ async function main() {
   const manifest = await loadInstallerManifest(manifestPath)
   const dashwayConfig = await loadDashwayConfig(dashwayConfigPath)
   const composeEnvironment = buildComposeEnvironment(dashwayConfig)
-  const contextApiEnvironment = buildContextApiComposeEnvironment(dashwayConfig)
+  const contextApiEnvironment = buildContextApiComposeEnvironment(dashwayConfig, repoRoot)
+  await mkdir(contextApiEnvironment.CONTEXT_API_STORAGE_HOST_PATH, { recursive: true })
   const installRoot = process.cwd()
   const statePath = buildStatePath(installRoot)
   const previousState = await readInstallState(statePath)

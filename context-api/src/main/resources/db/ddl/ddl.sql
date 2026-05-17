@@ -57,3 +57,19 @@ CREATE TABLE IF NOT EXISTS team_member (
     CONSTRAINT fk__team_member__team_id FOREIGN KEY (team_id) REFERENCES teams (id),
     CONSTRAINT fk__team_member__member_id FOREIGN KEY (member_id) REFERENCES members (id)
 );
+
+CREATE TABLE IF NOT EXISTS files (
+    id                  UUID        PRIMARY KEY,
+    file_name           VARCHAR(255)    NOT NULL,
+    storage_path        VARCHAR(255)    NOT NULL    UNIQUE,
+    owner_member_id     BIGINT      NOT NULL,
+    content_type        VARCHAR(255)    NOT NULL,
+    content_length      BIGINT      NOT NULL,
+    checksum_sha256     VARCHAR(64)     NOT NULL,
+    created_datetime    TIMESTAMP   NOT NULL    DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk__files__owner_member_id FOREIGN KEY (owner_member_id) REFERENCES members (id)
+);
+
+CREATE INDEX IF NOT EXISTS idx__files__owner_created_id
+    ON files (owner_member_id, created_datetime DESC, id);

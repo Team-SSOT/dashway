@@ -24,5 +24,6 @@
       "port": 12000,
       "composeFile": "apps/issue_tracker/docker-compose.yml"
     }
-  ]
+  ],
+  "filepath": "files"
 }

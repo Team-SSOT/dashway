@@ -5,6 +5,7 @@ import { createInterface } from 'node:readline/promises'
 import { fileURLToPath } from 'node:url'
 import {
   buildComposeEnvironment,
+  buildContextApiComposeEnvironment,
   buildComposeUninstallPlan,
   buildStatePath,
   loadDashwayConfig,
@@ -28,7 +29,10 @@ async function main() {
 
   const manifest = await loadInstallerManifest(manifestPath)
   const dashwayConfig = await loadDashwayConfig(dashwayConfigPath)
-  const composeEnvironment = buildComposeEnvironment(dashwayConfig)
+  const composeEnvironment = {
+    ...buildComposeEnvironment(dashwayConfig),
+    ...buildContextApiComposeEnvironment(dashwayConfig, repoRoot),
+  }
   const installRoot = process.cwd()
   const statePath = buildStatePath(installRoot)
   const previousState = await readInstallState(statePath)
