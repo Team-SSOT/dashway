@@ -73,17 +73,13 @@ importers:
         version: 2.1.1
       date-fns:
         specifier: ^4.1.0
-<<<<<<< HEAD
         version: 4.3.0
-=======
-        version: 4.1.0
       graphql:
         specifier: ^16
         version: 16.14.0
       graphql-request:
         specifier: ^7
         version: 7.4.0(graphql@16.14.0)
->>>>>>> f0b36ba (feat(chat-frontend): scaffold V1.1 live data layer infra)
       lexical:
         specifier: 0.43.0
         version: 0.43.0
@@ -117,7 +113,7 @@ importers:
         version: 4.11.3
       '@graphql-codegen/cli':
         specifier: ^5
-        version: 5.0.7(@types/node@20.19.37)(encoding@0.1.13)(graphql@16.14.0)(typescript@5.9.3)
+        version: 5.0.7(@types/node@20.19.37)(graphql@16.14.0)(typescript@5.9.3)
       '@graphql-codegen/typed-document-node':
         specifier: ^5
         version: 5.1.2(graphql@16.14.0)
@@ -150,14 +146,10 @@ importers:
         version: 4.7.0(vite@6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4))
       '@vitest/ui':
         specifier: ^4.1.5
-<<<<<<< HEAD
         version: 4.1.7(vitest@4.1.7)
-=======
-        version: 4.1.5(vitest@4.1.5)
       cross-env:
         specifier: ^7
         version: 7.0.3
->>>>>>> f0b36ba (feat(chat-frontend): scaffold V1.1 live data layer infra)
       jsdom:
         specifier: ^29.0.2
         version: 29.1.1
@@ -169,11 +161,7 @@ importers:
         version: 6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4)
       vitest:
         specifier: ^4.1.5
-<<<<<<< HEAD
-        version: 4.1.7(@types/node@20.19.37)(@vitest/ui@4.1.7)(jsdom@29.1.1)(vite@6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1))
-=======
-        version: 4.1.5(@types/node@20.19.37)(@vitest/ui@4.1.5)(jsdom@29.1.1)(vite@6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4))
->>>>>>> f0b36ba (feat(chat-frontend): scaffold V1.1 live data layer infra)
+        version: 4.1.7(@types/node@20.19.37)(@vitest/ui@4.1.7)(jsdom@29.1.1)(vite@6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4))
 
   apps/desktop:
     dependencies:
@@ -3610,16 +3598,11 @@ packages:
     resolution: {integrity: sha512-23XHcCF+coGYevirZceTVD7NdJOqVn+49IHyxgszm+JIiHLoB2TkmPtsYkNWT1pvRSGkc35L6NHs0yHkN2SumA==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
 
-<<<<<<< HEAD
-  date-fns@4.3.0:
-    resolution: {integrity: sha512-OYcL+3N/jyWbYdFGqoMAhytDgxP9pbYPUUiRCOgn4Fewaadk9l/Wam4Avciiyp2BgkpfQyBV9B+ehnVJych+eQ==}
-=======
   dataloader@2.2.3:
     resolution: {integrity: sha512-y2krtASINtPFS1rSDjacrFgn1dcUuoREVabwlOGOe4SdxenREqwjwjElAdwvbGM7kgZz9a3KVicWR7vcz8rnzA==}
 
-  date-fns@4.1.0:
-    resolution: {integrity: sha512-Ukq0owbQXxa/U3EGtsdVBkR1w7KOQ5gIBqdH2hkvknzZPYvBxb/aa6E8L7tmjFtkwZBu3UXBbjIgPo/Ez4xaNg==}
->>>>>>> f0b36ba (feat(chat-frontend): scaffold V1.1 live data layer infra)
+  date-fns@4.3.0:
+    resolution: {integrity: sha512-OYcL+3N/jyWbYdFGqoMAhytDgxP9pbYPUUiRCOgn4Fewaadk9l/Wam4Avciiyp2BgkpfQyBV9B+ehnVJych+eQ==}
 
   debounce@1.2.1:
     resolution: {integrity: sha512-XRRe6Glud4rd/ZGQfiV1ruXSfbvfJedlV9Y6zOlP+2K04vBYiJEte6stfFkCP03aMnY5tsipamumUjL14fofug==}
@@ -3877,17 +3860,12 @@ packages:
       picomatch:
         optional: true
 
-<<<<<<< HEAD
-  fflate@0.8.3:
-    resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
-=======
   fetch-blob@3.2.0:
     resolution: {integrity: sha512-7yAQpD2UMJzLi1Dqv7qFYnPbaPx7ZfFK6PiIxQ4PfkGPyNyl2Ugx+a/umUonmKqjhM4DnfbMvdX6otXq83soQQ==}
     engines: {node: ^12.20 || >= 14.13}
 
-  fflate@0.8.2:
-    resolution: {integrity: sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A==}
->>>>>>> f0b36ba (feat(chat-frontend): scaffold V1.1 live data layer infra)
+  fflate@0.8.3:
+    resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
 
   figures@3.2.0:
     resolution: {integrity: sha512-yaduQFRKLXYOGgEn6AZau90j3ggSOyiqXU0F9JZfeXYhNa+Jk4X+s45A2zg5jns87GAFa34BBm2kXw4XpNcbdg==}
@@ -6823,7 +6801,7 @@ snapshots:
       graphql: 16.14.0
       tslib: 2.6.3
 
-  '@graphql-codegen/cli@5.0.7(@types/node@20.19.37)(encoding@0.1.13)(graphql@16.14.0)(typescript@5.9.3)':
+  '@graphql-codegen/cli@5.0.7(@types/node@20.19.37)(graphql@16.14.0)(typescript@5.9.3)':
     dependencies:
       '@babel/generator': 7.29.1
       '@babel/template': 7.28.6
@@ -6838,7 +6816,7 @@ snapshots:
       '@graphql-tools/graphql-file-loader': 8.1.14(graphql@16.14.0)
       '@graphql-tools/json-file-loader': 8.0.28(graphql@16.14.0)
       '@graphql-tools/load': 8.1.10(graphql@16.14.0)
-      '@graphql-tools/prisma-loader': 8.0.17(@types/node@20.19.37)(encoding@0.1.13)(graphql@16.14.0)
+      '@graphql-tools/prisma-loader': 8.0.17(@types/node@20.19.37)(graphql@16.14.0)
       '@graphql-tools/url-loader': 8.0.33(@types/node@20.19.37)(graphql@16.14.0)
       '@graphql-tools/utils': 10.11.0(graphql@16.14.0)
       '@whatwg-node/fetch': 0.10.13
@@ -7220,7 +7198,7 @@ snapshots:
       graphql: 16.14.0
       tslib: 2.8.1
 
-  '@graphql-tools/prisma-loader@8.0.17(@types/node@20.19.37)(encoding@0.1.13)(graphql@16.14.0)':
+  '@graphql-tools/prisma-loader@8.0.17(@types/node@20.19.37)(graphql@16.14.0)':
     dependencies:
       '@graphql-tools/url-loader': 8.0.33(@types/node@20.19.37)(graphql@16.14.0)
       '@graphql-tools/utils': 10.11.0(graphql@16.14.0)
@@ -7230,7 +7208,7 @@ snapshots:
       debug: 4.4.3
       dotenv: 16.6.1
       graphql: 16.14.0
-      graphql-request: 6.1.0(encoding@0.1.13)(graphql@16.14.0)
+      graphql-request: 6.1.0(graphql@16.14.0)
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.6
       jose: 5.10.0
@@ -9050,11 +9028,7 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.1.0
 
-<<<<<<< HEAD
-  '@vitest/mocker@4.1.7(vite@6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1))':
-=======
-  '@vitest/mocker@4.1.5(vite@6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4))':
->>>>>>> f0b36ba (feat(chat-frontend): scaffold V1.1 live data layer infra)
+  '@vitest/mocker@4.1.7(vite@6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4))':
     dependencies:
       '@vitest/spy': 4.1.7
       estree-walker: 3.0.3
@@ -9089,11 +9063,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.1.0
-<<<<<<< HEAD
-      vitest: 4.1.7(@types/node@20.19.37)(@vitest/ui@4.1.7)(jsdom@29.1.1)(vite@6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1))
-=======
-      vitest: 4.1.5(@types/node@20.19.37)(@vitest/ui@4.1.5)(jsdom@29.1.1)(vite@6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4))
->>>>>>> f0b36ba (feat(chat-frontend): scaffold V1.1 live data layer infra)
+      vitest: 4.1.7(@types/node@20.19.37)(@vitest/ui@4.1.7)(jsdom@29.1.1)(vite@6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4))
 
   '@vitest/utils@4.1.7':
     dependencies:
@@ -9662,13 +9632,9 @@ snapshots:
     transitivePeerDependencies:
       - '@noble/hashes'
 
-<<<<<<< HEAD
-  date-fns@4.3.0: {}
-=======
   dataloader@2.2.3: {}
 
-  date-fns@4.1.0: {}
->>>>>>> f0b36ba (feat(chat-frontend): scaffold V1.1 live data layer infra)
+  date-fns@4.3.0: {}
 
   debounce@1.2.1: {}
 
@@ -9944,16 +9910,12 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.3
 
-<<<<<<< HEAD
-  fflate@0.8.3: {}
-=======
   fetch-blob@3.2.0:
     dependencies:
       node-domexception: 1.0.0
       web-streams-polyfill: 3.3.3
 
-  fflate@0.8.2: {}
->>>>>>> f0b36ba (feat(chat-frontend): scaffold V1.1 live data layer infra)
+  fflate@0.8.3: {}
 
   figures@3.2.0:
     dependencies:
@@ -10179,7 +10141,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  graphql-request@6.1.0(encoding@0.1.13)(graphql@16.14.0):
+  graphql-request@6.1.0(graphql@16.14.0):
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.14.0)
       cross-fetch: 3.2.0(encoding@0.1.13)
@@ -12001,27 +11963,15 @@ snapshots:
       terser: 5.46.1
       yaml: 2.8.4
 
-<<<<<<< HEAD
-  vitest@4.1.7(@types/node@20.19.37)(@vitest/ui@4.1.7)(jsdom@29.1.1)(vite@6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)):
+  vitest@4.1.7(@types/node@20.19.37)(@vitest/ui@4.1.7)(jsdom@29.1.1)(vite@6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4)):
     dependencies:
       '@vitest/expect': 4.1.7
-      '@vitest/mocker': 4.1.7(vite@6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1))
+      '@vitest/mocker': 4.1.7(vite@6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4))
       '@vitest/pretty-format': 4.1.7
       '@vitest/runner': 4.1.7
       '@vitest/snapshot': 4.1.7
       '@vitest/spy': 4.1.7
       '@vitest/utils': 4.1.7
-=======
-  vitest@4.1.5(@types/node@20.19.37)(@vitest/ui@4.1.5)(jsdom@29.1.1)(vite@6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4)):
-    dependencies:
-      '@vitest/expect': 4.1.5
-      '@vitest/mocker': 4.1.5(vite@6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4))
-      '@vitest/pretty-format': 4.1.5
-      '@vitest/runner': 4.1.5
-      '@vitest/snapshot': 4.1.5
-      '@vitest/spy': 4.1.5
-      '@vitest/utils': 4.1.5
->>>>>>> f0b36ba (feat(chat-frontend): scaffold V1.1 live data layer infra)
       es-module-lexer: 2.0.0
       expect-type: 1.3.0
       magic-string: 0.30.21
