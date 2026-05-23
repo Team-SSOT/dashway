@@ -1,0 +1,22 @@
+{
+  "root": {
+    "type": "root",
+    "version": 1,
+    "direction": "ltr",
+    "format": "",
+    "indent": 0,
+    "children": [
+      {
+        "type": "heading",
+        "version": 1,
+        "direction": "ltr",
+        "format": "",
+        "indent": 0,
+        "tag": "h1",
+        "children": [
+          { "type": "text", "version": 1, "text": "Announcement", "format": 0, "detail": 0, "mode": "normal", "style": "" }
+        ]
+      }
+    ]
+  }
+}

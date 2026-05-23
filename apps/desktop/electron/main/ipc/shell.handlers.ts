@@ -9,6 +9,7 @@ import type {
 import { ipcMain } from 'electron'
 import { buildShellBootstrap } from '../services/shell-bootstrap'
 import { configStore } from '../services/config-store'
+import { sessionStore } from '../services/session-store'
 import {
   contextApiClient,
   getStoredContextApiUrl,
@@ -60,5 +61,9 @@ export function registerShellHandlers(): void {
 
   ipcMain.handle(IPC.SHELL_PROBE_SERVER, async (_event, url: string) => {
     return probeContextApiUrl(url.trim())
+  })
+
+  ipcMain.handle(IPC.SHELL_GET_ACCESS_TOKEN, (): string | null => {
+    return sessionStore.get().accessToken
   })
 }

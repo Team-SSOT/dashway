@@ -1,0 +1,26 @@
+query chatRooms($input: ChatRoomsInput!) {
+  chatRooms(input: $input) {
+    rooms {
+      id
+      type
+      isPublic
+      title
+      isFavorite
+      canDelete
+      memberCount
+      members {
+        memberId
+        role
+        joinedDatetime
+      }
+      createdDatetime
+      updatedDatetime
+    }
+    pageInfo {
+      page
+      size
+      totalElements
+      totalPages
+    }
+  }
+}

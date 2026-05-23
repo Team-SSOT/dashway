@@ -17,6 +17,7 @@ export interface DashwayAppClient {
   notifySessionInvalid(): void
   onNavigate(handler: (appRoute: string) => void): () => void
   onThemeChange(handler: (mode: ThemeMode) => void): () => void
+  onAuthToken(handler: (token: string | null) => void): () => void
   destroy(): void
 }
 
@@ -32,6 +33,7 @@ export function createDashwayAppClient(options: DashwayAppClientOptions): Dashwa
   const { appId } = options
   const navHandlers = new Set<(appRoute: string) => void>()
   const themeHandlers = new Set<(mode: ThemeMode) => void>()
+  const authTokenHandlers = new Set<(token: string | null) => void>()
   let started = false
   let listenerAttached = false
 
@@ -58,6 +60,9 @@ export function createDashwayAppClient(options: DashwayAppClientOptions): Dashwa
         break
       case 'dashway:theme.changed':
         for (const handler of themeHandlers) handler(message.mode)
+        break
+      case 'dashway:auth.token':
+        for (const handler of authTokenHandlers) handler(message.token)
         break
     }
   }
@@ -110,6 +115,12 @@ export function createDashwayAppClient(options: DashwayAppClientOptions): Dashwa
         themeHandlers.delete(handler)
       }
     },
+    onAuthToken(handler) {
+      authTokenHandlers.add(handler)
+      return () => {
+        authTokenHandlers.delete(handler)
+      }
+    },
     destroy() {
       if (typeof window !== 'undefined' && listenerAttached) {
         window.removeEventListener('message', handleMessage)
@@ -117,6 +128,7 @@ export function createDashwayAppClient(options: DashwayAppClientOptions): Dashwa
       }
       navHandlers.clear()
       themeHandlers.clear()
+      authTokenHandlers.clear()
       started = false
     },
   }

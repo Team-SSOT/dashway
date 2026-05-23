@@ -1,0 +1,104 @@
+# Ralph Progress — chat-frontend-ui-v1 — COMPLETE
+
+## Session span
+- Started: 2026-04-21
+- Completed: 2026-04-21 (single-session ralph run through US-001 → US-006 + architect verify + deslop + regression)
+
+## Stories completed (all passes: true in .omc/prd.json)
+
+### US-001 FE-M1 Channel & Message View Structure
+- `data/MockChatRepository.ts` (324 lines) — 9 methods, cursor pagination, __mockError, __loadHeavyDataset
+- `data/MockChatRealtime.ts` — watchRoom/watchThread/watchConnection + __mockDisconnect
+- `data/mockData.ts` — 5 members, 3 rooms, 60 messages with full Lexical format variants (bold/italic/code/code-block/list/link/emoji/mention), 2 threads
+- `data/mockEventBus.ts` — module singleton EventTarget-backed pub/sub
+- `app/providers/DataSourceProvider.tsx` — Mock instances injected
+- `features/rooms/hooks/{useRooms,useActiveRoom,useRoomMemberships}.ts`
+- `features/messages/hooks/useRoomMessages.ts` (useInfiniteQuery with flat select)
+- `features/renderer/renderLexical.tsx` — pure JSX walker, 11 node types + unknown fallback
+- `features/renderer/__fixtures__/` — 3 initial (bold, code-block, mention-read) → grew to 13 in US-003
+- `features/messages/components/{MessageItem,MessageList,DateDivider}.tsx`
+- `features/rooms/components/{ChannelSidebar,RoomView}.tsx` replaced with data-driven hooks
+- Test: `renderLexical.test.tsx` + `vitest.config.ts`
+
+### US-002 FE-M2 Virtualized List + Dividers + Hover Toolbar
+- `data/mockData.heavy.ts` — 1000 messages (800 short/100 medium/50 code/30 link/20 long)
+- `MockChatRepository.__loadHeavyDataset` + `window.__chatMocks.{loadHeavyDataset,disconnect}` debug hooks
+- `features/messages/hooks/useRoomMessages.ts` → `useInfiniteQuery` with cursor prepend semantics documented
+- `features/messages/components/MessageList.tsx` — @tanstack/react-virtual, bottom-anchor, top-sentinel prepend, scroll anchor preservation, jump-to-bottom button
+- `features/messages/components/{UnreadDivider,MessageHoverToolbar}.tsx`
+- MessageItem wrapped with MessageHoverToolbar (4 stub actions with aria-labels)
+- `.omc/research/virtualization-spike.md` — keep TanStack Virtual, escape to Virtuoso if perf bar missed
+
+### US-003 FE-M3 Lexical Composer
+- `features/composer/lexical/nodes/EmojiNode.tsx` — DecoratorNode with role="img" + aria-label
+- `features/composer/lexical/{emojiMap,markdownTransformers,editorConfig}.ts`
+- `features/composer/lexical/plugins/{EmojiReplacePlugin,PasteSanitizerPlugin,ImeGuardPlugin}.tsx`
+- `features/composer/components/{MessageComposer,ComposerToolbar}.tsx` — IME-guarded Enter-to-send
+- `features/composer/hooks/useDraft.ts` — 300ms debounce → uiStore.drafts[roomId]
+- `features/messages/hooks/{useSendMessage,useRealtimeMessages}.ts` — optimistic flow with clientMsgId dedup
+- `RoomView.tsx` wired composer + realtime
+- `features/renderer/nodes/CodeBlockRender.tsx` — shiki-based lazy highlighter + copy button
+- Fixture growth: 13 golden fixtures (bold, italic, code-inline, code-block, link, bullet-list, ordered-list, heading, emoji, mention-read, empty, nested, max-length)
+- Tests: 13/13 pass
+
+### US-004 FE-M4 Thread Panel
+- `features/rooms/components/AvatarStack.tsx` — self-authored (shadcn Avatar + flex -space-x)
+- `features/threads/hooks/{useThreadReplies,useRealtimeThread}.ts`
+- `features/threads/components/{ThreadPanel,ThreadReplyList}.tsx` — right pane 96x, Escape closes, replies optimistic with parent replyCount setQueryData (not refetch)
+- `MessageItem` exposes Reply-in-thread + "N replies" button
+- Router `/c/:roomId/thread/:msgId` renders RoomView + conditional ThreadPanel
+
+### US-005 FE-M5 Polish
+- `shared/lib/date.ts` — locale-injectable formatters
+- MessageItem body `<div dir="auto">` for RTL/BiDi
+- `features/messages/components/{EmptyMessages,LoadingSpinner,ErrorMessage}.tsx`
+- RoomView uses the new state components
+- @axe-core/react wired DEV-only in main.tsx (+ tsconfig `types: ["vite/client"]` for ImportMeta.env)
+- `.omc/research/axe-report.md` — static audit of 4 views, runtime run section pending user
+- `apps/chat/frontend/README.md` — run commands + window.__chatMocks debug toggles + architecture links
+- `.omc/handoff/chat-frontend-ui-v1-be-spec.md` (~23KB) — 14-section BE spec: domain types, 9 REST endpoints, Lexical node set + plainText derivation, 13 fixtures, STOMP destinations, 5 event variants, cursor format, error matrix, idempotency contract
+
+### US-006 Plan file Kibo sweep
+- .omc/plans/chat-frontend-ui-v1.md — all scope/decisions/risks references removed except explicitly-dropped rejected-alternative markers
+- §7 tree diagram Kibo stragglers also cleaned during deslop
+
+## Architect reviewer verdict
+- **APPROVE** (THOROUGH tier) with 5 non-blocking follow-up recommendations
+- Every PRD criterion verified with file:line evidence
+- Fresh typecheck + build + test all exit 0
+- 13 fixtures present, exceed 10+ requirement
+- ChatRepository+ChatRealtime split cleanly swappable at DataSourceProvider
+- Optimistic reconcile + IME guard + clientMsgId dedup all verified correct
+- React 19 + Lexical 0.43.0 exact-pin verified against package.json
+- shadcn/TW4 single @theme + single .dark toggle point verified
+
+## Deslop pass (ai-slop-cleaner, standard mode)
+Architect-flagged fixes applied:
+1. `MockChatRealtime.watchRoom` — added `event.message.threadParentId === null` guard on MESSAGE_CREATED/UPDATED; thread replies no longer cross-pollute the room cache
+2. Plan §7 tree diagram stragglers — "kibo code-block 래핑" → "shiki 기반 자체 구현 (r2: Kibo DROPPED)"; removed `kibo/` directory row entirely; appended `avatar` to shadcn primitives comment
+
+Not fixed (intentional, in spec):
+- mockData.ts line 435-436 `console.log` references — code block CONTENT (seed demonstrates code block rendering with realistic content)
+- MessageItem stubs (stubReact/stubBookmark/stubMore) — per US-002 criterion "actions can be stubs (console.log)"; MessageHoverToolbar is UI-only in M2, wiring in later milestones (documented by inline comment)
+
+## Post-deslop regression (step 7.6)
+- `pnpm --filter chat-frontend typecheck` → exit 0
+- `pnpm --filter chat-frontend test` → 13/13 pass
+- `pnpm --filter chat-frontend build` → exit 0
+
+## Non-blocking follow-ups (NOT gating handoff)
+Captured from architect review — spin off as separate tasks if/when FE/BE integration phase begins:
+1. Add `features/auth/hooks/useCurrentUser.ts` hook backed by repo.getCurrentUser(); replace direct `currentUserId` + `MOCK_MEMBERS` imports in ThreadPanel/RoomView/useSendMessage
+2. `useMembersByIds` hook to remove `MOCK_MEMBERS` direct import from features/
+3. shiki tree-shaking via `createHighlighterCore` + explicit lang imports (current shiki default entry emits ~2MB of grammar chunks)
+4. `useRoomMessages.select` memoization on consumer side (currently recomputes flat+sort per render)
+5. Fill `.omc/research/axe-report.md` runtime sections by running `pnpm dev` + walking each view with DevTools console
+
+## Codebase patterns established (for future sessions)
+- Feature-first folders under `features/{domain}/{components,hooks,model}`
+- shared/ui = shadcn primitives only; shared/lib = true cross-feature utilities (cn, date); shared/store = Zustand
+- Data abstraction: `ChatRepository` (REST-equivalent) + `ChatRealtime` (WS-equivalent) in `data/`; Mock implementations swap-ready for HTTP/STOMP
+- Types SSOT at `src/types/chat.ts`; changes there require BE notification
+- Lexical exact version pin + golden fixtures in `features/renderer/__fixtures__/` for walker regression protection
+- Theme via Tailwind v4 CSS-first @theme (single block) + `.dark` class controlled by Zustand `uiStore.theme`
+- Mock debug hooks exposed via `window.__chatMocks` only in DEV

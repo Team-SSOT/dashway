@@ -13,4 +13,5 @@ export const shellApi = {
   getServerUrl: () => ipcRenderer.invoke(IPC.SHELL_GET_SERVER_URL),
   setServerUrl: (url: string) => ipcRenderer.invoke(IPC.SHELL_SET_SERVER_URL, url),
   probeServer: (url: string) => ipcRenderer.invoke(IPC.SHELL_PROBE_SERVER, url),
+  getAccessToken: (): Promise<string | null> => ipcRenderer.invoke(IPC.SHELL_GET_ACCESS_TOKEN),
 }

@@ -1,0 +1,81 @@
+@import "tailwindcss";
+@import "@dashway/design-tokens/css/tokens.css";
+@import "@dashway/design-tokens/css/shadcn-bridge.css";
+@import "@dashway/design-tokens/css/tailwind-theme.css";
+@source "../../../../packages/chat-ui/src/**/*.{ts,tsx}";
+
+@layer base {
+  html, body, #root {
+    @apply h-full;
+  }
+
+  body {
+    @apply bg-bg text-t1 antialiased;
+  }
+}
+
+@layer components {
+  .thread-panel-shell {
+    width: 24rem;
+    min-width: 24rem;
+    overflow: hidden;
+    transform-origin: right center;
+    will-change: width, min-width, transform, opacity;
+  }
+
+  .thread-panel-shell-enter {
+    animation: thread-panel-open 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .thread-panel-shell-exit {
+    animation: thread-panel-close 300ms cubic-bezier(0.4, 0, 0.2, 1) both;
+    pointer-events: none;
+  }
+}
+
+@keyframes thread-panel-open {
+  from {
+    width: 0;
+    min-width: 0;
+    opacity: 0;
+    transform: translateX(32px);
+  }
+
+  60% {
+    opacity: 1;
+  }
+
+  to {
+    width: 24rem;
+    min-width: 24rem;
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes thread-panel-close {
+  from {
+    width: 24rem;
+    min-width: 24rem;
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  to {
+    width: 0;
+    min-width: 0;
+    opacity: 0;
+    transform: translateX(32px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thread-panel-shell-enter,
+  .thread-panel-shell-exit {
+    animation: none;
+  }
+
+  .thread-panel-shell {
+    will-change: auto;
+  }
+}

@@ -14,6 +14,7 @@ class WebSocketConfig(
 ) : WebSocketMessageBrokerConfigurer {
     override fun registerStompEndpoints(registry: StompEndpointRegistry) {
         registry.addEndpoint("/ws/chat")
+            .setAllowedOriginPatterns("*")
     }
 
     override fun configureClientInboundChannel(registration: ChannelRegistration) {

@@ -1,0 +1,18 @@
+mutation createChatRoom($input: CreateChatRoomInput!) {
+  createChatRoom(input: $input) {
+    id
+    type
+    isPublic
+    title
+    isFavorite
+    canDelete
+    memberCount
+    members {
+      memberId
+      role
+      joinedDatetime
+    }
+    createdDatetime
+    updatedDatetime
+  }
+}

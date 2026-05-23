@@ -1,17 +1,56 @@
+# VCS
+.git
+.gitignore
+.gitattributes
+
+# Dependencies
 **/node_modules
+
+# Build artifacts
 **/dist
 **/build
 **/.next
+**/.vite
+**/.turbo
 **/out
 **/.gradle
 **/target
-**/.vite
-**/.cache
-.git
-.gitignore
-.vscode
+apps/desktop/.vite
+apps/desktop/out
+apps/desktop/renderer/.vite
+
+# Test / coverage
+**/coverage
+**/.nyc_output
+
+# Editor / IDE
 .idea
+.vscode
+**/.DS_Store
+**/Thumbs.db
+
+# Logs
 **/*.log
+**/.npm
+**/.pnpm-store
+
+# Tooling state
+.omc
+**/.omc
+.dashway
+.claude
+.cache
+**/.cache
+
+# Env
 .env
 .env.*
 !.env.example
+
+# Docker
+**/Dockerfile
+!apps/chat/Dockerfile
+
+# Misc
+*.swp
+*.swo

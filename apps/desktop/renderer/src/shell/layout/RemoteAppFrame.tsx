@@ -59,6 +59,16 @@ export function RemoteAppFrame({ app, splat }: Props) {
         const route = targetRouteRef.current
         host.navigate(route)
         lastSentRef.current = route
+        // Forward shell session token to the iframe so apps don't need
+        // operator-pasted localStorage entries (V1.2 dashway:auth.token).
+        const desktop = (window as unknown as { desktop?: { shell?: { getAccessToken?: () => Promise<string | null> } } }).desktop
+        if (desktop?.shell?.getAccessToken) {
+          void desktop.shell.getAccessToken().then((token) => {
+            host.setAuthToken(token)
+          }).catch((err) => {
+            console.warn('[dashway:shell] failed to read accessToken', err)
+          })
+        }
       },
       onRouteChanged: (appRoute) => {
         lastReceivedRef.current = appRoute

@@ -1,0 +1,22 @@
+{
+  "root": {
+    "type": "root",
+    "version": 1,
+    "direction": "ltr",
+    "format": "",
+    "indent": 0,
+    "children": [
+      {
+        "type": "code",
+        "version": 1,
+        "direction": "ltr",
+        "format": "",
+        "indent": 0,
+        "language": "typescript",
+        "children": [
+          { "type": "text", "version": 1, "text": "const x = 1;\nconst y = 2;", "format": 0, "detail": 0, "mode": "normal", "style": "" }
+        ]
+      }
+    ]
+  }
+}

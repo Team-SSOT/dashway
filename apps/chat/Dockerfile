@@ -1,31 +1,35 @@
-# 1단계: Frontend Build Stage
+# syntax=docker/dockerfile:1.7
+
+# 1단계: Frontend Build Stage (pnpm workspace)
 FROM node:20-alpine AS frontend
-WORKDIR /web
-COPY frontend/package.json ./
-RUN npm install
-COPY frontend ./
-RUN npm run build
+RUN apk add --no-cache libc6-compat
+RUN corepack enable && corepack prepare pnpm@10.0.0 --activate
+WORKDIR /repo
+
+# 빌드 컨텍스트는 레포 루트 (docker-compose 의 context: ../..)
+COPY . .
+
+RUN pnpm install --filter chat-frontend... --frozen-lockfile
+ENV VITE_CHAT_DATA_SOURCE=live
+RUN pnpm --filter chat-frontend build
 
 # 2단계: Backend Build Stage
 FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /home/gradle/project
 
-# Gradle 설정 파일들을 먼저 복사 (의존성 캐싱을 위해)
-COPY backend/gradlew .
-COPY backend/gradle gradle
-COPY backend/build.gradle.kts backend/settings.gradle.kts ./
+# Gradle 설정 파일을 먼저 복사 (의존성 캐싱을 위해)
+COPY apps/chat/backend/gradlew .
+COPY apps/chat/backend/gradle gradle
+COPY apps/chat/backend/build.gradle.kts apps/chat/backend/settings.gradle.kts ./
 
-# gradlew 실행 권한 부여 및 의존성 미리 다운로드
-RUN chmod +x gradlew
+RUN sed -i 's/\r$//' gradlew && chmod +x gradlew
 RUN ./gradlew dependencies --no-daemon
 
-# 소스 코드 복사
-COPY backend/src src
+COPY apps/chat/backend/src src
 
-# 프런트 빌드 산출물을 Spring Boot 정적 리소스 경로로 복사
-COPY --from=frontend /web/dist src/main/resources/static
+# 프런트 빌드 산출물을 Spring Boot 정적 리소스 경로로 임베드
+COPY --from=frontend /repo/apps/chat/frontend/dist src/main/resources/static
 
-# plain jar가 생성되지 않도록 bootJar만 실행
 RUN ./gradlew bootJar --no-daemon
 
 # 3단계: Run Stage
