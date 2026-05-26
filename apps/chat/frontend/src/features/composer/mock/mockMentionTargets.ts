@@ -1,72 +1,33 @@
+import { getRichTextMentionId } from '@dashway/app-protocol'
 import type { MentionQuery, MentionTarget } from '@dashway/chat-ui'
 import type { DirectoryRepository } from '@/data/DirectoryRepository'
 import { MockDirectoryRepository } from '@/data/MockDirectoryRepository'
 
 const STATIC_TARGETS: MentionTarget[] = [
   {
-    type: 'document',
-    id: 'doc-chat-fe-handoff',
+    appId: 'docs',
+    type: 'FILE',
+    fileId: 'doc-chat-fe-handoff',
     label: 'Chat frontend BE handoff',
-    description: 'REST, STOMP, Lexical content and optimistic send contract',
-    source: 'Docs',
   },
   {
-    type: 'document',
-    id: 'doc-universal-mention',
+    appId: 'docs',
+    type: 'FILE',
+    fileId: 'doc-universal-mention',
     label: 'Universal mention design',
-    description: 'Notion-style mention picker for people, docs and issues',
-    source: 'Docs',
   },
   {
-    type: 'document',
-    id: 'doc-lexical-composer',
+    appId: 'docs',
+    type: 'FILE',
+    fileId: 'doc-lexical-composer',
     label: 'Lexical composer ADR',
-    description: 'Why Slack-style composer stays on Lexical',
-    source: 'Docs',
-  },
-  {
-    type: 'issue',
-    id: 'DW-142',
-    label: 'DW-142 Universal mention picker',
-    description: 'Design mock mention search and inline chips',
-    source: 'Issues',
-  },
-  {
-    type: 'issue',
-    id: 'DW-118',
-    label: 'DW-118 Attachment tray',
-    description: 'Mock file upload preview for chat composer',
-    source: 'Issues',
-  },
-  {
-    type: 'issue',
-    id: 'DW-097',
-    label: 'DW-097 Context search bridge',
-    description: 'Use context-api search results as mention targets',
-    source: 'Issues',
-  },
-  {
-    type: 'team',
-    id: 'team-platform',
-    label: 'Platform Team',
-    description: 'Backend, graph and desktop shell ownership',
-    source: 'Teams',
-  },
-  {
-    type: 'app',
-    id: 'app-context-api',
-    label: 'Context API',
-    description: 'GraphQL search and permission-filtered app content',
-    source: 'Apps',
   },
 ]
 
 const RECENT_TARGET_IDS = new Set([
   'alice',
   'doc-universal-mention',
-  'DW-142',
-  'app-context-api',
-  'team-platform',
+  'doc-chat-fe-handoff',
 ])
 
 export async function buildMentionTargets(
@@ -77,16 +38,15 @@ export async function buildMentionTargets(
 
   const { items } = await directory.searchMembers({ q: normalizedQuery, limit: query.limit ?? 20 })
   const personTargets: MentionTarget[] = items.map((m) => ({
-    type: 'person',
-    id: m.id,
+    appId: 'context-api',
+    type: 'PERSON',
+    memberId: m.id,
     label: m.name,
-    description: `${m.name} from the current workspace`,
-    source: 'People',
   }))
 
   if (normalizedQuery.length === 0) {
-    const recentPersons = personTargets.filter((t) => RECENT_TARGET_IDS.has(t.id))
-    const recentStatic = STATIC_TARGETS.filter((t) => RECENT_TARGET_IDS.has(t.id))
+    const recentPersons = personTargets.filter((t) => RECENT_TARGET_IDS.has(getRichTextMentionId(t)))
+    const recentStatic = STATIC_TARGETS.filter((t) => RECENT_TARGET_IDS.has(getRichTextMentionId(t)))
     return [...recentPersons, ...recentStatic]
   }
 
@@ -100,21 +60,22 @@ export async function buildMentionTargets(
 }
 
 function scoreTarget(target: MentionTarget, query: string): number {
-  if (query.length === 0) return RECENT_TARGET_IDS.has(target.id) ? 10 : 0
+  const targetId = getRichTextMentionId(target)
+
+  if (query.length === 0) return RECENT_TARGET_IDS.has(targetId) ? 10 : 0
 
   const haystack = [
-    target.id,
-    target.label,
-    target.description ?? '',
-    target.source ?? '',
+    target.appId,
     target.type,
+    targetId,
+    target.label,
   ]
     .join(' ')
     .toLowerCase()
 
-  if (target.id.toLowerCase() === query) return 100
+  if (targetId.toLowerCase() === query) return 100
   if (target.label.toLowerCase().startsWith(query)) return 80
-  if (target.id.toLowerCase().startsWith(query)) return 70
+  if (targetId.toLowerCase().startsWith(query)) return 70
   if (haystack.includes(query)) return 40
   return 0
 }

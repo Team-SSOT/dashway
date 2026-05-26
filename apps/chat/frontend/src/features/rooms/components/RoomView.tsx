@@ -1,3 +1,4 @@
+import type { RichTextMention } from '@dashway/app-protocol'
 import type { SerializedEditorState } from 'lexical'
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
@@ -48,9 +49,10 @@ export function RoomView() {
   const handleSend = (
     content: SerializedEditorState,
     plainText: string,
+    mentions: RichTextMention[],
     attachments?: MessageAttachment[],
   ) => {
-    sendMessage.mutate({ content, plainText, attachments })
+    sendMessage.mutate({ content, plainText, mentions, attachments })
   }
 
   if (roomsLoading) {

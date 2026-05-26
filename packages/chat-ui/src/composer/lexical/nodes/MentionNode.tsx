@@ -1,3 +1,4 @@
+import { getRichTextMentionId, normalizeRichTextMentionType } from '@dashway/app-protocol'
 import { cn } from '@dashway/ui'
 import type { EditorConfig, LexicalNode, NodeKey, SerializedLexicalNode, Spread } from 'lexical'
 import { DecoratorNode } from 'lexical'
@@ -7,12 +8,15 @@ import type { MentionTarget, MentionTargetType } from '../../types'
 export type SerializedMentionNode = Spread<
   {
     type: 'mention'
-    targetType: MentionTargetType
-    targetId: string
-    label: string
-    source?: string
-    iconUrl?: string
-    url?: string
+    appId?: string
+    mentionType?: MentionTargetType
+    memberId?: string
+    fileId?: string
+    label?: string
+    resourceType?: string
+    resourceId?: string
+    targetType?: string
+    targetId?: string
     text: string
     version: 1
   },
@@ -20,12 +24,10 @@ export type SerializedMentionNode = Spread<
 >
 
 const TYPE_CLASSES: Record<MentionTargetType, string> = {
-  person: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
-  document: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
-  issue: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
-  team: 'bg-violet-500/15 text-violet-700 dark:text-violet-300',
-  app: 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
+  PERSON: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
+  FILE: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
 }
+const DEFAULT_TYPE_CLASS = 'bg-muted text-muted-foreground'
 
 export class MentionNode extends DecoratorNode<ReactNode> {
   __target: MentionTarget
@@ -70,11 +72,13 @@ export class MentionNode extends DecoratorNode<ReactNode> {
       <span
         className={cn(
           'inline-flex max-w-[16rem] items-center rounded px-1 align-baseline font-medium',
-          TYPE_CLASSES[this.__target.type],
+          TYPE_CLASSES[this.__target.type] ?? DEFAULT_TYPE_CLASS,
         )}
-        data-mention-id={this.__target.id}
+        data-mention-id={getRichTextMentionId(this.__target)}
         data-mention-type={this.__target.type}
-        title={this.__target.description}
+        data-mention-app-id={this.__target.appId}
+        data-mention-member-id={this.__target.type === 'PERSON' ? this.__target.memberId : undefined}
+        data-mention-file-id={this.__target.type === 'FILE' ? this.__target.fileId : undefined}
       >
         @{this.__target.label}
       </span>
@@ -82,27 +86,44 @@ export class MentionNode extends DecoratorNode<ReactNode> {
   }
 
   exportJSON(): SerializedMentionNode {
+    const mentionId =
+      this.__target.type === 'PERSON'
+        ? { memberId: this.__target.memberId }
+        : { fileId: this.__target.fileId }
+
     return {
       type: 'mention',
       version: 1,
-      targetType: this.__target.type,
-      targetId: this.__target.id,
+      appId: this.__target.appId,
+      mentionType: this.__target.type,
+      ...mentionId,
       label: this.__target.label,
-      source: this.__target.source,
-      iconUrl: this.__target.iconUrl,
-      url: this.__target.url,
       text: `@${this.__target.label}`,
     }
   }
 
   static importJSON(json: SerializedMentionNode): MentionNode {
+    const mentionType = normalizeRichTextMentionType(
+      json.mentionType ?? json.resourceType ?? json.targetType,
+    )
+    const mentionIdValue =
+      mentionType === 'PERSON'
+        ? json.memberId ?? json.resourceId ?? json.targetId ?? ''
+        : json.fileId ?? json.resourceId ?? json.targetId ?? json.memberId ?? ''
+    const label = json.label ?? json.text?.replace(/^@/, '') ?? mentionIdValue
+    if (mentionType === 'PERSON') {
+      return new MentionNode({
+        appId: json.appId ?? 'context-api',
+        type: 'PERSON',
+        memberId: mentionIdValue,
+        label,
+      })
+    }
     return new MentionNode({
-      type: json.targetType,
-      id: json.targetId,
-      label: json.label,
-      source: json.source,
-      iconUrl: json.iconUrl,
-      url: json.url,
+      appId: json.appId ?? 'unknown',
+      type: 'FILE',
+      fileId: mentionIdValue,
+      label,
     })
   }
 }

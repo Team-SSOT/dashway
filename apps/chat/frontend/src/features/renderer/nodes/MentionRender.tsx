@@ -1,36 +1,37 @@
+import { normalizeRichTextMentionType, type RichTextMentionType } from '@dashway/app-protocol'
 import type { ReactNode } from 'react'
 
-type MentionTargetType = 'person' | 'document' | 'issue' | 'team' | 'app'
-
 export interface MentionRenderProps {
-  targetId: string
-  targetType?: MentionTargetType
+  appId?: string
+  mentionId: string
+  mentionType?: string
   label: string
   displayName?: string
-  source?: string
 }
 
-const TYPE_CLASSES: Record<MentionTargetType, string> = {
-  person: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
-  document: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
-  issue: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
-  team: 'bg-violet-500/15 text-violet-700 dark:text-violet-300',
-  app: 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
+const TYPE_CLASSES: Record<RichTextMentionType, string> = {
+  PERSON: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
+  FILE: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
 }
+const DEFAULT_TYPE_CLASS = 'bg-muted text-muted-foreground'
 
 export function MentionRender({
-  targetId,
-  targetType = 'person',
+  appId,
+  mentionId,
+  mentionType,
   label,
   displayName,
-  source,
 }: MentionRenderProps): ReactNode {
+  const normalizedMentionType = normalizeRichTextMentionType(mentionType)
+
   return (
     <span
-      className={`rounded px-1 font-medium ${TYPE_CLASSES[targetType]}`}
-      data-mention-id={targetId}
-      data-mention-type={targetType}
-      title={source}
+      className={`rounded px-1 font-medium ${TYPE_CLASSES[normalizedMentionType] ?? DEFAULT_TYPE_CLASS}`}
+      data-mention-id={mentionId}
+      data-mention-type={normalizedMentionType}
+      data-mention-app-id={appId}
+      data-mention-member-id={normalizedMentionType === 'PERSON' ? mentionId : undefined}
+      data-mention-file-id={normalizedMentionType === 'FILE' ? mentionId : undefined}
     >
       @{displayName ?? label}
     </span>

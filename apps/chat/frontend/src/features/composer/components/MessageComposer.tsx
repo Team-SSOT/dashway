@@ -3,6 +3,7 @@ import {
   type MentionQuery,
   UniversalMessageComposer,
 } from '@dashway/chat-ui'
+import type { RichTextMention } from '@dashway/app-protocol'
 import type { SerializedEditorState } from 'lexical'
 import { useCallback, useRef } from 'react'
 import { useDirectory } from '@/app/providers/DataSourceProvider'
@@ -15,6 +16,7 @@ interface Props {
   onSend: (
     content: SerializedEditorState,
     plainText: string,
+    mentions: RichTextMention[],
     attachments?: MessageAttachment[],
   ) => void | Promise<void>
   placeholder?: string
@@ -61,6 +63,7 @@ export function MessageComposer({
       return onSend(
         payload.content,
         payload.plainText,
+        payload.mentions,
         attachments.length > 0 ? attachments : undefined,
       )
     },

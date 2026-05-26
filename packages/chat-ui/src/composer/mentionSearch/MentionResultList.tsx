@@ -1,33 +1,37 @@
+import { getRichTextMentionKey } from '@dashway/app-protocol'
 import { Button, cn } from '@dashway/ui'
-import { AppWindow, CircleDot, FileText, type LucideIcon, User, Users } from 'lucide-react'
+import { FileText, type LucideIcon, User } from 'lucide-react'
 import { type ReactNode, useMemo } from 'react'
 import type { MentionTarget, MentionTargetType } from './types'
 
-export const MENTION_TYPE_LABELS: Record<MentionTargetType, string> = {
-  person: 'People',
-  document: 'Docs',
-  issue: 'Issues',
-  team: 'Teams',
-  app: 'Apps',
+interface MentionResourceMeta {
+  label: string
+  icon: LucideIcon
+  className: string
 }
 
-export const MENTION_TYPE_ICONS: Record<MentionTargetType, LucideIcon> = {
-  person: User,
-  document: FileText,
-  issue: CircleDot,
-  team: Users,
-  app: AppWindow,
+export const MENTION_RESOURCE_META: Record<MentionTargetType, MentionResourceMeta> = {
+  PERSON: {
+    label: 'People',
+    icon: User,
+    className: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
+  },
+  FILE: {
+    label: 'Files',
+    icon: FileText,
+    className: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+  },
 }
 
-export const MENTION_TYPE_CLASSES: Record<MentionTargetType, string> = {
-  person: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
-  document: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
-  issue: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
-  team: 'bg-violet-500/15 text-violet-700 dark:text-violet-300',
-  app: 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
+const DEFAULT_MENTION_RESOURCE_META: MentionResourceMeta = {
+  label: 'Resources',
+  icon: FileText,
+  className: 'bg-muted text-muted-foreground',
 }
 
-const TYPE_ORDER: MentionTargetType[] = ['person', 'document', 'issue', 'team', 'app']
+function getMentionMeta(mentionType: MentionTargetType): MentionResourceMeta {
+  return MENTION_RESOURCE_META[mentionType] ?? DEFAULT_MENTION_RESOURCE_META
+}
 
 export interface MentionResultListProps {
   items: MentionTarget[]
@@ -51,13 +55,13 @@ export function MentionResultList({
   listboxId,
 }: MentionResultListProps) {
   const groupedItems = useMemo(() => {
-    return items.reduce<Record<MentionTargetType, MentionTarget[]>>(
-      (acc, item) => {
-        acc[item.type].push(item)
-        return acc
-      },
-      { person: [], document: [], issue: [], team: [], app: [] },
-    )
+    const groups = new Map<MentionTargetType, MentionTarget[]>()
+    for (const item of items) {
+      const group = groups.get(item.type) ?? []
+      group.push(item)
+      groups.set(item.type, group)
+    }
+    return [...groups.entries()]
   }, [items])
 
   const containerClass = compact
@@ -79,22 +83,23 @@ export function MentionResultList({
               </div>
             ))
           : null}
-        {TYPE_ORDER.map((type) => {
-          const group = groupedItems[type]
+        {groupedItems.map(([mentionType, group]) => {
           if (group.length === 0) return null
+          const groupMeta = getMentionMeta(mentionType)
           return (
-            <div key={type} className="py-1">
+            <div key={mentionType} className="py-1">
               <div className="px-3 py-1 text-[11px] font-medium uppercase text-muted-foreground">
-                {MENTION_TYPE_LABELS[type]}
+                {groupMeta.label}
               </div>
               {group.map((item) => {
                 flatIndex += 1
-                const Icon = MENTION_TYPE_ICONS[item.type]
+                const itemMeta = getMentionMeta(item.type)
+                const Icon = itemMeta.icon
                 const itemIndex = flatIndex
                 const selected = itemIndex === activeIndex
                 return (
                   <Button
-                    key={`${item.type}:${item.id}`}
+                    key={getRichTextMentionKey(item)}
                     type="button"
                     variant="ghost"
                     className={cn(
@@ -112,24 +117,17 @@ export function MentionResultList({
                     <span
                       className={cn(
                         'flex size-8 shrink-0 items-center justify-center rounded-md',
-                        MENTION_TYPE_CLASSES[item.type],
+                        itemMeta.className,
                       )}
                     >
                       <Icon className="size-4" />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{item.label}</span>
-                      {item.description ? (
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {item.description}
-                        </span>
-                      ) : null}
                     </span>
-                    {item.source ? (
-                      <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
-                        {item.source}
-                      </span>
-                    ) : null}
+                    <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                      {item.appId}
+                    </span>
                   </Button>
                 )
               })}

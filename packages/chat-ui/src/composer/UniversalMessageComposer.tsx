@@ -1,3 +1,4 @@
+import { getRichTextMentionKey, normalizeRichTextMentionType } from '@dashway/app-protocol'
 import { Button, cn } from '@dashway/ui'
 import type { LinkMatcher } from '@lexical/link'
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin'
@@ -409,35 +410,38 @@ function AttachmentTray({
   )
 }
 
-function extractMentions(state: SerializedEditorState): MentionTarget[] {
-  const mentions = new Map<string, MentionTarget>()
+function extractMentions(state: SerializedEditorState): ComposerSendPayload['mentions'] {
+  const mentions = new Map<string, ComposerSendPayload['mentions'][number]>()
   const visit = (node: unknown) => {
     if (!node || typeof node !== 'object') return
     const value = node as {
       type?: string
-      targetType?: MentionTarget['type']
+      appId?: string
+      mentionType?: string
+      resourceType?: string
+      resourceId?: string
+      targetType?: string
       targetId?: string
       memberId?: string
+      fileId?: string
       id?: string
-      label?: string
-      source?: string
-      iconUrl?: string
-      url?: string
       children?: unknown[]
     }
     if (value.type === 'mention') {
-      const type = value.targetType ?? 'person'
-      const id = value.targetId ?? value.memberId ?? value.id
-      const label = value.label ?? id
-      if (id && label) {
-        mentions.set(`${type}:${id}`, {
-          type,
-          id,
-          label,
-          source: value.source,
-          iconUrl: value.iconUrl,
-          url: value.url,
-        })
+      const mentionType = normalizeRichTextMentionType(
+        value.mentionType ?? value.resourceType ?? value.targetType,
+      )
+      const mentionId =
+        mentionType === 'PERSON'
+          ? value.memberId ?? value.resourceId ?? value.targetId ?? value.id
+          : value.fileId ?? value.resourceId ?? value.targetId ?? value.memberId ?? value.id
+      const appId = value.appId ?? (mentionType === 'PERSON' ? 'context-api' : 'unknown')
+      if (mentionId) {
+        const mention =
+          mentionType === 'PERSON'
+            ? { appId, type: mentionType, memberId: mentionId }
+            : { appId, type: mentionType, fileId: mentionId }
+        mentions.set(getRichTextMentionKey(mention), mention)
       }
     }
     value.children?.forEach(visit)

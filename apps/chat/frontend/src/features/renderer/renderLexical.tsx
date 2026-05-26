@@ -1,3 +1,4 @@
+import { normalizeRichTextMentionType } from '@dashway/app-protocol'
 import type { SerializedEditorState, SerializedLexicalNode } from 'lexical'
 import { type ReactNode } from 'react'
 import { MentionRender } from './nodes/MentionRender'
@@ -94,13 +95,17 @@ interface SerializedEmojiNode extends SerializedLexicalNode {
 
 interface SerializedMentionNode extends SerializedLexicalNode {
   type: 'mention'
-  targetType?: 'person' | 'document' | 'issue' | 'team' | 'app'
+  appId?: string
+  mentionType?: string
+  resourceType?: string
+  resourceId?: string
+  targetType?: string
   targetId?: string
   memberId?: string
+  fileId?: string
   id?: string
   label?: string
   text?: string
-  source?: string
 }
 
 interface SerializedRootNode {
@@ -268,18 +273,28 @@ function walkNode(
 
     case 'mention': {
       const mentionNode = node as SerializedMentionNode
-      const targetType = mentionNode.targetType ?? 'person'
-      const targetId = mentionNode.targetId ?? mentionNode.memberId ?? mentionNode.id ?? ''
-      const label = mentionNode.label ?? mentionNode.text ?? targetId
-      const displayName = targetType === 'person' ? opts.membersById?.[targetId]?.name : undefined
+      const mentionType = normalizeRichTextMentionType(
+        mentionNode.mentionType ?? mentionNode.resourceType ?? mentionNode.targetType,
+      )
+      const mentionId =
+        mentionType === 'PERSON'
+          ? mentionNode.memberId ?? mentionNode.resourceId ?? mentionNode.targetId ?? mentionNode.id ?? ''
+          : mentionNode.fileId ??
+            mentionNode.resourceId ??
+            mentionNode.targetId ??
+            mentionNode.memberId ??
+            mentionNode.id ??
+            ''
+      const label = mentionNode.label ?? mentionNode.text ?? mentionId
+      const displayName = mentionType === 'PERSON' ? opts.membersById?.[mentionId]?.name : undefined
       return (
         <MentionRender
           key={key}
-          targetId={targetId}
-          targetType={targetType}
+          appId={mentionNode.appId}
+          mentionId={mentionId}
+          mentionType={mentionType}
           label={label}
           displayName={displayName}
-          source={mentionNode.source}
         />
       )
     }

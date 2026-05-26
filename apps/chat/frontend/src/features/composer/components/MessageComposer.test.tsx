@@ -13,19 +13,17 @@ import { MentionNode } from '../../../../../../../packages/chat-ui/src/composer/
 import { MentionTypeaheadPlugin } from '../../../../../../../packages/chat-ui/src/composer/lexical/plugins/MentionTypeaheadPlugin'
 
 const ALICE: MentionTarget = {
-  type: 'person',
-  id: 'alice',
+  appId: 'context-api',
+  type: 'PERSON',
+  memberId: 'alice',
   label: 'Alice',
-  description: 'Alice from the current workspace',
-  source: 'People',
 }
 
 const BOB: MentionTarget = {
-  type: 'person',
-  id: 'bob',
+  appId: 'context-api',
+  type: 'PERSON',
+  memberId: 'bob',
   label: 'Bob',
-  description: 'Bob from the current workspace',
-  source: 'People',
 }
 
 function renderComposer(onFilesSelected = vi.fn()) {
