@@ -1,14 +1,17 @@
 import { z } from 'zod'
 
-export const RichTextMentionTypeSchema = z.enum(['person', 'document', 'issue', 'team', 'app'])
-export type RichTextMentionType = z.infer<typeof RichTextMentionTypeSchema>
+export const RichTextResourceTypeSchema = z.string().min(1)
+export type RichTextResourceType = z.infer<typeof RichTextResourceTypeSchema>
+
+export const RichTextMentionTypeSchema = RichTextResourceTypeSchema
+export type RichTextMentionType = RichTextResourceType
 
 export const RichTextMentionSchema = z.object({
-  type: RichTextMentionTypeSchema,
-  id: z.string().min(1),
+  appId: z.string().min(1),
+  resourceType: RichTextResourceTypeSchema,
+  resourceId: z.string().min(1),
   label: z.string().min(1),
   description: z.string().optional(),
-  source: z.string().optional(),
   iconUrl: z.string().optional(),
   url: z.string().optional(),
 })

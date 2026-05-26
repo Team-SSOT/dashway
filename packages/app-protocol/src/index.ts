@@ -34,4 +34,6 @@ export {
   RichTextMentionTypeSchema,
   type RichTextPayload,
   RichTextPayloadSchema,
+  type RichTextResourceType,
+  RichTextResourceTypeSchema,
 } from './rich-text'

@@ -415,26 +415,31 @@ function extractMentions(state: SerializedEditorState): MentionTarget[] {
     if (!node || typeof node !== 'object') return
     const value = node as {
       type?: string
-      targetType?: MentionTarget['type']
+      appId?: string
+      resourceType?: MentionTarget['resourceType']
+      resourceId?: string
+      targetType?: MentionTarget['resourceType']
       targetId?: string
       memberId?: string
       id?: string
       label?: string
-      source?: string
+      description?: string
       iconUrl?: string
       url?: string
       children?: unknown[]
     }
     if (value.type === 'mention') {
-      const type = value.targetType ?? 'person'
-      const id = value.targetId ?? value.memberId ?? value.id
-      const label = value.label ?? id
-      if (id && label) {
-        mentions.set(`${type}:${id}`, {
-          type,
-          id,
+      const resourceType = value.resourceType ?? value.targetType ?? 'resource'
+      const resourceId = value.resourceId ?? value.targetId ?? value.memberId ?? value.id
+      const appId = value.appId ?? 'unknown'
+      const label = value.label ?? resourceId
+      if (resourceId && label) {
+        mentions.set(`${appId}:${resourceType}:${resourceId}`, {
+          appId,
+          resourceType,
+          resourceId,
           label,
-          source: value.source,
+          description: value.description,
           iconUrl: value.iconUrl,
           url: value.url,
         })
