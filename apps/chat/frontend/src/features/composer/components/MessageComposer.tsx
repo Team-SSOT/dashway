@@ -1,9 +1,9 @@
 import {
   type ComposerSendPayload,
   type MentionQuery,
-  type MentionTarget,
   UniversalMessageComposer,
 } from '@dashway/chat-ui'
+import type { RichTextMention } from '@dashway/app-protocol'
 import type { SerializedEditorState } from 'lexical'
 import { useCallback, useRef } from 'react'
 import { useDirectory } from '@/app/providers/DataSourceProvider'
@@ -16,7 +16,7 @@ interface Props {
   onSend: (
     content: SerializedEditorState,
     plainText: string,
-    mentions: MentionTarget[],
+    mentions: RichTextMention[],
     attachments?: MessageAttachment[],
   ) => void | Promise<void>
   placeholder?: string

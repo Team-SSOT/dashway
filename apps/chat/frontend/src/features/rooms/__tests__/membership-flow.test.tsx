@@ -86,9 +86,9 @@ describe('membership-flow integration', () => {
       directory.searchMembers({ q, limit }),
     ])
 
-    const personIds = mentionResult
-      .filter((t) => t.appId === 'context-api' && t.resourceType === 'member')
-      .map((t) => t.resourceId)
+    const personIds = mentionResult.flatMap((t) =>
+      t.appId === 'context-api' && t.type === 'PERSON' ? [t.memberId] : [],
+    )
     const directoryIds = directoryResult.items.map((m) => m.id)
 
     expect(personIds).toEqual(directoryIds)

@@ -14,15 +14,15 @@ import { MentionTypeaheadPlugin } from '../../../../../../../packages/chat-ui/sr
 
 const ALICE: MentionTarget = {
   appId: 'context-api',
-  resourceType: 'member',
-  resourceId: 'alice',
+  type: 'PERSON',
+  memberId: 'alice',
   label: 'Alice',
 }
 
 const BOB: MentionTarget = {
   appId: 'context-api',
-  resourceType: 'member',
-  resourceId: 'bob',
+  type: 'PERSON',
+  memberId: 'bob',
   label: 'Bob',
 }
 

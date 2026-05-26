@@ -2,7 +2,7 @@ import type { RichTextMention, RichTextMentionType, RichTextPayload } from '@das
 import type { NodeKey, SerializedEditorState } from 'lexical'
 
 export type MentionTargetType = RichTextMentionType
-export type MentionTarget = RichTextMention
+export type MentionTarget = RichTextMention & { label: string }
 
 export interface MentionQuery {
   query: string

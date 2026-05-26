@@ -1,18 +1,43 @@
 import { z } from 'zod'
 
-export const RichTextResourceTypeSchema = z.string().min(1)
-export type RichTextResourceType = z.infer<typeof RichTextResourceTypeSchema>
+export const RICH_TEXT_MENTION_TYPES = ['PERSON', 'FILE'] as const
 
-export const RichTextMentionTypeSchema = RichTextResourceTypeSchema
-export type RichTextMentionType = RichTextResourceType
+export const RichTextMentionTypeSchema = z.enum(RICH_TEXT_MENTION_TYPES)
+export type RichTextMentionType = z.infer<typeof RichTextMentionTypeSchema>
 
-export const RichTextMentionSchema = z.object({
+export function normalizeRichTextMentionType(value: string | null | undefined): RichTextMentionType {
+  const normalized = value?.trim().toUpperCase()
+  if (normalized === 'PERSON' || normalized === 'MEMBER' || normalized === 'USER') {
+    return 'PERSON'
+  }
+  return 'FILE'
+}
+
+export const RichTextPersonMentionSchema = z.object({
   appId: z.string().min(1),
-  resourceType: RichTextResourceTypeSchema,
-  resourceId: z.string().min(1),
-  label: z.string().min(1),
+  type: z.literal('PERSON'),
+  memberId: z.string().min(1),
 })
+
+export const RichTextFileMentionSchema = z.object({
+  appId: z.string().min(1),
+  type: z.literal('FILE'),
+  fileId: z.string().min(1),
+})
+
+export const RichTextMentionSchema = z.discriminatedUnion('type', [
+  RichTextPersonMentionSchema,
+  RichTextFileMentionSchema,
+])
 export type RichTextMention = z.infer<typeof RichTextMentionSchema>
+
+export function getRichTextMentionId(mention: RichTextMention): string {
+  return mention.type === 'PERSON' ? mention.memberId : mention.fileId
+}
+
+export function getRichTextMentionKey(mention: RichTextMention): string {
+  return `${mention.appId}:${mention.type}:${getRichTextMentionId(mention)}`
+}
 
 export const RichTextPayloadSchema = z.object({
   content: z.unknown(),
