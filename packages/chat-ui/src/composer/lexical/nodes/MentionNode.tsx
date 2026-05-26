@@ -7,10 +7,14 @@ import type { MentionTarget, MentionTargetType } from '../../types'
 export type SerializedMentionNode = Spread<
   {
     type: 'mention'
-    targetType: MentionTargetType
-    targetId: string
+    appId: string
+    resourceType: MentionTargetType
+    resourceId: string
     label: string
-    source?: string
+    targetType?: MentionTargetType
+    targetId?: string
+    memberId?: string
+    description?: string
     iconUrl?: string
     url?: string
     text: string
@@ -19,13 +23,14 @@ export type SerializedMentionNode = Spread<
   SerializedLexicalNode
 >
 
-const TYPE_CLASSES: Record<MentionTargetType, string> = {
-  person: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
+const TYPE_CLASSES: Record<string, string> = {
+  member: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
   document: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
   issue: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
   team: 'bg-violet-500/15 text-violet-700 dark:text-violet-300',
   app: 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
 }
+const DEFAULT_TYPE_CLASS = 'bg-muted text-muted-foreground'
 
 export class MentionNode extends DecoratorNode<ReactNode> {
   __target: MentionTarget
@@ -70,10 +75,13 @@ export class MentionNode extends DecoratorNode<ReactNode> {
       <span
         className={cn(
           'inline-flex max-w-[16rem] items-center rounded px-1 align-baseline font-medium',
-          TYPE_CLASSES[this.__target.type],
+          TYPE_CLASSES[this.__target.resourceType] ?? DEFAULT_TYPE_CLASS,
         )}
-        data-mention-id={this.__target.id}
-        data-mention-type={this.__target.type}
+        data-mention-id={this.__target.resourceId}
+        data-mention-type={this.__target.resourceType}
+        data-mention-app-id={this.__target.appId}
+        data-mention-resource-id={this.__target.resourceId}
+        data-mention-resource-type={this.__target.resourceType}
         title={this.__target.description}
       >
         @{this.__target.label}
@@ -85,10 +93,11 @@ export class MentionNode extends DecoratorNode<ReactNode> {
     return {
       type: 'mention',
       version: 1,
-      targetType: this.__target.type,
-      targetId: this.__target.id,
+      appId: this.__target.appId,
+      resourceType: this.__target.resourceType,
+      resourceId: this.__target.resourceId,
       label: this.__target.label,
-      source: this.__target.source,
+      description: this.__target.description,
       iconUrl: this.__target.iconUrl,
       url: this.__target.url,
       text: `@${this.__target.label}`,
@@ -96,11 +105,14 @@ export class MentionNode extends DecoratorNode<ReactNode> {
   }
 
   static importJSON(json: SerializedMentionNode): MentionNode {
+    const resourceType = json.resourceType ?? json.targetType ?? 'resource'
+    const resourceId = json.resourceId ?? json.targetId ?? json.memberId ?? ''
     return new MentionNode({
-      type: json.targetType,
-      id: json.targetId,
+      appId: json.appId ?? 'unknown',
+      resourceType,
+      resourceId,
       label: json.label,
-      source: json.source,
+      description: json.description,
       iconUrl: json.iconUrl,
       url: json.url,
     })

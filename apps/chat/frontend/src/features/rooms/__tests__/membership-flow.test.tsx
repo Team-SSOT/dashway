@@ -75,7 +75,7 @@ describe('membership-flow integration', () => {
     unsub()
   })
 
-  // AC#15: mention parity — buildMentionTargets person results match directory.searchMembers
+  // AC#15: mention parity — member mention targets match directory.searchMembers
   it('AC#15: buildMentionTargets person results match directory.searchMembers for same query', async () => {
     const directory = new MockDirectoryRepository()
     const q = 'al'
@@ -86,7 +86,9 @@ describe('membership-flow integration', () => {
       directory.searchMembers({ q, limit }),
     ])
 
-    const personIds = mentionResult.filter((t) => t.type === 'person').map((t) => t.id)
+    const personIds = mentionResult
+      .filter((t) => t.appId === 'context-api' && t.resourceType === 'member')
+      .map((t) => t.resourceId)
     const directoryIds = directoryResult.items.map((m) => m.id)
 
     expect(personIds).toEqual(directoryIds)
