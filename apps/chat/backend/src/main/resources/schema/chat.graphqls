@@ -64,10 +64,33 @@ type ChatMessage {
     senderMemberId: Long!
     clientMessageId: String!
     content: String
+    mentions: [ContentMention!]!
     isDeleted: Boolean!
     createdDatetime: DateTime!
     editedDatetime: DateTime
     deletedDatetime: DateTime
+}
+
+interface ContentMention {
+    appId: String!
+    type: ContentMentionType!
+}
+
+type PersonContentMention implements ContentMention {
+    appId: String!
+    type: ContentMentionType!
+    memberId: String!
+}
+
+type FileContentMention implements ContentMention {
+    appId: String!
+    type: ContentMentionType!
+    fileId: String!
+}
+
+enum ContentMentionType {
+    PERSON
+    FILE
 }
 
 type ChatMessageSlice {
