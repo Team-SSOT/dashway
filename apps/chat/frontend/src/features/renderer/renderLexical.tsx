@@ -103,7 +103,6 @@ interface SerializedMentionNode extends SerializedLexicalNode {
   id?: string
   label?: string
   text?: string
-  description?: string
 }
 
 interface SerializedRootNode {
@@ -284,7 +283,6 @@ function walkNode(
           resourceType={resourceType}
           label={label}
           displayName={displayName}
-          description={mentionNode.description}
         />
       )
     }

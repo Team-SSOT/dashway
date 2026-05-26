@@ -141,11 +141,6 @@ export function MentionResultList({
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{item.label}</span>
-                      {item.description ? (
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {item.description}
-                        </span>
-                      ) : null}
                     </span>
                     {item.appId ? (
                       <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">

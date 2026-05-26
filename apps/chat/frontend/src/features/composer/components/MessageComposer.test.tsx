@@ -17,7 +17,6 @@ const ALICE: MentionTarget = {
   resourceType: 'member',
   resourceId: 'alice',
   label: 'Alice',
-  description: 'Alice from the current workspace',
 }
 
 const BOB: MentionTarget = {
@@ -25,7 +24,6 @@ const BOB: MentionTarget = {
   resourceType: 'member',
   resourceId: 'bob',
   label: 'Bob',
-  description: 'Bob from the current workspace',
 }
 
 function renderComposer(onFilesSelected = vi.fn()) {

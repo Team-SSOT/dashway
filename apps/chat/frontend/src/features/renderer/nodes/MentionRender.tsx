@@ -7,7 +7,6 @@ export interface MentionRenderProps {
   resourceType?: RichTextResourceType
   label: string
   displayName?: string
-  description?: string
 }
 
 const TYPE_CLASSES: Record<string, string> = {
@@ -25,7 +24,6 @@ export function MentionRender({
   resourceType = 'resource',
   label,
   displayName,
-  description,
 }: MentionRenderProps): ReactNode {
   return (
     <span
@@ -35,7 +33,6 @@ export function MentionRender({
       data-mention-app-id={appId}
       data-mention-resource-id={resourceId}
       data-mention-resource-type={resourceType}
-      title={description}
     >
       @{displayName ?? label}
     </span>
