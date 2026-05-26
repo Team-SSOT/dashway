@@ -60,6 +60,7 @@ CREATE TABLE chat.chat_message(
 	member_id	        BIGINT          NOT NULL,
 	client_message_id	TEXT            NOT NULL,
 	content				TEXT            NOT NULL,
+	mentions			TEXT            NOT NULL DEFAULT '[]',
 
     is_enabled			BOOLEAN         NOT NULL DEFAULT TRUE,
     is_deleted			BOOLEAN         NOT NULL DEFAULT FALSE,

@@ -217,6 +217,7 @@ export class MockChatRepository implements ChatRepository {
       authorId: currentUserId,
       content: input.content,
       plainText: input.plainText,
+      mentions: input.mentions,
       clientCreatedAt: input.clientCreatedAt,
       serverCreatedAt: now,
       editedAt: null,

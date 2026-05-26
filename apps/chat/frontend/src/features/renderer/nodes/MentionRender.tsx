@@ -1,16 +1,15 @@
+import type { RichTextMentionType } from '@dashway/app-protocol'
 import type { ReactNode } from 'react'
-
-type MentionTargetType = 'person' | 'document' | 'issue' | 'team' | 'app'
 
 export interface MentionRenderProps {
   targetId: string
-  targetType?: MentionTargetType
+  targetType?: RichTextMentionType
   label: string
   displayName?: string
   source?: string
 }
 
-const TYPE_CLASSES: Record<MentionTargetType, string> = {
+const TYPE_CLASSES: Record<RichTextMentionType, string> = {
   person: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
   document: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
   issue: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',

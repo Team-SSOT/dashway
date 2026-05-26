@@ -446,6 +446,9 @@ importers:
 
   packages/chat-ui:
     dependencies:
+      '@dashway/app-protocol':
+        specifier: workspace:*
+        version: link:../app-protocol
       '@dashway/ui':
         specifier: workspace:*
         version: link:../ui

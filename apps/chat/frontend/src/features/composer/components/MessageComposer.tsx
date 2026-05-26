@@ -1,6 +1,7 @@
 import {
   type ComposerSendPayload,
   type MentionQuery,
+  type MentionTarget,
   UniversalMessageComposer,
 } from '@dashway/chat-ui'
 import type { SerializedEditorState } from 'lexical'
@@ -15,6 +16,7 @@ interface Props {
   onSend: (
     content: SerializedEditorState,
     plainText: string,
+    mentions: MentionTarget[],
     attachments?: MessageAttachment[],
   ) => void | Promise<void>
   placeholder?: string
@@ -61,6 +63,7 @@ export function MessageComposer({
       return onSend(
         payload.content,
         payload.plainText,
+        payload.mentions,
         attachments.length > 0 ? attachments : undefined,
       )
     },

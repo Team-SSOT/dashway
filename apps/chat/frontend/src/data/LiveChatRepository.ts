@@ -176,13 +176,14 @@ export class LiveChatRepository implements ChatRepository {
 
   sendMessage(input: SendMessageInput): Promise<ChatMessage> {
     // Delegates to STOMP; optimistic row built here
-    this.realtime.sendMessageOverSocket(input.roomId, input.plainText)
+    this.realtime.sendMessageOverSocket(input.roomId, input.plainText, input.clientMsgId, input.mentions)
     const optimistic: ChatMessage = {
       id: input.clientMsgId,
       roomId: input.roomId,
       authorId: this.getMemberId() ?? '0',
       content: input.content,
       plainText: input.plainText,
+      mentions: input.mentions,
       clientCreatedAt: input.clientCreatedAt,
       serverCreatedAt: input.clientCreatedAt,
       editedAt: null,

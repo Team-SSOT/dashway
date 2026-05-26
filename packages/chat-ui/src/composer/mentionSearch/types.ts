@@ -1,16 +1,8 @@
+import type { RichTextMention, RichTextMentionType, RichTextPayload } from '@dashway/app-protocol'
 import type { NodeKey, SerializedEditorState } from 'lexical'
 
-export type MentionTargetType = 'person' | 'document' | 'issue' | 'team' | 'app'
-
-export interface MentionTarget {
-  type: MentionTargetType
-  id: string
-  label: string
-  description?: string
-  source?: string
-  iconUrl?: string
-  url?: string
-}
+export type MentionTargetType = RichTextMentionType
+export type MentionTarget = RichTextMention
 
 export interface MentionQuery {
   query: string
@@ -36,9 +28,6 @@ export interface ComposerAttachment {
   status: 'mock-ready'
 }
 
-export interface ComposerSendPayload {
-  content: SerializedEditorState
-  plainText: string
-  mentions: MentionTarget[]
+export interface ComposerSendPayload extends RichTextPayload<SerializedEditorState> {
   attachments: ComposerAttachment[]
 }

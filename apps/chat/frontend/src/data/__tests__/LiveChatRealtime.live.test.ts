@@ -50,7 +50,12 @@ describe.skipIf(!RUN_LIVE)('LiveChatRealtime [LIVE]', () => {
           resolve()
         }
       })
-      realtime.sendMessageOverSocket(roomId, `live-test-${Date.now()}`)
+      realtime.sendMessageOverSocket(
+        roomId,
+        `live-test-${Date.now()}`,
+        `live-test-${Date.now()}`,
+        [],
+      )
     })
   }, 15_000)
 })
