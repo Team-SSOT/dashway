@@ -11,9 +11,6 @@ export const RichTextMentionSchema = z.object({
   resourceType: RichTextResourceTypeSchema,
   resourceId: z.string().min(1),
   label: z.string().min(1),
-  description: z.string().optional(),
-  iconUrl: z.string().optional(),
-  url: z.string().optional(),
 })
 export type RichTextMention = z.infer<typeof RichTextMentionSchema>
 

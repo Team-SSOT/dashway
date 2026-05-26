@@ -14,9 +14,6 @@ export type SerializedMentionNode = Spread<
     targetType?: MentionTargetType
     targetId?: string
     memberId?: string
-    description?: string
-    iconUrl?: string
-    url?: string
     text: string
     version: 1
   },
@@ -82,7 +79,6 @@ export class MentionNode extends DecoratorNode<ReactNode> {
         data-mention-app-id={this.__target.appId}
         data-mention-resource-id={this.__target.resourceId}
         data-mention-resource-type={this.__target.resourceType}
-        title={this.__target.description}
       >
         @{this.__target.label}
       </span>
@@ -97,9 +93,6 @@ export class MentionNode extends DecoratorNode<ReactNode> {
       resourceType: this.__target.resourceType,
       resourceId: this.__target.resourceId,
       label: this.__target.label,
-      description: this.__target.description,
-      iconUrl: this.__target.iconUrl,
-      url: this.__target.url,
       text: `@${this.__target.label}`,
     }
   }
@@ -112,9 +105,6 @@ export class MentionNode extends DecoratorNode<ReactNode> {
       resourceType,
       resourceId,
       label: json.label,
-      description: json.description,
-      iconUrl: json.iconUrl,
-      url: json.url,
     })
   }
 }

@@ -423,9 +423,6 @@ function extractMentions(state: SerializedEditorState): MentionTarget[] {
       memberId?: string
       id?: string
       label?: string
-      description?: string
-      iconUrl?: string
-      url?: string
       children?: unknown[]
     }
     if (value.type === 'mention') {
@@ -439,9 +436,6 @@ function extractMentions(state: SerializedEditorState): MentionTarget[] {
           resourceType,
           resourceId,
           label,
-          description: value.description,
-          iconUrl: value.iconUrl,
-          url: value.url,
         })
       }
     }

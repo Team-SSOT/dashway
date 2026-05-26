@@ -8,56 +8,48 @@ const STATIC_TARGETS: MentionTarget[] = [
     resourceType: 'document',
     resourceId: 'doc-chat-fe-handoff',
     label: 'Chat frontend BE handoff',
-    description: 'REST, STOMP, Lexical content and optimistic send contract',
   },
   {
     appId: 'docs',
     resourceType: 'document',
     resourceId: 'doc-universal-mention',
     label: 'Universal mention design',
-    description: 'Notion-style mention picker for people, docs and issues',
   },
   {
     appId: 'docs',
     resourceType: 'document',
     resourceId: 'doc-lexical-composer',
     label: 'Lexical composer ADR',
-    description: 'Why Slack-style composer stays on Lexical',
   },
   {
     appId: 'issue_tracker',
     resourceType: 'issue',
     resourceId: 'DW-142',
     label: 'DW-142 Universal mention picker',
-    description: 'Design mock mention search and inline chips',
   },
   {
     appId: 'issue_tracker',
     resourceType: 'issue',
     resourceId: 'DW-118',
     label: 'DW-118 Attachment tray',
-    description: 'Mock file upload preview for chat composer',
   },
   {
     appId: 'issue_tracker',
     resourceType: 'issue',
     resourceId: 'DW-097',
     label: 'DW-097 Context search bridge',
-    description: 'Use context-api search results as mention targets',
   },
   {
     appId: 'context-api',
     resourceType: 'team',
     resourceId: 'team-platform',
     label: 'Platform Team',
-    description: 'Backend, graph and desktop shell ownership',
   },
   {
     appId: 'context-api',
     resourceType: 'app',
     resourceId: 'app-context-api',
     label: 'Context API',
-    description: 'GraphQL search and permission-filtered app content',
   },
 ]
 
@@ -81,7 +73,6 @@ export async function buildMentionTargets(
     resourceType: 'member',
     resourceId: m.id,
     label: m.name,
-    description: `${m.name} from the current workspace`,
   }))
 
   if (normalizedQuery.length === 0) {
@@ -107,7 +98,6 @@ function scoreTarget(target: MentionTarget, query: string): number {
     target.resourceType,
     target.resourceId,
     target.label,
-    target.description ?? '',
   ]
     .join(' ')
     .toLowerCase()
