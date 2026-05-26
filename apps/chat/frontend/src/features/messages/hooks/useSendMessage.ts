@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient, type InfiniteData } from '@tanstack/react-query'
+import type { RichTextMention } from '@dashway/app-protocol'
 import type { SerializedEditorState } from 'lexical'
 import { useDataSource } from '@/app/providers/DataSourceProvider'
 import { useAuthToken } from '@/app/providers/AuthProvider'
@@ -13,6 +14,7 @@ interface SendArgs {
   roomId: RoomId
   content: SerializedEditorState
   plainText: string
+  mentions: RichTextMention[]
   threadParentId?: string
   attachments?: MessageAttachment[]
 }
@@ -31,6 +33,7 @@ function makeOptimisticMessage(args: SendArgs, clientMsgId: string, authorId: st
     authorId,
     content: args.content,
     plainText: args.plainText,
+    mentions: args.mentions,
     clientCreatedAt: now,
     serverCreatedAt: now,
     editedAt: null,
@@ -64,6 +67,7 @@ export function useSendMessage(roomId: RoomId | undefined) {
         roomId,
         content: args.content,
         plainText: args.plainText,
+        mentions: args.mentions,
         clientMsgId,
         threadParentId: args.threadParentId,
         clientCreatedAt: new Date().toISOString(),

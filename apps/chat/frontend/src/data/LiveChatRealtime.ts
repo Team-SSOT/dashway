@@ -1,4 +1,5 @@
 import { Client, type StompSubscription } from '@stomp/stompjs'
+import type { RichTextMention } from '@dashway/app-protocol'
 import type { ChatRealtime, ChatRealtimeEvent, ConnectionState, MessageId, RoomId } from '@/types/chat'
 
 // Wire shape from BE: /topic/chat/rooms/{roomId}/messages
@@ -7,7 +8,9 @@ interface WireMessagePayload {
   id: string
   roomId: string
   senderMemberId: number | string
+  clientMessageId?: string
   content: string
+  mentions?: RichTextMention[]
   createdDatetime: string
 }
 
@@ -113,6 +116,7 @@ export class LiveChatRealtime implements ChatRealtime {
             roomId: wire.roomId,
             authorId: String(wire.senderMemberId),
             plainText: wire.content,
+            mentions: wire.mentions ?? [],
             // Lexical content: cast to avoid strict SerializedLexicalNode type (element vs leaf node split)
             content: {
               root: {
@@ -139,7 +143,7 @@ export class LiveChatRealtime implements ChatRealtime {
             deletedAt: null,
             threadParentId: null,
             replyCount: 0,
-            clientMsgId: '',
+            clientMsgId: wire.clientMessageId ?? '',
             contentVersion: 1,
             version: 1,
           },
@@ -202,10 +206,15 @@ export class LiveChatRealtime implements ChatRealtime {
   }
 
   /** Private helper used by LiveChatRepository.sendMessage delegation */
-  sendMessageOverSocket(roomId: RoomId, content: string): void {
+  sendMessageOverSocket(
+    roomId: RoomId,
+    content: string,
+    clientMessageId: string,
+    mentions: RichTextMention[],
+  ): void {
     this.client.publish({
       destination: `/app/chat/rooms/${roomId}/messages`,
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ clientMessageId, content, mentions }),
       headers: { 'content-type': 'application/json' },
     })
   }

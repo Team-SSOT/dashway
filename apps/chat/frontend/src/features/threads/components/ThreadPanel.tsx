@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { X } from 'lucide-react'
+import type { RichTextMention } from '@dashway/app-protocol'
 import type { SerializedEditorState } from 'lexical'
 import { Button } from '@/shared/ui/button'
 import { Separator } from '@/shared/ui/separator'
@@ -113,9 +114,14 @@ export function ThreadPanel() {
   }, [closeThread])
 
   const handleSend = useCallback(
-    (content: SerializedEditorState, plainText: string, attachments?: MessageAttachment[]) => {
+    (
+      content: SerializedEditorState,
+      plainText: string,
+      mentions: RichTextMention[],
+      attachments?: MessageAttachment[],
+    ) => {
       if (!msgId) return
-      sendReply.mutate({ content, plainText, threadParentId: msgId, attachments })
+      sendReply.mutate({ content, plainText, mentions, threadParentId: msgId, attachments })
     },
     [sendReply, msgId],
   )

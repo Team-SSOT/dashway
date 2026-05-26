@@ -1,3 +1,4 @@
+import type { RichTextMention } from '@dashway/app-protocol'
 import type { SerializedEditorState } from 'lexical'
 import type { ReactNode } from 'react'
 import { RoomHeader } from './RoomHeader'
@@ -23,7 +24,12 @@ interface ChatSurfaceProps {
   isFetchingNextPage?: boolean
   fetchNextPage?: () => void
   threadPanel?: ReactNode
-  onSend: (content: SerializedEditorState, plainText: string, attachments?: MessageAttachment[]) => void
+  onSend: (
+    content: SerializedEditorState,
+    plainText: string,
+    mentions: RichTextMention[],
+    attachments?: MessageAttachment[],
+  ) => void
   onMembersToggle?: () => void
   membersOpen?: boolean
   /** Optional message id from `?m=` query param — MessageList scrolls + flashes on mount. */

@@ -2,6 +2,7 @@
  * SSOT for FE/BE contract. See .omc/plans/chat-frontend-ui-v1.md §6. Changes here require BE notification.
  */
 
+import type { RichTextMention } from '@dashway/app-protocol'
 import type { SerializedEditorState } from 'lexical'
 
 // §6.1 Type aliases
@@ -74,6 +75,7 @@ export interface ChatMessage {
   authorId: MemberId
   content: SerializedEditorState  // Lexical JSON, contentVersion=1
   plainText: string                // 서버 파생 (검색·프리뷰용)
+  mentions?: RichTextMention[]     // shared body mentions; see @dashway/app-protocol
   clientCreatedAt: string          // 클라이언트 전송 시각 (낙관적 UI 정렬용)
   serverCreatedAt: string          // 서버 확정 시각 (정식 순서)
   editedAt: string | null
@@ -124,6 +126,7 @@ export interface SendMessageInput {
   roomId: RoomId
   content: SerializedEditorState
   plainText: string        // 클라가 walker로 파생
+  mentions: RichTextMention[]
   clientMsgId: ClientMsgId
   threadParentId?: MessageId
   clientCreatedAt: string  // ISO, 클라 시계

@@ -27,3 +27,11 @@ export {
   type ThemeMode,
   ThemeModeSchema,
 } from './messages'
+export {
+  type RichTextMention,
+  RichTextMentionSchema,
+  type RichTextMentionType,
+  RichTextMentionTypeSchema,
+  type RichTextPayload,
+  RichTextPayloadSchema,
+} from './rich-text'
