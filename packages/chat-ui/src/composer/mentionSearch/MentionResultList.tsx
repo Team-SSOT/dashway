@@ -1,5 +1,6 @@
+import { getRichTextMentionKey } from '@dashway/app-protocol'
 import { Button, cn } from '@dashway/ui'
-import { AppWindow, CircleDot, FileText, type LucideIcon, User, Users } from 'lucide-react'
+import { FileText, type LucideIcon, User } from 'lucide-react'
 import { type ReactNode, useMemo } from 'react'
 import type { MentionTarget, MentionTargetType } from './types'
 
@@ -9,31 +10,16 @@ interface MentionResourceMeta {
   className: string
 }
 
-export const MENTION_RESOURCE_META: Record<string, MentionResourceMeta> = {
-  member: {
+export const MENTION_RESOURCE_META: Record<MentionTargetType, MentionResourceMeta> = {
+  PERSON: {
     label: 'People',
     icon: User,
     className: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
   },
-  document: {
-    label: 'Docs',
+  FILE: {
+    label: 'Files',
     icon: FileText,
     className: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
-  },
-  issue: {
-    label: 'Issues',
-    icon: CircleDot,
-    className: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
-  },
-  team: {
-    label: 'Teams',
-    icon: Users,
-    className: 'bg-violet-500/15 text-violet-700 dark:text-violet-300',
-  },
-  app: {
-    label: 'Apps',
-    icon: AppWindow,
-    className: 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
   },
 }
 
@@ -43,11 +29,8 @@ const DEFAULT_MENTION_RESOURCE_META: MentionResourceMeta = {
   className: 'bg-muted text-muted-foreground',
 }
 
-function getResourceMeta(resourceType: MentionTargetType): MentionResourceMeta {
-  return MENTION_RESOURCE_META[resourceType] ?? {
-    ...DEFAULT_MENTION_RESOURCE_META,
-    label: resourceType,
-  }
+function getMentionMeta(mentionType: MentionTargetType): MentionResourceMeta {
+  return MENTION_RESOURCE_META[mentionType] ?? DEFAULT_MENTION_RESOURCE_META
 }
 
 export interface MentionResultListProps {
@@ -74,9 +57,9 @@ export function MentionResultList({
   const groupedItems = useMemo(() => {
     const groups = new Map<MentionTargetType, MentionTarget[]>()
     for (const item of items) {
-      const group = groups.get(item.resourceType) ?? []
+      const group = groups.get(item.type) ?? []
       group.push(item)
-      groups.set(item.resourceType, group)
+      groups.set(item.type, group)
     }
     return [...groups.entries()]
   }, [items])
@@ -100,23 +83,23 @@ export function MentionResultList({
               </div>
             ))
           : null}
-        {groupedItems.map(([resourceType, group]) => {
+        {groupedItems.map(([mentionType, group]) => {
           if (group.length === 0) return null
-          const groupMeta = getResourceMeta(resourceType)
+          const groupMeta = getMentionMeta(mentionType)
           return (
-            <div key={resourceType} className="py-1">
+            <div key={mentionType} className="py-1">
               <div className="px-3 py-1 text-[11px] font-medium uppercase text-muted-foreground">
                 {groupMeta.label}
               </div>
               {group.map((item) => {
                 flatIndex += 1
-                const itemMeta = getResourceMeta(item.resourceType)
+                const itemMeta = getMentionMeta(item.type)
                 const Icon = itemMeta.icon
                 const itemIndex = flatIndex
                 const selected = itemIndex === activeIndex
                 return (
                   <Button
-                    key={`${item.appId}:${item.resourceType}:${item.resourceId}`}
+                    key={getRichTextMentionKey(item)}
                     type="button"
                     variant="ghost"
                     className={cn(
@@ -142,11 +125,9 @@ export function MentionResultList({
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{item.label}</span>
                     </span>
-                    {item.appId ? (
-                      <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
-                        {item.appId}
-                      </span>
-                    ) : null}
+                    <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                      {item.appId}
+                    </span>
                   </Button>
                 )
               })}

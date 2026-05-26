@@ -1,3 +1,4 @@
+import { getRichTextMentionId, normalizeRichTextMentionType } from '@dashway/app-protocol'
 import { cn } from '@dashway/ui'
 import type { EditorConfig, LexicalNode, NodeKey, SerializedLexicalNode, Spread } from 'lexical'
 import { DecoratorNode } from 'lexical'
@@ -7,25 +8,24 @@ import type { MentionTarget, MentionTargetType } from '../../types'
 export type SerializedMentionNode = Spread<
   {
     type: 'mention'
-    appId: string
-    resourceType: MentionTargetType
-    resourceId: string
-    label: string
-    targetType?: MentionTargetType
-    targetId?: string
+    appId?: string
+    mentionType?: MentionTargetType
     memberId?: string
+    fileId?: string
+    label?: string
+    resourceType?: string
+    resourceId?: string
+    targetType?: string
+    targetId?: string
     text: string
     version: 1
   },
   SerializedLexicalNode
 >
 
-const TYPE_CLASSES: Record<string, string> = {
-  member: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
-  document: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
-  issue: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
-  team: 'bg-violet-500/15 text-violet-700 dark:text-violet-300',
-  app: 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
+const TYPE_CLASSES: Record<MentionTargetType, string> = {
+  PERSON: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
+  FILE: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
 }
 const DEFAULT_TYPE_CLASS = 'bg-muted text-muted-foreground'
 
@@ -72,13 +72,13 @@ export class MentionNode extends DecoratorNode<ReactNode> {
       <span
         className={cn(
           'inline-flex max-w-[16rem] items-center rounded px-1 align-baseline font-medium',
-          TYPE_CLASSES[this.__target.resourceType] ?? DEFAULT_TYPE_CLASS,
+          TYPE_CLASSES[this.__target.type] ?? DEFAULT_TYPE_CLASS,
         )}
-        data-mention-id={this.__target.resourceId}
-        data-mention-type={this.__target.resourceType}
+        data-mention-id={getRichTextMentionId(this.__target)}
+        data-mention-type={this.__target.type}
         data-mention-app-id={this.__target.appId}
-        data-mention-resource-id={this.__target.resourceId}
-        data-mention-resource-type={this.__target.resourceType}
+        data-mention-member-id={this.__target.type === 'PERSON' ? this.__target.memberId : undefined}
+        data-mention-file-id={this.__target.type === 'FILE' ? this.__target.fileId : undefined}
       >
         @{this.__target.label}
       </span>
@@ -86,25 +86,44 @@ export class MentionNode extends DecoratorNode<ReactNode> {
   }
 
   exportJSON(): SerializedMentionNode {
+    const mentionId =
+      this.__target.type === 'PERSON'
+        ? { memberId: this.__target.memberId }
+        : { fileId: this.__target.fileId }
+
     return {
       type: 'mention',
       version: 1,
       appId: this.__target.appId,
-      resourceType: this.__target.resourceType,
-      resourceId: this.__target.resourceId,
+      mentionType: this.__target.type,
+      ...mentionId,
       label: this.__target.label,
       text: `@${this.__target.label}`,
     }
   }
 
   static importJSON(json: SerializedMentionNode): MentionNode {
-    const resourceType = json.resourceType ?? json.targetType ?? 'resource'
-    const resourceId = json.resourceId ?? json.targetId ?? json.memberId ?? ''
+    const mentionType = normalizeRichTextMentionType(
+      json.mentionType ?? json.resourceType ?? json.targetType,
+    )
+    const mentionIdValue =
+      mentionType === 'PERSON'
+        ? json.memberId ?? json.resourceId ?? json.targetId ?? ''
+        : json.fileId ?? json.resourceId ?? json.targetId ?? json.memberId ?? ''
+    const label = json.label ?? json.text?.replace(/^@/, '') ?? mentionIdValue
+    if (mentionType === 'PERSON') {
+      return new MentionNode({
+        appId: json.appId ?? 'context-api',
+        type: 'PERSON',
+        memberId: mentionIdValue,
+        label,
+      })
+    }
     return new MentionNode({
       appId: json.appId ?? 'unknown',
-      resourceType,
-      resourceId,
-      label: json.label,
+      type: 'FILE',
+      fileId: mentionIdValue,
+      label,
     })
   }
 }
