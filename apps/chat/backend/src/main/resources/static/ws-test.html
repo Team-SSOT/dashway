@@ -202,6 +202,17 @@
       <textarea id="content">hello</textarea>
     </label>
 
+    <div class="grid">
+      <label>
+        Client Message ID
+        <input id="clientMessageId" maxlength="128">
+      </label>
+      <label>
+        ID Tools
+        <button id="newClientMessageIdBtn" type="button">New ID</button>
+      </label>
+    </div>
+
     <div class="actions">
       <button id="connectBtn" class="primary">Connect WS</button>
       <button id="stompConnectBtn" disabled>STOMP CONNECT</button>
@@ -222,7 +233,9 @@
   const wsUrlInput = document.querySelector("#wsUrl");
   const authorizationInput = document.querySelector("#authorization");
   const roomIdInput = document.querySelector("#roomId");
+  const clientMessageIdInput = document.querySelector("#clientMessageId");
   const contentInput = document.querySelector("#content");
+  const newClientMessageIdBtn = document.querySelector("#newClientMessageIdBtn");
   const connectBtn = document.querySelector("#connectBtn");
   const stompConnectBtn = document.querySelector("#stompConnectBtn");
   const subscribeBtn = document.querySelector("#subscribeBtn");
@@ -234,6 +247,7 @@
 
   const defaultWsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
   wsUrlInput.value = `${defaultWsProtocol}//${location.host}/ws/chat`;
+  clientMessageIdInput.value = createClientMessageId();
 
   let ws = null;
   let stompConnected = false;
@@ -276,6 +290,13 @@
 
   function currentRoomId() {
     return roomIdInput.value.trim();
+  }
+
+  function createClientMessageId() {
+    if (crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    return `client-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   }
 
   function ensureSocket() {
@@ -383,11 +404,23 @@
       appendLog("ERROR", "Room ID is required.", "error-line");
       return;
     }
+    const clientMessageId = clientMessageIdInput.value.trim();
+    if (!clientMessageId) {
+      appendLog("ERROR", "Client Message ID is required.", "error-line");
+      return;
+    }
 
     sendFrame("SEND", {
       "destination": `/app/chat/rooms/${roomId}/messages`,
       "content-type": "application/json",
-    }, JSON.stringify({ content: contentInput.value }));
+    }, JSON.stringify({
+      clientMessageId,
+      content: contentInput.value,
+    }));
+  });
+
+  newClientMessageIdBtn.addEventListener("click", () => {
+    clientMessageIdInput.value = createClientMessageId();
   });
 
   disconnectBtn.addEventListener("click", () => {

@@ -9,6 +9,7 @@ export {
   type ShellGraphqlResponse,
   type ShellLoginInput,
   type ShellMember,
+  type ShellSignupInput,
   type ThemeMode,
   ShellBootstrapReadySchema,
   ShellBootstrapResultSchema,
@@ -18,6 +19,7 @@ export {
   ShellGraphqlResponseSchema,
   ShellLoginInputSchema,
   ShellMemberSchema,
+  ShellSignupInputSchema,
   ThemeModeSchema,
 } from './shell'
 export { type WorkspaceApp, WorkspaceAppSchema } from './workspace-app'

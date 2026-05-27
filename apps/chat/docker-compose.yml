@@ -9,12 +9,13 @@ services:
     container_name: chat-backend
     restart: unless-stopped
     environment:
-      DASHWAY_CONFIG_PATH: /etc/dashway/dashway.config.json
+      DASHWAY_APP_NAME: ${DASHWAY_APP_NAME:-chat}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/dashway}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-context_api}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-context_api}
       CHAT_CONTEXT_API_BASE_URL: ${CHAT_CONTEXT_API_BASE_URL:-http://context-api:8080}
     ports:
-      - 12001:8080
-    volumes:
-      - ../../dashway.config.json:/etc/dashway/dashway.config.json:ro
+      - 12001:12001
     networks:
       - dashway-shared
 

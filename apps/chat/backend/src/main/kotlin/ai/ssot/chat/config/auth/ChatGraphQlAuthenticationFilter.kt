@@ -3,6 +3,7 @@ package ai.ssot.chat.config.auth
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException
@@ -18,9 +19,11 @@ import org.springframework.web.filter.OncePerRequestFilter
 class ChatGraphQlAuthenticationFilter(
     private val authClient: ContextApiAuthClient,
     private val authenticationEntryPoint: AuthenticationEntryPoint,
+    @Value("\${spring.graphql.http.path:/chat/graphql}")
+    private val graphQlPath: String,
 ) : OncePerRequestFilter() {
     override fun shouldNotFilter(request: HttpServletRequest): Boolean =
-        request.servletPath != "/graphql" || request.method != HttpMethod.POST.name()
+        request.servletPath != graphQlPath || request.method != HttpMethod.POST.name()
 
     override fun doFilterInternal(
         request: HttpServletRequest,

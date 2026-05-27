@@ -1,31 +1,48 @@
 # 1단계: Frontend Build Stage
 FROM node:20-alpine AS frontend
-WORKDIR /web
-COPY frontend/package.json ./
-RUN npm install
-COPY frontend ./
-RUN npm run build
+RUN corepack enable && corepack prepare pnpm@10.0.0 --activate
+WORKDIR /repo
+
+# Workspace manifests first (dep install caching)
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY packages/app-protocol/package.json packages/app-protocol/
+COPY packages/app-sdk/package.json packages/app-sdk/
+COPY packages/config-schema/package.json packages/config-schema/
+COPY packages/design-tokens/package.json packages/design-tokens/
+COPY packages/desktop-sdk/package.json packages/desktop-sdk/
+COPY packages/shell-runtime/package.json packages/shell-runtime/
+COPY packages/ui/package.json packages/ui/
+COPY apps/desktop/package.json apps/desktop/
+COPY apps/landing/package.json apps/landing/
+COPY apps/issue_tracker/frontend/package.json apps/issue_tracker/frontend/
+
+RUN pnpm install --filter "@dashway/issue-tracker..." --frozen-lockfile
+
+# Sources for the frontend and its workspace deps
+COPY packages/app-protocol packages/app-protocol
+COPY packages/app-sdk packages/app-sdk
+COPY packages/design-tokens packages/design-tokens
+COPY apps/issue_tracker/frontend apps/issue_tracker/frontend
+
+# design-tokens는 ./dist/index.js로 export하므로 사전 빌드 필요
+RUN pnpm --filter @dashway/design-tokens build
+
+RUN pnpm --filter @dashway/issue-tracker build
 
 # 2단계: Backend Build Stage
 FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /home/gradle/project
 
-# Gradle 설정 파일들을 먼저 복사 (의존성 캐싱을 위해)
-COPY backend/gradlew .
-COPY backend/gradle gradle
-COPY backend/build.gradle.kts backend/settings.gradle.kts ./
+COPY apps/issue_tracker/backend/gradlew .
+COPY apps/issue_tracker/backend/gradle gradle
+COPY apps/issue_tracker/backend/build.gradle.kts apps/issue_tracker/backend/settings.gradle.kts ./
 
-# gradlew 실행 권한 부여 및 의존성 미리 다운로드
 RUN chmod +x gradlew
 RUN ./gradlew dependencies --no-daemon
 
-# 소스 코드 복사
-COPY backend/src src
+COPY apps/issue_tracker/backend/src src
+COPY --from=frontend /repo/apps/issue_tracker/frontend/dist src/main/resources/static
 
-# 프런트 빌드 산출물을 Spring Boot 정적 리소스 경로로 복사
-COPY --from=frontend /web/dist src/main/resources/static
-
-# plain jar가 생성되지 않도록 bootJar만 실행
 RUN ./gradlew bootJar --no-daemon
 
 # 3단계: Run Stage

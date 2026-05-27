@@ -1,5 +1,6 @@
 package ai.ssot.chat.config.auth
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
@@ -14,13 +15,15 @@ import org.springframework.security.web.access.intercept.AuthorizationFilter
 class SecurityConfig(
     private val chatGraphQlAuthenticationFilter: ChatGraphQlAuthenticationFilter,
     private val chatAuthenticationEntryPoint: ChatAuthenticationEntryPoint,
+    @Value("\${spring.graphql.http.path:/chat/graphql}")
+    private val graphQlPath: String,
 ) {
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain =
         http.csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests {
-                it.requestMatchers(HttpMethod.POST, "/graphql").authenticated()
+                it.requestMatchers(HttpMethod.POST, graphQlPath).authenticated()
                     .anyRequest().permitAll()
             }
             .addFilterBefore(chatGraphQlAuthenticationFilter, AuthorizationFilter::class.java)

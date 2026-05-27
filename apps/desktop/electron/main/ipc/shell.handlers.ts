@@ -2,6 +2,8 @@ import type {
   ShellBootstrapReadyResult,
   ShellGraphqlRequest,
   ShellLoginInput,
+  ShellMember,
+  ShellSignupInput,
   ThemeMode,
 } from '@dashway/config-schema'
 import { ipcMain } from 'electron'
@@ -30,6 +32,10 @@ export function registerShellHandlers(): void {
     }
 
     return bootstrap
+  })
+
+  ipcMain.handle(IPC.SHELL_SIGNUP, async (_event, input: ShellSignupInput): Promise<ShellMember> => {
+    return contextApiClient.signup(input)
   })
 
   ipcMain.handle(IPC.SHELL_LOGOUT, async () => {

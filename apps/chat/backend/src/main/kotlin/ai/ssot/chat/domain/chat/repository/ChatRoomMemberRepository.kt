@@ -11,6 +11,8 @@ import java.util.*
 
 interface ChatRoomMemberRepository : JpaRepository<ChatRoomMember, ChatRoomMemberId>, QChatRoomMemberRepository {
     fun existsByIdRoomIdAndIdMemberId(roomId: UUID, memberId: Long): Boolean
+
+    fun findByIdRoomIdAndIdMemberId(roomId: UUID, memberId: Long): ChatRoomMember?
 }
 
 interface QChatRoomMemberRepository {

@@ -6,9 +6,10 @@ interface Props {
   error?: string | null
   submitting?: boolean
   onSubmit: (input: ShellLoginInput) => Promise<void>
+  onSwitchToSignup: () => void
 }
 
-export function LoginPage({ error, submitting = false, onSubmit }: Props) {
+export function LoginPage({ error, submitting = false, onSubmit, onSwitchToSignup }: Props) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [formError, setFormError] = useState<string | null>(error ?? null)
@@ -186,6 +187,34 @@ export function LoginPage({ error, submitting = false, onSubmit }: Props) {
         >
           {submitting ? 'Signing in...' : 'Sign in'}
         </button>
+
+        <p
+          style={{
+            margin: '20px 0 0',
+            textAlign: 'center',
+            color: 'var(--fg-2)',
+            fontSize: 14,
+          }}
+        >
+          Don't have an account?{' '}
+          <button
+            type="button"
+            onClick={onSwitchToSignup}
+            disabled={submitting}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              color: '#f97316',
+              fontWeight: 600,
+              cursor: submitting ? 'default' : 'pointer',
+              fontFamily: 'inherit',
+              fontSize: 'inherit',
+            }}
+          >
+            Sign up
+          </button>
+        </p>
       </form>
     </div>
   )

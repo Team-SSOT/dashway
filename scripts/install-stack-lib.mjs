@@ -1,7 +1,9 @@
+import { createHash } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 export const INSTALLER_STATE_VERSION = 1
+const APP_NAME_PATTERN = /^[A-Za-z0-9_-]+$/
 
 export function parseAppSelectionValue(rawAppsValue) {
   return rawAppsValue
@@ -158,6 +160,7 @@ export async function loadDashwayConfig(configPath) {
   if (!Array.isArray(config.apps)) {
     throw new Error('dashway.config.json apps must be an array.')
   }
+  const filepath = requireConfigString(config, 'filepath', 'filepath')
   const postgres = normalizePostgresConfig(config.database?.postgres)
 
   const apps = config.apps.map((app, index) => {
@@ -167,25 +170,22 @@ export async function loadDashwayConfig(configPath) {
     }
 
     const name = requireConfigString(app, 'name', `${configPath}.name`)
+    if (!APP_NAME_PATTERN.test(name)) {
+      throw new Error(
+        `dashway.config.json ${configPath}.name may only contain letters, numbers, underscores, and hyphens.`,
+      )
+    }
     const composeFile = requireConfigString(app, 'composeFile', `${configPath}.composeFile`)
-    const healthUrl = requireConfigString(app, 'healthUrl', `${configPath}.healthUrl`)
     const port = app.port
     if (!Number.isInteger(port) || port <= 0) {
       throw new Error(`dashway.config.json ${configPath}.port must be a positive integer.`)
     }
 
-    try {
-      new URL(healthUrl)
-    } catch {
-      throw new Error(`dashway.config.json ${configPath}.healthUrl must be a valid URL.`)
-    }
-
     return {
-      id: name,
+      id: buildDeterministicAppId(name),
       name,
       port,
       composeFile,
-      healthUrl,
       displayName: name,
     }
   })
@@ -199,6 +199,7 @@ export async function loadDashwayConfig(configPath) {
 
   return {
     ...config,
+    filepath,
     database: {
       ...config.database,
       postgres,
@@ -216,8 +217,53 @@ export function buildComposeEnvironment(config) {
     DASHWAY_POSTGRES_PUBLIC_PORT: String(postgres.port),
     DASHWAY_POSTGRES_USER: postgres.username,
     DASHWAY_POSTGRES_PASSWORD: postgres.password,
+  }
+}
+
+export function buildContextApiComposeEnvironment(config, repoRoot) {
+  return {
+    ...buildSpringDatasourceEnvironment(config, 'contextApi'),
+    CONTEXT_API_STORAGE_HOST_PATH: path.resolve(repoRoot, config.filepath),
+  }
+}
+
+export function buildAppComposeEnvironment(config, app) {
+  return {
+    DASHWAY_APP_NAME: app.name,
+    ...buildSpringDatasourceEnvironment(config, 'chat'),
     CHAT_CONTEXT_API_BASE_URL: 'http://context-api:8080',
   }
+}
+
+function buildSpringDatasourceEnvironment(config, databaseKey) {
+  const postgres = config.database.postgres
+  const databaseName = postgres.databases[databaseKey]
+  if (typeof databaseName !== 'string' || databaseName.trim().length === 0) {
+    throw new Error(`dashway.config.json database.postgres.databases.${databaseKey} must be a non-empty string.`)
+  }
+
+  return {
+    SPRING_DATASOURCE_URL: `jdbc:postgresql://${postgres.host}:${postgres.port}/${databaseName}`,
+    SPRING_DATASOURCE_USERNAME: postgres.username,
+    SPRING_DATASOURCE_PASSWORD: postgres.password,
+  }
+}
+
+function buildDeterministicAppId(name) {
+  const hash = createHash('sha256')
+    .update(`dashway-app:${name}`)
+    .digest('hex')
+  const variantByte = ((Number.parseInt(hash.slice(16, 18), 16) & 0x3f) | 0x80)
+    .toString(16)
+    .padStart(2, '0')
+
+  return [
+    hash.slice(0, 8),
+    hash.slice(8, 12),
+    `5${hash.slice(13, 16)}`,
+    `${variantByte}${hash.slice(18, 20)}`,
+    hash.slice(20, 32),
+  ].join('-')
 }
 
 export function buildComposeInstallPlan({ manifest, selectedAppUnits }) {

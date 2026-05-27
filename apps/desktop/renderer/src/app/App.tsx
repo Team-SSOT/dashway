@@ -1,4 +1,9 @@
-import type { ShellBootstrapReadyResult, ShellLoginInput, ThemeMode } from '@dashway/config-schema'
+import type {
+  ShellBootstrapReadyResult,
+  ShellLoginInput,
+  ShellSignupInput,
+  ThemeMode,
+} from '@dashway/config-schema'
 import { useEffect, useMemo, useState } from 'react'
 import { createHashRouter, RouterProvider } from 'react-router-dom'
 import { BootErrorPage } from '../pages/BootErrorPage'
@@ -6,6 +11,7 @@ import { BootingPage } from '../pages/BootingPage'
 import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { ServerUrlOnboardingPage } from '../pages/ServerUrlOnboardingPage'
+import { SignupPage } from '../pages/SignupPage'
 import { createRelayEnvironment } from '../relay'
 import { AppShell } from '../shell/layout/AppShell'
 import { useShellStore } from '../shell/model/shell-store'
@@ -20,7 +26,8 @@ type BootPhase =
   | 'loading'
   | 'ready'
   | 'bootstrap_error'
-type LoadingContext = 'bootstrap' | 'login' | 'retry' | 'logout'
+type LoadingContext = 'bootstrap' | 'login' | 'signup' | 'retry' | 'logout'
+type AuthView = 'signin' | 'signup'
 
 function readErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback
@@ -56,6 +63,7 @@ export function App() {
   const [loadingContext, setLoadingContext] = useState<LoadingContext>('bootstrap')
   const [initialTheme, setInitialTheme] = useState<ThemeMode>('dark')
   const [authError, setAuthError] = useState<string | null>(null)
+  const [authView, setAuthView] = useState<AuthView>('signin')
   const [bootError, setBootError] = useState<string | null>(null)
   const [serverUrl, setServerUrl] = useState<string>('')
 
@@ -162,6 +170,30 @@ export function App() {
     }
   }
 
+  const handleSignup = async (input: ShellSignupInput) => {
+    setLoadingContext('signup')
+    setAuthError(null)
+    setBootError(null)
+    setPhase('loading')
+
+    try {
+      await window.desktop.shell.signup(input)
+      const payload = await window.desktop.shell.login({
+        email: input.email,
+        password: input.password,
+      })
+      logShellReady('login', payload)
+      hydrateShell(payload)
+      setAuthView('signin')
+      setPhase('ready')
+    } catch (error) {
+      console.error('Sign-up failed:', error)
+      setAuthError(readErrorMessage(error, 'Could not complete sign up.'))
+      setPhase('unauthenticated')
+      throw error
+    }
+  }
+
   const handleLogout = async () => {
     setLoadingContext('logout')
     setAuthError(null)
@@ -195,7 +227,7 @@ export function App() {
     return <ServerUrlOnboardingPage initialUrl={serverUrl} onSubmit={handleServerUrlSubmit} />
   }
 
-  if (phase === 'loading' && loadingContext !== 'login') {
+  if (phase === 'loading' && loadingContext !== 'login' && loadingContext !== 'signup') {
     const message =
       loadingContext === 'logout'
         ? 'Signing you out...'
@@ -216,12 +248,33 @@ export function App() {
     )
   }
 
-  if (phase === 'unauthenticated' || (phase === 'loading' && loadingContext === 'login')) {
+  if (
+    phase === 'unauthenticated' ||
+    (phase === 'loading' && (loadingContext === 'login' || loadingContext === 'signup'))
+  ) {
+    if (authView === 'signup') {
+      return (
+        <SignupPage
+          error={authError}
+          submitting={phase === 'loading'}
+          onSubmit={handleSignup}
+          onSwitchToSignin={() => {
+            setAuthError(null)
+            setAuthView('signin')
+          }}
+        />
+      )
+    }
+
     return (
       <LoginPage
         error={authError}
         submitting={phase === 'loading'}
         onSubmit={handleLogin}
+        onSwitchToSignup={() => {
+          setAuthError(null)
+          setAuthView('signup')
+        }}
       />
     )
   }

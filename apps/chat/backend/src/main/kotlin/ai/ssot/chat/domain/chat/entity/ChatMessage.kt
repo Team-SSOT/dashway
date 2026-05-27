@@ -23,6 +23,9 @@ class ChatMessage(
     @Column(name = "member_id", nullable = false)
     var memberId: Long = 0,
 
+    @Column(name = "client_message_id", nullable = false, columnDefinition = "TEXT")
+    var clientMessageId: String = "",
+
     @Column(nullable = false, columnDefinition = "TEXT")
     var content: String = "",
 

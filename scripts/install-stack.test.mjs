@@ -1,9 +1,14 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 import {
   assertRequiredAdminOptions,
   buildComposeInstallPlan,
+  buildContextApiComposeEnvironment,
   buildInstallExecutionPlan,
+  loadDashwayConfig,
   parseCliArgs,
   resolveSelectedAppUnits,
   toggleSelectedAppIds,
@@ -130,6 +135,49 @@ test('validateInstallerManifest rejects a missing infra definition', () => {
       }),
     /Installer manifest infra must be an object/,
   )
+})
+
+test('loadDashwayConfig does not require app healthUrl', async (t) => {
+  const tempDir = await mkdtemp(path.join(tmpdir(), 'dashway-config-'))
+  t.after(async () => {
+    await rm(tempDir, { recursive: true, force: true })
+  })
+
+  const configPath = path.join(tempDir, 'dashway.config.json')
+  await writeFile(
+    configPath,
+    JSON.stringify({
+      schemaVersion: 1,
+      filepath: 'files',
+      database: {
+        postgres: {
+          host: 'postgres',
+          publicHost: '127.0.0.1',
+          port: 5432,
+          username: 'context_api',
+          password: 'context_api',
+          databases: {
+            contextApi: 'dashway',
+            chat: 'dashway',
+          },
+        },
+      },
+      apps: [
+        {
+          name: 'chat',
+          port: 12001,
+          composeFile: 'apps/chat/docker-compose.yml',
+        },
+      ],
+    }),
+  )
+
+  const config = await loadDashwayConfig(configPath)
+
+  assert.equal(config.filepath, 'files')
+  assert.equal(config.apps[0].name, 'chat')
+  assert.equal(Object.hasOwn(config.apps[0], 'healthUrl'), false)
+  assert.equal(buildContextApiComposeEnvironment(config, tempDir).CONTEXT_API_STORAGE_HOST_PATH, path.join(tempDir, 'files'))
 })
 
 test('toggleSelectedAppIds toggles entries by number order', () => {

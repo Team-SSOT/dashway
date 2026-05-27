@@ -3,6 +3,7 @@ package ai.ssot.chat.domain.chat.service
 import ai.ssot.chat.domain.chat.dto.*
 import ai.ssot.chat.domain.chat.entity.*
 import ai.ssot.chat.domain.chat.exception.InvalidChatRoomRequestException
+import ai.ssot.chat.domain.chat.repository.ChatRoomFavoriteRepository
 import ai.ssot.chat.domain.chat.repository.ChatRoomMemberRepository
 import ai.ssot.chat.domain.chat.repository.ChatRoomRepository
 import org.springframework.dao.DataIntegrityViolationException
@@ -18,6 +19,7 @@ import java.util.*
 class ChatRoomService(
     private val chatRoomRepository: ChatRoomRepository,
     private val chatRoomMemberRepository: ChatRoomMemberRepository,
+    private val chatRoomFavoriteRepository: ChatRoomFavoriteRepository,
 ) {
     @Transactional
     fun createChatRoom(
@@ -61,6 +63,61 @@ class ChatRoomService(
         )
     }
 
+    @Transactional
+    fun deleteChatRoom(
+        memberId: Long,
+        dto: DeleteChatRoomDto,
+    ): Boolean {
+        val roomId = parseRoomId(dto.roomId)
+        val room = chatRoomRepository.findById(roomId)
+            .orElseThrow { InvalidChatRoomRequestException("Chat room not found.") }
+        val member = chatRoomMemberRepository.findByIdRoomIdAndIdMemberId(roomId, memberId)
+            ?: throw InvalidChatRoomRequestException("Chat room member is required.")
+
+        if (member.role != ChatRoomRole.OWNER) {
+            throw InvalidChatRoomRequestException("Chat room owner is required.")
+        }
+
+        if (room.isDeleted) {
+            return true
+        }
+
+        val now = OffsetDateTime.now()
+        room.isEnabled = false
+        room.isDeleted = true
+        room.updatedDatetime = now
+        room.deletedDatetime = now
+
+        return true
+    }
+
+    @Transactional
+    fun setChatRoomFavorite(
+        memberId: Long,
+        dto: SetChatRoomFavoriteDto,
+    ): ChatRoomDto {
+        val roomId = parseRoomId(dto.roomId)
+        validateActiveRoomMember(roomId, memberId)
+
+        if (dto.isFavorite) {
+            chatRoomFavoriteRepository.insertIfAbsent(
+                roomId = roomId,
+                memberId = memberId,
+                createdDatetime = OffsetDateTime.now(),
+            )
+        } else {
+            chatRoomFavoriteRepository.deleteByRoomIdAndMemberId(
+                roomId = roomId,
+                memberId = memberId,
+            )
+        }
+
+        val room = chatRoomRepository.findByIdAndIsEnabledTrueAndIsDeletedFalse(roomId)
+            ?: throw InvalidChatRoomRequestException("Chat room not found.")
+
+        return room.toDto(isFavorite = dto.isFavorite)
+    }
+
     @Transactional(readOnly = true)
     fun validateActiveRoomMember(roomId: UUID, memberId: Long) {
         if (!chatRoomRepository.existsByIdAndIsEnabledTrueAndIsDeletedFalse(roomId)) {
@@ -71,6 +128,13 @@ class ChatRoomService(
             throw InvalidChatRoomRequestException("Chat room member is required.")
         }
     }
+
+    private fun parseRoomId(roomId: String): UUID =
+        try {
+            UUID.fromString(roomId)
+        } catch (exception: IllegalArgumentException) {
+            throw InvalidChatRoomRequestException("Chat room id must be a UUID.")
+        }
 
     private fun validateParticipants(creatorMemberId: Long, participantMemberIds: List<Long>) {
         if (participantMemberIds.distinct().size != participantMemberIds.size) {

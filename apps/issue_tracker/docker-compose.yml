@@ -3,8 +3,8 @@ version: '3.8'
 services:
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: apps/issue_tracker/Dockerfile
     image: issue-tracker-backend:local
     container_name: issue-tracker-backend
     restart: unless-stopped

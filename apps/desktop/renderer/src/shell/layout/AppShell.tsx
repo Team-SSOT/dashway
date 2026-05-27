@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useShellStore } from '../model/shell-store'
+import { AppRail } from './AppRail'
+import { CommandPalette } from './CommandPalette'
 import { ContentArea } from './ContentArea'
 import { RightPanel } from './RightPanel'
 import { Topbar } from './Topbar'
-import { UnifiedSidebar } from './UnifiedSidebar'
 import '../../shared/styles/shell.css'
 
 export function AppShell() {
@@ -16,7 +17,20 @@ export function AppShell() {
     activeWorkspaceId,
     workspaceConfig,
     currentMember,
+    toggleCommandPalette,
   } = useShellStore()
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const isCmdK = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'
+      if (isCmdK) {
+        e.preventDefault()
+        toggleCommandPalette()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [toggleCommandPalette])
 
   useEffect(() => {
     console.info('[dashway:shell] app shell rendered', {
@@ -42,9 +56,10 @@ export function AppShell() {
       data-right-panel-open={rightPanelOpen}
     >
       <Topbar />
-      <UnifiedSidebar />
+      <AppRail />
       <ContentArea />
       {rightPanelOpen && <RightPanel />}
+      <CommandPalette />
     </div>
   )
 }

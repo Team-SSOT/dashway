@@ -3,6 +3,7 @@ import type {
   ShellGraphqlResponse,
   ShellLoginInput,
   ShellMember,
+  ShellSignupInput,
 } from '@dashway/config-schema'
 import { IPC } from '../ipc/channels'
 import { windowManager } from '../window-manager'
@@ -52,6 +53,20 @@ const REFRESH_MUTATION = `
 const LOGOUT_MUTATION = `
   mutation ShellLogout {
     logout
+  }
+`
+
+const REGISTER_MEMBER_MUTATION = `
+  mutation ShellRegisterMember($input: RegisterMemberInput!) {
+    registerMember(input: $input) {
+      id
+      name
+      email
+      isEnabled
+      authorities {
+        name
+      }
+    }
   }
 `
 
@@ -272,7 +287,43 @@ async function refreshSession(): Promise<boolean> {
   }
 }
 
+interface RegisterMemberPayload {
+  id: string | number
+  name: string
+  email: string
+  isEnabled: boolean
+  authorities?: Array<{ name: string }>
+}
+
 export const contextApiClient = {
+  async signup(input: ShellSignupInput): Promise<ShellMember> {
+    const result = await executeRequest({
+      query: REGISTER_MEMBER_MUTATION,
+      variables: {
+        input: {
+          name: input.name.trim(),
+          email: input.email.trim(),
+          password: input.password,
+          isEnabled: true,
+        },
+      },
+      operationName: 'ShellRegisterMember',
+    })
+
+    if (result.response.errors?.length) {
+      throw new Error(getGraphqlErrorMessage(result.response, 'Sign-up failed.'))
+    }
+
+    const data = result.response.data as { registerMember?: RegisterMemberPayload } | undefined
+    const member = data?.registerMember
+
+    if (!member) {
+      throw new Error('Context API sign-up response was incomplete.')
+    }
+
+    return toShellMember(member)
+  },
+
   async login(input: ShellLoginInput): Promise<void> {
     const result = await executeRequest({
       query: LOGIN_MUTATION,

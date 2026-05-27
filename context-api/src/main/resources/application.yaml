@@ -14,6 +14,8 @@ logging:
     org.springframework.security: debug
 
 context-api:
+  storage:
+    local-root: ${CONTEXT_API_STORAGE_LOCAL_ROOT:${user.home}/dashway/files}
   search:
     meilisearch:
       host: http://localhost:7700
@@ -34,10 +36,6 @@ context-api:
   install:
     bootstrap-enabled: false
     bootstrap-secret: ""
-
-dashway:
-  config:
-    path: ${DASHWAY_CONFIG_PATH:}
 
 redis:
   host: localhost

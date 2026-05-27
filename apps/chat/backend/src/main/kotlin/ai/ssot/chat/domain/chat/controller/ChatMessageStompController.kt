@@ -2,6 +2,7 @@ package ai.ssot.chat.domain.chat.controller
 
 import ai.ssot.chat.config.auth.memberId
 import ai.ssot.chat.domain.chat.dto.ChatMessageDto
+import ai.ssot.chat.domain.chat.dto.CreateChatMessageDto
 import ai.ssot.chat.domain.chat.service.ChatMessageService
 import org.springframework.messaging.handler.annotation.DestinationVariable
 import org.springframework.messaging.handler.annotation.MessageMapping
@@ -29,6 +30,10 @@ class ChatMessageStompController(
             content = command.content?.trim() ?: "",
         )
 
+        if (!result.created) {
+            return
+        }
+
         messagingTemplate.convertAndSend(
             chatRoomMessageDestination(roomId),
             message.toCreatedPayload(),
@@ -37,6 +42,7 @@ class ChatMessageStompController(
 }
 
 data class SendChatMessageCommand(
+    val clientMessageId: String? = null,
     val content: String? = null,
 )
 
@@ -48,10 +54,20 @@ data class ChatMessageCreatedPayload(
 data class ChatMessagePayload(
     val id: String,
     val roomId: String,
-    val senderMemberId: Long,
-    val content: String,
+    val memberId: Long,
+    val clientMessageId: String,
+    val content: String?,
+    val isDeleted: Boolean,
     val createdDatetime: OffsetDateTime,
+    val editedDatetime: OffsetDateTime?,
+    val deletedDatetime: OffsetDateTime?,
 )
+
+fun SendChatMessageCommand.toDto(): CreateChatMessageDto =
+    CreateChatMessageDto(
+        clientMessageId = clientMessageId.orEmpty(),
+        content = content.orEmpty(),
+    )
 
 fun ChatMessageDto.toCreatedPayload(): ChatMessageCreatedPayload =
     ChatMessageCreatedPayload(
@@ -59,9 +75,13 @@ fun ChatMessageDto.toCreatedPayload(): ChatMessageCreatedPayload =
         message = ChatMessagePayload(
             id = id.toString(),
             roomId = roomId.toString(),
-            senderMemberId = memberId,
+            memberId = memberId,
+            clientMessageId = clientMessageId,
             content = content,
+            isDeleted = isDeleted,
             createdDatetime = createdDatetime,
+            editedDatetime = editedDatetime,
+            deletedDatetime = deletedDatetime,
         ),
     )
 

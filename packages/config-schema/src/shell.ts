@@ -22,6 +22,14 @@ export const ShellLoginInputSchema = z.object({
 
 export type ShellLoginInput = z.infer<typeof ShellLoginInputSchema>
 
+export const ShellSignupInputSchema = z.object({
+  name: z.string().trim().min(1),
+  email: z.string().trim().email(),
+  password: z.string().min(1),
+})
+
+export type ShellSignupInput = z.infer<typeof ShellSignupInputSchema>
+
 const GraphqlPathSegmentSchema = z.union([z.string(), z.number()])
 
 export const ShellGraphqlRequestSchema = z.object({
