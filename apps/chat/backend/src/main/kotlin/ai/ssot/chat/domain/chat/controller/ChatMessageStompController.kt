@@ -24,10 +24,10 @@ class ChatMessageStompController(
         @Payload command: SendChatMessageCommand,
         principal: Principal,
     ) {
-        val message = chatMessageService.createChatMessage(
+        val result = chatMessageService.createChatMessage(
             memberId = principal.memberId(),
             roomId = roomId,
-            content = command.content?.trim() ?: "",
+            dto = command.toDto(),
         )
 
         if (!result.created) {
@@ -36,7 +36,7 @@ class ChatMessageStompController(
 
         messagingTemplate.convertAndSend(
             chatRoomMessageDestination(roomId),
-            message.toCreatedPayload(),
+            result.message.toCreatedPayload(),
         )
     }
 }

@@ -1,11 +1,8 @@
 package ai.ssot.chat.domain.chat.service
 
-import ai.ssot.chat.domain.chat.dto.ChatMessageCursorDto
+import ai.ssot.chat.domain.chat.dto.ChatMessageCreateResult
 import ai.ssot.chat.domain.chat.dto.ChatMessageCursorResult
-import ai.ssot.chat.domain.chat.dto.ChatMessageCursorResult
-import ai.ssot.chat.domain.chat.dto.ChatMessageDto
 import ai.ssot.chat.domain.chat.dto.ChatMessageSearchDto
-import ai.ssot.chat.domain.chat.dto.ChatMessageSearchResult
 import ai.ssot.chat.domain.chat.dto.CreateChatMessageDto
 import ai.ssot.chat.domain.chat.dto.toDto
 import ai.ssot.chat.domain.chat.exception.InvalidChatRoomRequestException
@@ -24,29 +21,15 @@ class ChatMessageService(
     fun getChatMessages(
         memberId: Long,
         dto: ChatMessageSearchDto,
-    ): ChatMessageSearchResult {
+    ): ChatMessageCursorResult {
         val roomId = parseRoomId(dto.roomId)
-        val cursor = dto.cursor?.let {
-            ChatMessageCursorDto(
-                createdDatetime = it.createdDatetime,
-                messageId = parseMessageId(it.messageId),
-            )
-        }
         validateSearchSize(dto.size)
         chatRoomService.validateActiveRoomMember(roomId = roomId, memberId = memberId)
 
-        val messages = chatMessageRepository.findMessages(
+        return chatMessageRepository.findCursorResultByRoomId(
             roomId = roomId,
-            cursor = cursor,
-            limit = dto.size + 1,
-        )
-        val hasNext = messages.size > dto.size
-        val returnedMessages = messages.take(dto.size).map { it.toDto() }
-
-        return ChatMessageSearchResult(
-            messages = returnedMessages,
-            hasNext = hasNext,
-            nextCursor = if (hasNext) returnedMessages.lastOrNull()?.toCursor() else null,
+            size = dto.size,
+            cursor = dto.cursor,
         )
     }
 
@@ -96,9 +79,20 @@ class ChatMessageService(
         }
     }
 
-    fun findCursorResult(roomId: UUID, size: Int, cursor: Long? = null): ChatMessageCursorResult {
-        return chatMessageRepository.findCursorResultByRoomId(roomId, size, cursor)
+    private fun parseRoomId(roomId: String): UUID =
+        try {
+            UUID.fromString(roomId)
+        } catch (exception: IllegalArgumentException) {
+            throw InvalidChatRoomRequestException("Chat room id must be a UUID.")
+        }
+
+    private fun validateSearchSize(size: Int) {
+        if (size !in 1..MAX_CHAT_MESSAGE_SEARCH_SIZE) {
+            throw InvalidChatRoomRequestException("size must be between 1 and 100.")
+        }
     }
 }
 
 private const val MAX_MESSAGE_CONTENT_LENGTH = 4000
+private const val MAX_CLIENT_MESSAGE_ID_LENGTH = 128
+private const val MAX_CHAT_MESSAGE_SEARCH_SIZE = 100
