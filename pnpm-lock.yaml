@@ -519,6 +519,28 @@ importers:
         specifier: ^5
         version: 5.9.3
 
+  packages/rich-text:
+    dependencies:
+      '@lexical/react':
+        specifier: 0.43.0
+        version: 0.43.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(yjs@13.6.30)
+      lexical:
+        specifier: 0.43.0
+        version: 0.43.0
+      react:
+        specifier: ^19.0.0
+        version: 19.2.3
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.3(react@19.2.3)
+    devDependencies:
+      '@types/react':
+        specifier: ^19
+        version: 19.2.14
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
   packages/shell-runtime:
     dependencies:
       '@dashway/app-protocol':
