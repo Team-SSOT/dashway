@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "type": "mention",
+            "version": 1,
+            "targetType": "person",
+            "targetId": "5",
+            "label": "Quoted",
+            "text": "@Quoted"
+          }
+        ],
+        "direction": null,
+        "format": "",
+        "indent": 0,
+        "type": "quote",
+        "version": 1
+      }
+    ],
+    "direction": null,
+    "format": "",
+    "indent": 0,
+    "type": "root",
+    "version": 1
+  }
+}

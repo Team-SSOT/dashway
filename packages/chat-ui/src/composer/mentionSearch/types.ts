@@ -1,16 +1,9 @@
 import type { NodeKey, SerializedEditorState } from 'lexical'
 
-export type MentionTargetType = 'person' | 'document' | 'issue' | 'team' | 'app'
+export type { MentionTarget, MentionTargetType } from '@dashway/rich-text'
 
-export interface MentionTarget {
-  type: MentionTargetType
-  id: string
-  label: string
-  description?: string
-  source?: string
-  iconUrl?: string
-  url?: string
-}
+// Imported for local interfaces below (e.g. ComposerSendPayload.mentions).
+import type { MentionTarget } from '@dashway/rich-text'
 
 export interface MentionQuery {
   query: string

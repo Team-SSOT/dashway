@@ -29,6 +29,9 @@ importers:
       '@dashway/design-tokens':
         specifier: workspace:*
         version: link:../../../packages/design-tokens
+      '@dashway/rich-text':
+        specifier: workspace:*
+        version: link:../../../packages/rich-text
       '@lexical/code':
         specifier: 0.43.0
         version: 0.43.0
@@ -446,6 +449,9 @@ importers:
 
   packages/chat-ui:
     dependencies:
+      '@dashway/rich-text':
+        specifier: workspace:*
+        version: link:../rich-text
       '@dashway/ui':
         specifier: workspace:*
         version: link:../ui
@@ -537,9 +543,15 @@ importers:
       '@types/react':
         specifier: ^19
         version: 19.2.14
+      jsdom:
+        specifier: ^29.0.2
+        version: 29.1.1
       typescript:
         specifier: ^5
         version: 5.9.3
+      vitest:
+        specifier: ^4.1.5
+        version: 4.1.7(@types/node@22.19.15)(@vitest/ui@4.1.7)(jsdom@29.1.1)(vite@6.4.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4))
 
   packages/shell-runtime:
     dependencies:
@@ -9058,6 +9070,14 @@ snapshots:
     optionalDependencies:
       vite: 6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4)
 
+  '@vitest/mocker@4.1.7(vite@6.4.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4))':
+    dependencies:
+      '@vitest/spy': 4.1.7
+      estree-walker: 3.0.3
+      magic-string: 0.30.21
+    optionalDependencies:
+      vite: 6.4.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4)
+
   '@vitest/pretty-format@4.1.7':
     dependencies:
       tinyrainbow: 3.1.0
@@ -11985,6 +12005,22 @@ snapshots:
       terser: 5.46.1
       yaml: 2.8.4
 
+  vite@6.4.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4):
+    dependencies:
+      esbuild: 0.25.12
+      fdir: 6.5.0(picomatch@4.0.3)
+      picomatch: 4.0.3
+      postcss: 8.5.8
+      rollup: 4.59.0
+      tinyglobby: 0.2.15
+    optionalDependencies:
+      '@types/node': 22.19.15
+      fsevents: 2.3.3
+      jiti: 2.6.1
+      lightningcss: 1.32.0
+      terser: 5.46.1
+      yaml: 2.8.4
+
   vitest@4.1.7(@types/node@20.19.37)(@vitest/ui@4.1.7)(jsdom@29.1.1)(vite@6.4.1(@types/node@20.19.37)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4)):
     dependencies:
       '@vitest/expect': 4.1.7
@@ -12009,6 +12045,35 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 20.19.37
+      '@vitest/ui': 4.1.7(vitest@4.1.7)
+      jsdom: 29.1.1
+    transitivePeerDependencies:
+      - msw
+
+  vitest@4.1.7(@types/node@22.19.15)(@vitest/ui@4.1.7)(jsdom@29.1.1)(vite@6.4.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4)):
+    dependencies:
+      '@vitest/expect': 4.1.7
+      '@vitest/mocker': 4.1.7(vite@6.4.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4))
+      '@vitest/pretty-format': 4.1.7
+      '@vitest/runner': 4.1.7
+      '@vitest/snapshot': 4.1.7
+      '@vitest/spy': 4.1.7
+      '@vitest/utils': 4.1.7
+      es-module-lexer: 2.0.0
+      expect-type: 1.3.0
+      magic-string: 0.30.21
+      obug: 2.1.1
+      pathe: 2.0.3
+      picomatch: 4.0.3
+      std-env: 4.1.0
+      tinybench: 2.9.0
+      tinyexec: 1.1.2
+      tinyglobby: 0.2.15
+      tinyrainbow: 3.1.0
+      vite: 6.4.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.4)
+      why-is-node-running: 2.3.0
+    optionalDependencies:
+      '@types/node': 22.19.15
       '@vitest/ui': 4.1.7(vitest@4.1.7)
       jsdom: 29.1.1
     transitivePeerDependencies:

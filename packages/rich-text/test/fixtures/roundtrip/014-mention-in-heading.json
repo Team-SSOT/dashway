@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": "re: ",
+            "type": "text",
+            "version": 1
+          },
+          {
+            "type": "mention",
+            "version": 1,
+            "targetType": "person",
+            "targetId": "9",
+            "label": "Sam",
+            "text": "@Sam"
+          }
+        ],
+        "direction": null,
+        "format": "",
+        "indent": 0,
+        "type": "heading",
+        "version": 1,
+        "tag": "h2"
+      }
+    ],
+    "direction": null,
+    "format": "",
+    "indent": 0,
+    "type": "root",
+    "version": 1
+  }
+}

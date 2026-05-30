@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "detail": 0,
+                "format": 0,
+                "mode": "normal",
+                "style": "",
+                "text": "first",
+                "type": "text",
+                "version": 1
+              }
+            ],
+            "direction": null,
+            "format": "",
+            "indent": 0,
+            "type": "listitem",
+            "version": 1,
+            "value": 1
+          },
+          {
+            "children": [
+              {
+                "detail": 0,
+                "format": 0,
+                "mode": "normal",
+                "style": "",
+                "text": "second",
+                "type": "text",
+                "version": 1
+              }
+            ],
+            "direction": null,
+            "format": "",
+            "indent": 0,
+            "type": "listitem",
+            "version": 1,
+            "value": 2
+          }
+        ],
+        "direction": null,
+        "format": "",
+        "indent": 0,
+        "type": "list",
+        "version": 1,
+        "listType": "number",
+        "start": 1,
+        "tag": "ol"
+      }
+    ],
+    "direction": null,
+    "format": "",
+    "indent": 0,
+    "type": "root",
+    "version": 1
+  }
+}

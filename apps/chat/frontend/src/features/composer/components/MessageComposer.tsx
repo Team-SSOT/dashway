@@ -3,8 +3,9 @@ import {
   type MentionQuery,
   UniversalMessageComposer,
 } from '@dashway/chat-ui'
+import { fromSearchFn, type MentionSearchProvider } from '@dashway/rich-text'
 import type { SerializedEditorState } from 'lexical'
-import { useCallback, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { useDirectory } from '@/app/providers/DataSourceProvider'
 import type { MessageAttachment, RoomId } from '@/types/chat'
 import { useDraft } from '../hooks/useDraft'
@@ -33,9 +34,20 @@ export function MessageComposer({
   const { savedDraft, debouncedSave } = useDraft(roomId)
   const fileCacheRef = useRef<Map<string, File>>(new Map())
 
-  const mentionSearch = useCallback(
-    (query: MentionQuery) => buildMentionTargets(directory, query),
+  // Canonical mention-search injection seam (Principle 3): the provider is the
+  // single swap-point. Swapping to a future ContextApiMentionSearchProvider is a
+  // one-line change here; the composer's `mentionSearch` prop stays a function.
+  const mentionProvider: MentionSearchProvider = useMemo(
+    () =>
+      fromSearchFn(({ query, limit }) =>
+        buildMentionTargets(directory, { query, limit: limit ?? 8 }),
+      ),
     [directory],
+  )
+
+  const mentionSearch = useCallback(
+    (query: MentionQuery) => mentionProvider.search(query),
+    [mentionProvider],
   )
 
   const handleFilesSelected = useCallback((files: File[]) => {

@@ -17,6 +17,7 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
+    "@dashway/rich-text": "workspace:*",
     "@dashway/ui": "workspace:*",
     "@lexical/code": "0.43.0",
     "@lexical/html": "0.43.0",

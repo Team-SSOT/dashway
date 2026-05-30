@@ -31,6 +31,7 @@ export default defineConfig({
     ],
     alias: {
       '@dashway/chat-ui': path.resolve(workspaceRoot, './packages/chat-ui/src/index.ts'),
+      '@dashway/rich-text': path.resolve(workspaceRoot, './packages/rich-text/src/index.ts'),
       '@dashway/ui': path.resolve(workspaceRoot, './packages/ui/src/index.ts'),
       '@': path.resolve(__dirname, './src'),
     },

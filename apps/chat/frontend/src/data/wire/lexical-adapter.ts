@@ -35,8 +35,8 @@ export function plainTextToLexical(s: string): SerializedEditorState {
 export function lexicalToPlain(es: SerializedEditorState): string {
   function extractNode(node: Record<string, unknown>): string {
     if (node.type === 'text') return String(node.text ?? '')
-    // Mention node: render as @text. Mention payload (memberId) is lost in plain text.
-    if (node.type === 'mention') return `@${String(node.text ?? node.value ?? '')}`
+    // Mention node: render as @text. Mention payload (targetId) is lost in plain text.
+    if (node.type === 'mention') return `@${String(node.text ?? '')}`
     const children = node.children as Record<string, unknown>[] | undefined
     if (!children) return ''
     const childText = children.map(extractNode).join('')

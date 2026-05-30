@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "type": "mention",
+            "version": 1,
+            "targetType": "person",
+            "targetId": "77",
+            "label": "풀필드",
+            "source": "directory",
+            "iconUrl": "https://cdn/x.png",
+            "url": "https://app/x/77",
+            "text": "@풀필드"
+          }
+        ],
+        "direction": null,
+        "format": "",
+        "indent": 0,
+        "type": "paragraph",
+        "version": 1,
+        "textFormat": 0,
+        "textStyle": ""
+      }
+    ],
+    "direction": null,
+    "format": "",
+    "indent": 0,
+    "type": "root",
+    "version": 1
+  }
+}

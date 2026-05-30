@@ -1,0 +1,11 @@
+{
+  "type": "mention",
+  "version": 1,
+  "targetType": "person",
+  "targetId": "user-1001",
+  "label": "홍길동",
+  "source": "directory",
+  "iconUrl": "https://cdn.example.com/avatars/1001.png",
+  "url": "https://app.example.com/people/1001",
+  "text": "@홍길동"
+}

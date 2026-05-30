@@ -62,7 +62,7 @@ describe('lexicalToPlain', () => {
   })
 
   it('renders mention node as @text with fidelity loss noted', () => {
-    // Mention node: memberId is lost in plain text — this is documented fidelity loss.
+    // Mention node: targetId is lost in plain text — this is documented fidelity loss.
     // Full mention round-trip requires server-side resolution (V1.2+).
     const state = {
       root: {
@@ -70,7 +70,7 @@ describe('lexicalToPlain', () => {
           {
             children: [
               { type: 'text', text: 'hello ', detail: 0, format: 0, mode: 'normal', style: '', version: 1 },
-              { type: 'mention', text: '홍길동', value: '1001', version: 1 },
+              { type: 'mention', targetType: 'person', targetId: '1001', label: '홍길동', text: '홍길동', version: 1 },
             ],
             direction: 'ltr',
             format: '',

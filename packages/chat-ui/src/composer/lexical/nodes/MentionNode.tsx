@@ -1,23 +1,11 @@
 import { cn } from '@dashway/ui'
-import type { EditorConfig, LexicalNode, NodeKey, SerializedLexicalNode, Spread } from 'lexical'
+import type { SerializedMentionNode } from '@dashway/rich-text'
+import type { EditorConfig, LexicalNode, NodeKey } from 'lexical'
 import { DecoratorNode } from 'lexical'
 import type { ReactNode } from 'react'
 import type { MentionTarget, MentionTargetType } from '../../types'
 
-export type SerializedMentionNode = Spread<
-  {
-    type: 'mention'
-    targetType: MentionTargetType
-    targetId: string
-    label: string
-    source?: string
-    iconUrl?: string
-    url?: string
-    text: string
-    version: 1
-  },
-  SerializedLexicalNode
->
+export type { SerializedMentionNode }
 
 const TYPE_CLASSES: Record<MentionTargetType, string> = {
   person: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',

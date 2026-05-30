@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "type": "mention",
+            "version": 1,
+            "targetType": "person",
+            "targetId": "id-0",
+            "label": "person-label",
+            "text": "@person-label"
+          },
+          {
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": " ",
+            "type": "text",
+            "version": 1
+          },
+          {
+            "type": "mention",
+            "version": 1,
+            "targetType": "document",
+            "targetId": "id-1",
+            "label": "document-label",
+            "text": "@document-label"
+          },
+          {
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": " ",
+            "type": "text",
+            "version": 1
+          },
+          {
+            "type": "mention",
+            "version": 1,
+            "targetType": "issue",
+            "targetId": "id-2",
+            "label": "issue-label",
+            "text": "@issue-label"
+          },
+          {
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": " ",
+            "type": "text",
+            "version": 1
+          },
+          {
+            "type": "mention",
+            "version": 1,
+            "targetType": "team",
+            "targetId": "id-3",
+            "label": "team-label",
+            "text": "@team-label"
+          },
+          {
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": " ",
+            "type": "text",
+            "version": 1
+          },
+          {
+            "type": "mention",
+            "version": 1,
+            "targetType": "app",
+            "targetId": "id-4",
+            "label": "app-label",
+            "text": "@app-label"
+          },
+          {
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": " ",
+            "type": "text",
+            "version": 1
+          }
+        ],
+        "direction": null,
+        "format": "",
+        "indent": 0,
+        "type": "paragraph",
+        "version": 1,
+        "textFormat": 0,
+        "textStyle": ""
+      }
+    ],
+    "direction": null,
+    "format": "",
+    "indent": 0,
+    "type": "root",
+    "version": 1
+  }
+}
