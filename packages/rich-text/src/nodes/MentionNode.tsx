@@ -1,7 +1,15 @@
-import type { EditorConfig, LexicalNode, NodeKey } from 'lexical'
+import type { EditorConfig, LexicalEditor, LexicalNode, NodeKey } from 'lexical'
 import { DecoratorNode } from 'lexical'
 import type { ReactNode } from 'react'
-import type { MentionTarget, SerializedMentionNode } from '../types'
+import type { MentionTarget, MentionTargetType, SerializedMentionNode } from '../types'
+
+/**
+ * Per-target-type class strings injected by the host app via Lexical's
+ * `EditorThemeClasses` (`config.theme.mention`). The package stays headless: when
+ * no `mention` theme is supplied, the node renders an unstyled, style-agnostic span
+ * (only `data-mention-*` attributes), so non-app consumers and tests are unaffected.
+ */
+type MentionTheme = { base?: string } & Partial<Record<MentionTargetType, string>>
 
 export class MentionNode extends DecoratorNode<ReactNode> {
   __target: MentionTarget
@@ -41,12 +49,18 @@ export class MentionNode extends DecoratorNode<ReactNode> {
     return true
   }
 
-  decorate(): ReactNode {
+  decorate(_editor: LexicalEditor, config: EditorConfig): ReactNode {
+    const mentionTheme = (config.theme as { mention?: MentionTheme }).mention
+    const className =
+      [mentionTheme?.base, mentionTheme?.[this.__target.type]].filter(Boolean).join(' ') ||
+      undefined
     return (
       <span
+        className={className}
         data-mention-type={this.__target.type}
         data-mention-id={this.__target.id}
         data-mention-label={this.__target.label}
+        title={this.__target.description}
       >
         @{this.__target.label}
       </span>

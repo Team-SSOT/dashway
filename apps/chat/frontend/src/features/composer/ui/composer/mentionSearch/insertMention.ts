@@ -8,7 +8,7 @@ import {
   type LexicalEditor,
   type TextNode,
 } from 'lexical'
-import { $createMentionNode } from '../lexical/nodes/MentionNode'
+import { $createMentionNode } from '@dashway/rich-text'
 import type { MentionCapturedRange, MentionTarget } from './types'
 
 const MENTION_MATCH = /(^|\s)@([\p{L}\p{N}_./#-]*)$/u

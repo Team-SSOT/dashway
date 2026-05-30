@@ -9,7 +9,7 @@ import userEvent from '@testing-library/user-event'
 import { $createParagraphNode, $createTextNode, $getRoot } from 'lexical'
 import { useEffect } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import { MentionNode } from '../ui/composer/lexical/nodes/MentionNode'
+import { MentionNode } from '@dashway/rich-text'
 import { MentionTypeaheadPlugin } from '../ui/composer/lexical/plugins/MentionTypeaheadPlugin'
 
 const ALICE: MentionTarget = {

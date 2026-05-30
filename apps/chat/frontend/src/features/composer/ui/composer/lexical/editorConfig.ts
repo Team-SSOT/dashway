@@ -3,8 +3,8 @@ import { CodeHighlightNode, CodeNode } from '@lexical/code'
 import { AutoLinkNode, LinkNode } from '@lexical/link'
 import { ListItemNode, ListNode } from '@lexical/list'
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
+import { MentionNode } from '@dashway/rich-text'
 import { EmojiNode } from './nodes/EmojiNode'
-import { MentionNode } from './nodes/MentionNode'
 
 export function createEditorConfig(namespace: string): InitialConfigType {
   return {
@@ -43,6 +43,16 @@ export function createEditorConfig(namespace: string): InitialConfigType {
         strikethrough: 'line-through',
         underline: 'underline',
         code: 'rounded bg-muted px-1 py-0.5 font-mono text-[0.92em]',
+      },
+      // App-injected styling for the headless @dashway/rich-text MentionNode.
+      // Lives here (an app-scanned source file) so Tailwind v4 keeps these classes.
+      mention: {
+        base: 'inline-flex max-w-[16rem] items-center rounded px-1 align-baseline font-medium',
+        person: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
+        document: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+        issue: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
+        team: 'bg-violet-500/15 text-violet-700 dark:text-violet-300',
+        app: 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
       },
     },
     onError: (error) => {
