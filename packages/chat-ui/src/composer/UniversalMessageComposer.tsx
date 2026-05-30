@@ -288,7 +288,10 @@ function InnerComposer({
         </div>
       ) : null}
       <AttachmentTray attachments={attachments} onRemove={removeAttachment} />
-      <div className="relative flex items-end gap-2 px-3 py-2">
+      {/* py-1.5 (6px) + 44px controls (h-11 buttons / min-h-44 editor) = 56px
+          resting height, matching the chat sidebar's Settings footer so the
+          bottom borders line up across the divider. */}
+      <div className="relative flex items-end gap-2 px-3 py-1.5">
         <div className="relative flex-1">
           <MentionTypeaheadPlugin mentionSearch={mentionSearch} />
           <RichTextPlugin

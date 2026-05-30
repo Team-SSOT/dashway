@@ -15,6 +15,7 @@ import type {
   MessageId,
 } from '@/types/chat'
 import type { LiveChatRealtime } from '@/data/LiveChatRealtime'
+import { toAuthorizationHeader } from '@/data/authHeader'
 import {
   adaptChatRoom,
   adaptChatRoomPage,
@@ -79,7 +80,11 @@ export class LiveChatRepository implements ChatRepository {
     private readonly getMemberId: () => string | null,
     private readonly onSessionInvalid?: () => void
   ) {
-    const endpoint = import.meta.env.VITE_CHAT_GRAPHQL_URL ?? new URL('/graphql', window.location.origin).toString()
+    // BE exposes GraphQL under the app-name prefix (application.yaml:
+    // `spring.graphql.http.path: /${DASHWAY_APP_NAME:chat}/graphql`), so the
+    // default must be `/chat/graphql`, not `/graphql` (which 404s). Mirrors the
+    // WS path convention in LiveChatRealtime ('/ws/chat').
+    const endpoint = import.meta.env.VITE_CHAT_GRAPHQL_URL ?? new URL('/chat/graphql', window.location.origin).toString()
     this.gql = new GraphQLClient(
       endpoint,
       {
@@ -88,7 +93,7 @@ export class LiveChatRepository implements ChatRepository {
           headers: {
             ...req.headers,
             'Content-Type': 'application/json',
-            Authorization: this.getToken() ?? '',
+            Authorization: toAuthorizationHeader(this.getToken()),
           },
         }),
       }
@@ -153,6 +158,21 @@ export class LiveChatRepository implements ChatRepository {
   }
 
   async createRoom(input: CreateRoomInput): Promise<ChatRoom> {
+    // TODO(member-directory): 멤버 조회/검색 API가 생기면 사용자가 선택한 참가자로 교체할 것.
+    //   현재는 멤버 선택 UI와 라이브 directory가 없어, 임시로
+    //   [생성자 + DB에 수동 삽입해 둔 임시 사용자(temp-user, id=999999)]로 GROUP 방을 만든다.
+    //   BE 제약(ChatRoomService): ① 생성자가 participantMemberIds에 포함되어야 하고,
+    //   ② GROUP은 2~100명이어야 한다. 그래서 본인만으로는 생성이 불가능해 임시 멤버를 끼워 넣는다.
+    //   → 멤버 피커가 들어오면 TEMP_PARTICIPANT_MEMBER_ID와 이 주석을 함께 제거할 것.
+    const TEMP_PARTICIPANT_MEMBER_ID = 999999
+    const creatorId = Number(this.getMemberId())
+    const participantMemberIds = Array.from(
+      new Set(
+        [creatorId, TEMP_PARTICIPANT_MEMBER_ID].filter(
+          (id) => Number.isInteger(id) && id > 0,
+        ),
+      ),
+    )
     try {
       const data = await this.gql.request<{ createChatRoom: WireRoom }>(
         CREATE_CHAT_ROOM_MUTATION,
@@ -161,7 +181,7 @@ export class LiveChatRepository implements ChatRepository {
             type: 'GROUP',
             isPublic: false,
             title: input.name,
-            participantMemberIds: [],
+            participantMemberIds,
           },
         }
       )

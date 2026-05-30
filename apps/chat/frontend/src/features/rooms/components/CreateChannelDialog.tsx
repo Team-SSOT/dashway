@@ -19,6 +19,21 @@ interface CreateChannelDialogProps {
   existingNames: string[]
 }
 
+// Map repository errors to a short, human-readable message. Never surface the
+// raw GraphQL error string here — it's a multi-hundred-char single-line blob
+// that overflows the dialog and breaks the layout.
+function toCreateChannelErrorMessage(err: unknown): string {
+  const code = (err as { code?: string })?.code
+  switch (code) {
+    case 'UNAUTHENTICATED':
+      return '로그인이 필요합니다. 세션이 만료되었거나 인증 토큰이 없습니다.'
+    case 'FORBIDDEN':
+      return '채널을 생성할 권한이 없습니다.'
+    default:
+      return '채널 생성에 실패했습니다. 잠시 후 다시 시도해주세요.'
+  }
+}
+
 export function CreateChannelDialog({
   open,
   onOpenChange,
@@ -65,8 +80,7 @@ export function CreateChannelDialog({
       navigate(`/chat/${room.id}`)
       handleOpenChange(false)
     } catch (err) {
-      const chatErr = err as { message?: string }
-      setError(chatErr?.message ?? 'Failed to create channel')
+      setError(toCreateChannelErrorMessage(err))
     }
   }
 
@@ -114,7 +128,10 @@ export function CreateChannelDialog({
               )}
             />
             {touched && error ? (
-              <p id="channel-name-error" className="text-xs text-destructive">
+              <p
+                id="channel-name-error"
+                className="text-xs text-destructive break-words [overflow-wrap:anywhere]"
+              >
                 {error}
               </p>
             ) : (
