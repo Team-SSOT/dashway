@@ -1,4 +1,4 @@
-import { type MentionQuery, type MentionTarget, UniversalMessageComposer } from '@dashway/chat-ui'
+import { type MentionQuery, type MentionTarget, UniversalMessageComposer } from '@/features/composer/ui'
 import { LexicalComposer as LexicalComposerProvider } from '@lexical/react/LexicalComposer'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
@@ -9,8 +9,8 @@ import userEvent from '@testing-library/user-event'
 import { $createParagraphNode, $createTextNode, $getRoot } from 'lexical'
 import { useEffect } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import { MentionNode } from '../../../../../../../packages/chat-ui/src/composer/lexical/nodes/MentionNode'
-import { MentionTypeaheadPlugin } from '../../../../../../../packages/chat-ui/src/composer/lexical/plugins/MentionTypeaheadPlugin'
+import { MentionNode } from '../ui/composer/lexical/nodes/MentionNode'
+import { MentionTypeaheadPlugin } from '../ui/composer/lexical/plugins/MentionTypeaheadPlugin'
 
 const ALICE: MentionTarget = {
   type: 'person',

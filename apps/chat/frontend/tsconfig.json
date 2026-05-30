@@ -17,7 +17,6 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@dashway/chat-ui": ["../../../packages/chat-ui/src/index.ts"],
       "@dashway/rich-text": ["../../../packages/rich-text/src/index.ts"],
       "@dashway/ui": ["../../../packages/ui/src/index.ts"],
       "@/*": ["src/*"]

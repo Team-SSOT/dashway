@@ -23,15 +23,15 @@ importers:
       '@dashway/app-sdk':
         specifier: workspace:*
         version: link:../../../packages/app-sdk
-      '@dashway/chat-ui':
-        specifier: workspace:*
-        version: link:../../../packages/chat-ui
       '@dashway/design-tokens':
         specifier: workspace:*
         version: link:../../../packages/design-tokens
       '@dashway/rich-text':
         specifier: workspace:*
         version: link:../../../packages/rich-text
+      '@dashway/ui':
+        specifier: workspace:*
+        version: link:../../../packages/ui
       '@lexical/code':
         specifier: 0.43.0
         version: 0.43.0
@@ -443,58 +443,6 @@ importers:
       react:
         specifier: 19.2.3
         version: 19.2.3
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-
-  packages/chat-ui:
-    dependencies:
-      '@dashway/rich-text':
-        specifier: workspace:*
-        version: link:../rich-text
-      '@dashway/ui':
-        specifier: workspace:*
-        version: link:../ui
-      '@lexical/code':
-        specifier: 0.43.0
-        version: 0.43.0
-      '@lexical/html':
-        specifier: 0.43.0
-        version: 0.43.0
-      '@lexical/link':
-        specifier: 0.43.0
-        version: 0.43.0
-      '@lexical/list':
-        specifier: 0.43.0
-        version: 0.43.0
-      '@lexical/markdown':
-        specifier: 0.43.0
-        version: 0.43.0
-      '@lexical/react':
-        specifier: 0.43.0
-        version: 0.43.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(yjs@13.6.30)
-      '@lexical/rich-text':
-        specifier: 0.43.0
-        version: 0.43.0
-      lexical:
-        specifier: 0.43.0
-        version: 0.43.0
-      lucide-react:
-        specifier: ^0.488.0
-        version: 0.488.0(react@19.2.3)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.3
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.3(react@19.2.3)
-      tailwindcss:
-        specifier: ^4.0.0
-        version: 4.2.2
-    devDependencies:
-      '@types/react':
-        specifier: ^19
-        version: 19.2.14
       typescript:
         specifier: ^5
         version: 5.9.3

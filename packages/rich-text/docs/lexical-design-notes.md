@@ -2,7 +2,7 @@
 
 > chat composer의 리치텍스트(Lexical) 인터페이스를 만들면서 고려했던 결정들을
 > 한곳에 모은 문서. "왜 이렇게 했나"를 코드가 아니라 의도 수준에서 남긴다.
-> 관련 코드: `@dashway/rich-text`, `packages/chat-ui/src/composer/`
+> 관련 코드: `@dashway/rich-text`, `apps/chat/frontend/src/features/composer/ui/composer/`
 
 ---
 
@@ -287,7 +287,7 @@ blur 시에도 `relatedTarget`이 picker 내부면 유지.
 
 _관련 코드_
 - `packages/rich-text/src/nodes/MentionNode.tsx`, `tracker.ts`, `react/useMentionTracker.ts`
-- `packages/chat-ui/src/composer/lexical/nodes/{MentionNode,EmojiNode}.tsx`
-- `packages/chat-ui/src/composer/lexical/plugins/{MentionTypeahead,ImeGuard,EmojiReplace,PasteSanitizer}*`
-- `packages/chat-ui/src/composer/mentionSearch/insertMention.ts`
-- `packages/chat-ui/src/composer/UniversalMessageComposer.tsx`
+- `apps/chat/frontend/src/features/composer/ui/composer/lexical/nodes/{MentionNode,EmojiNode}.tsx`
+- `apps/chat/frontend/src/features/composer/ui/composer/lexical/plugins/{MentionTypeahead,ImeGuard,EmojiReplace,PasteSanitizer}*`
+- `apps/chat/frontend/src/features/composer/ui/composer/mentionSearch/insertMention.ts`
+- `apps/chat/frontend/src/features/composer/ui/composer/UniversalMessageComposer.tsx`

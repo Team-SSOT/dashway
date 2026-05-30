@@ -10,6 +10,7 @@
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
     "codegen": "graphql-codegen --config codegen.ts",
+    "lint": "biome check .",
     "test:live": "cross-env RUN_LIVE=1 vitest run --include 'src/data/__tests__/*.live.test.ts'"
   },
   "dependencies": {
@@ -18,9 +19,9 @@
     "graphql": "^16",
     "graphql-request": "^7",
     "@dashway/app-sdk": "workspace:*",
-    "@dashway/chat-ui": "workspace:*",
     "@dashway/design-tokens": "workspace:*",
     "@dashway/rich-text": "workspace:*",
+    "@dashway/ui": "workspace:*",
     "@lexical/code": "0.43.0",
     "@lexical/code-shiki": "0.43.0",
     "@lexical/html": "0.43.0",

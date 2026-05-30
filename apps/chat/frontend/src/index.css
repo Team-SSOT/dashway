@@ -2,7 +2,6 @@
 @import "@dashway/design-tokens/css/tokens.css";
 @import "@dashway/design-tokens/css/shadcn-bridge.css";
 @import "@dashway/design-tokens/css/tailwind-theme.css";
-@source "../../../../packages/chat-ui/src/**/*.{ts,tsx}";
 
 @layer base {
   html, body, #root {

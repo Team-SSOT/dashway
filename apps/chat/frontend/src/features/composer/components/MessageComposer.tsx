@@ -2,7 +2,7 @@ import {
   type ComposerSendPayload,
   type MentionQuery,
   UniversalMessageComposer,
-} from '@dashway/chat-ui'
+} from '@/features/composer/ui'
 import { fromSearchFn, type MentionSearchProvider } from '@dashway/rich-text'
 import type { SerializedEditorState } from 'lexical'
 import { useCallback, useMemo, useRef } from 'react'
