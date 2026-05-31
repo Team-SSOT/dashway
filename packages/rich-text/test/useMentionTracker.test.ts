@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { useMentionTracker } from '../src/react/useMentionTracker'
-import * as pkg from '../src/index'
+// Editor-runtime pieces live on the `@dashway/rich-text/react` entry, not the
+// pure-data core (`./index`). Assert the hook is on the react public surface.
+import * as reactEntry from '../src/react'
 
 /**
  * Decision D2: the package harness is JSON/tracker-only — no @vitejs/plugin-react
@@ -11,8 +13,8 @@ import * as pkg from '../src/index'
  * is exported on the public surface and is a function (the contract callers depend on).
  */
 describe('useMentionTracker — public surface (AC6 / T5)', () => {
-  it('is exported from the package entry point', () => {
-    expect(pkg.useMentionTracker).toBe(useMentionTracker)
+  it('is exported from the /react entry point', () => {
+    expect(reactEntry.useMentionTracker).toBe(useMentionTracker)
   })
 
   it('is a function with arity 1 (editor)', () => {

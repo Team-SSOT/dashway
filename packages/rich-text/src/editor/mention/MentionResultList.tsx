@@ -1,0 +1,135 @@
+import { Button, cn } from '@dashway/ui'
+import { AppWindow, CircleDot, FileText, type LucideIcon, User, Users } from 'lucide-react'
+import { type ReactNode, useMemo } from 'react'
+import { MENTION_TYPE_CLASSES } from '../../render/mentionClasses'
+import type { MentionTarget, MentionTargetType } from '../../types'
+
+export const MENTION_TYPE_LABELS: Record<MentionTargetType, string> = {
+  person: 'People',
+  document: 'Docs',
+  issue: 'Issues',
+  team: 'Teams',
+  app: 'Apps',
+}
+
+export const MENTION_TYPE_ICONS: Record<MentionTargetType, LucideIcon> = {
+  person: User,
+  document: FileText,
+  issue: CircleDot,
+  team: Users,
+  app: AppWindow,
+}
+
+const TYPE_ORDER: MentionTargetType[] = ['person', 'document', 'issue', 'team', 'app']
+
+export interface MentionResultListProps {
+  items: MentionTarget[]
+  activeIndex: number
+  onSelect: (target: MentionTarget) => void
+  onActiveChange: (index: number) => void
+  compact?: boolean
+  headerSlot?: ReactNode
+  emptyState?: ReactNode
+  listboxId?: string
+}
+
+export function MentionResultList({
+  items,
+  activeIndex,
+  onSelect,
+  onActiveChange,
+  compact = false,
+  headerSlot,
+  emptyState,
+  listboxId,
+}: MentionResultListProps) {
+  const groupedItems = useMemo(() => {
+    return items.reduce<Record<MentionTargetType, MentionTarget[]>>(
+      (acc, item) => {
+        acc[item.type].push(item)
+        return acc
+      },
+      { person: [], document: [], issue: [], team: [], app: [] },
+    )
+  }, [items])
+
+  const containerClass = compact
+    ? 'overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-xl'
+    : 'overflow-hidden rounded-md border border-border bg-background text-foreground'
+
+  const listClass = compact ? 'max-h-80 overflow-y-auto py-1' : 'max-h-[60vh] overflow-y-auto py-1'
+
+  let flatIndex = -1
+
+  return (
+    <div className={containerClass}>
+      {headerSlot}
+      <div id={listboxId} className={listClass} role="listbox" aria-label="Mention suggestions">
+        {items.length === 0
+          ? (emptyState ?? (
+              <div className="px-3 py-6 text-center text-sm text-muted-foreground">
+                No mention targets found
+              </div>
+            ))
+          : null}
+        {TYPE_ORDER.map((type) => {
+          const group = groupedItems[type]
+          if (group.length === 0) return null
+          return (
+            <div key={type} className="py-1">
+              <div className="px-3 py-1 text-[11px] font-medium uppercase text-muted-foreground">
+                {MENTION_TYPE_LABELS[type]}
+              </div>
+              {group.map((item) => {
+                flatIndex += 1
+                const Icon = MENTION_TYPE_ICONS[item.type]
+                const itemIndex = flatIndex
+                const selected = itemIndex === activeIndex
+                return (
+                  <Button
+                    key={`${item.type}:${item.id}`}
+                    type="button"
+                    variant="ghost"
+                    className={cn(
+                      'h-auto w-full justify-start rounded-none px-3 py-2 text-left',
+                      selected && 'bg-accent text-accent-foreground',
+                    )}
+                    role="option"
+                    aria-selected={selected}
+                    onMouseEnter={() => onActiveChange(itemIndex)}
+                    onMouseDown={(event) => {
+                      event.preventDefault()
+                      onSelect(item)
+                    }}
+                  >
+                    <span
+                      className={cn(
+                        'flex size-8 shrink-0 items-center justify-center rounded-md',
+                        MENTION_TYPE_CLASSES[item.type],
+                      )}
+                    >
+                      <Icon className="size-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium">{item.label}</span>
+                      {item.description ? (
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {item.description}
+                        </span>
+                      ) : null}
+                    </span>
+                    {item.source ? (
+                      <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                        {item.source}
+                      </span>
+                    ) : null}
+                  </Button>
+                )
+              })}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}

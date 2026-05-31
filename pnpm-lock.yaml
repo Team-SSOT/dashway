@@ -475,18 +475,45 @@ importers:
 
   packages/rich-text:
     dependencies:
+      '@dashway/ui':
+        specifier: workspace:*
+        version: link:../ui
+      '@lexical/code':
+        specifier: 0.43.0
+        version: 0.43.0
+      '@lexical/html':
+        specifier: 0.43.0
+        version: 0.43.0
+      '@lexical/link':
+        specifier: 0.43.0
+        version: 0.43.0
+      '@lexical/list':
+        specifier: 0.43.0
+        version: 0.43.0
+      '@lexical/markdown':
+        specifier: 0.43.0
+        version: 0.43.0
       '@lexical/react':
         specifier: 0.43.0
         version: 0.43.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(yjs@13.6.30)
+      '@lexical/rich-text':
+        specifier: 0.43.0
+        version: 0.43.0
       lexical:
         specifier: 0.43.0
         version: 0.43.0
+      lucide-react:
+        specifier: ^0.488.0
+        version: 0.488.0(react@19.2.3)
       react:
         specifier: ^19.0.0
         version: 19.2.3
       react-dom:
         specifier: ^19.0.0
         version: 19.2.3(react@19.2.3)
+      shiki:
+        specifier: ^3.23.0
+        version: 3.23.0
     devDependencies:
       '@types/react':
         specifier: ^19
