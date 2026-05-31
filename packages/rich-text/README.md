@@ -8,6 +8,129 @@ Lexical 위에 올린 **헤드리스(UI 없음) 리치텍스트 핵심 로직** 
 > `SerializedMentionNode`)의 **단일 출처(single source of truth)**다. 포크하지
 > 말고 `@dashway/rich-text`에서 import 할 것.
 
+이제 이 패키지는 데이터 규약뿐 아니라 **에디터 UI(`<RichTextEditor>`)와 읽기 렌더러
+(`renderLexical`)까지** 소유한다. 각 앱은 Lexical을 재조립하지 않고 import만 한다.
+
+---
+
+## 진입점 (Entry Points)
+
+목적별로 4개의 진입점이 있다. 필요한 것만 import해 런타임 의존성을 최소화한다.
+
+| 진입점 | 용도 | 주요 export | 런타임 의존성 |
+|--------|------|------------|--------------|
+| `@dashway/rich-text` | **순수 데이터** (검증·추출·타입). 서버/RSC 안전 | `validate` · `extract` · `serialize 타입` · 도메인/AST 타입 · 상수 · `fromSearchFn` | 없음 (lexical은 타입만) |
+| `@dashway/rich-text/react` | **직렬화·노드·증분 추적** | `MentionNode` · `$createMentionNode` · `serialize` · `deserialize` · `createMentionTracker` · `useMentionTracker` | lexical + react |
+| `@dashway/rich-text/render` | **읽기**(저장된 글 표시) | `renderLexical` · `MentionRender` · `CodeBlockRender`(opt-in, shiki) · `MENTION_TYPE_CLASSES` | react (+ @dashway/ui) |
+| `@dashway/rich-text/editor` | **편집**(작성 UI) | `<RichTextEditor>` · `createEditorConfig` · 플러그인 · `MentionTypeaheadPlugin` · `insertMention*` | lexical + react + @dashway/ui |
+
+> core(`.`)와 `/render`는 **런타임 클린**(에디터 런타임 미포함)으로 유지된다 —
+> `validate()`만 쓰려는 서버 소비자가 Lexical/React를 끌어오지 않도록.
+
+---
+
+## 다른 앱에서 사용하기 (Integration)
+
+### 1. 의존성
+```jsonc
+// 앱 package.json
+"dependencies": {
+  "@dashway/rich-text": "workspace:*",
+  "@dashway/ui": "workspace:*"   // /editor·/render의 기본 UI(Button)가 사용
+}
+```
+
+### 2. 모듈 해석 — `resolve.dedupe`가 가장 중요
+Lexical 인스턴스가 중복되면 `instanceof`/노드 등록이 깨져 에디터가 통째로 죽는다.
+vite/vitest 양쪽에 dedupe를 넣을 것:
+```ts
+// vite.config.ts / vitest.config.ts
+resolve: {
+  dedupe: ['lexical', '@lexical/code', '@lexical/html', '@lexical/link',
+           '@lexical/list', '@lexical/markdown', '@lexical/react',
+           '@lexical/rich-text', 'react', 'react-dom'],
+}
+```
+Vite는 패키지 `exports`로 서브패스를 자동 해석하므로 **alias 불필요**. TS는 `paths`에
+4개 서브패스를 매핑(상대경로는 앱 위치에 맞게):
+```jsonc
+// tsconfig.json — 서브패스를 bare보다 먼저
+"paths": {
+  "@dashway/rich-text/editor": ["../../../packages/rich-text/src/editor/index.ts"],
+  "@dashway/rich-text/render": ["../../../packages/rich-text/src/render/index.ts"],
+  "@dashway/rich-text/react":  ["../../../packages/rich-text/src/react.ts"],
+  "@dashway/rich-text":        ["../../../packages/rich-text/src/index.ts"]
+}
+```
+vitest를 쓰면 같은 4개를 `resolve.alias`에도(더 구체적인 서브패스를 먼저) 추가.
+
+### 3. Tailwind `@source` (클래스 purge 방지 — 필수)
+패키지 소스의 유틸 클래스(멘션 색상·타입어헤드·코드블록)가 빌드에서 사라지지 않도록,
+앱 CSS(`@import "tailwindcss"` 파일)에 추가:
+```css
+@source "../../../../packages/rich-text/src/render";
+@source "../../../../packages/rich-text/src/editor";
+```
+
+### 4. 테마
+- `@dashway/design-tokens`를 쓰는 앱(`border-border`·`bg-muted`·`text-primary` 등) →
+  **기본 테마가 그대로 동작**.
+- 팔레트가 다른 앱 → `<RichTextEditor theme={...}>` / `renderLexical(doc, { classes })`로 오버라이드.
+
+### 5. 편집 — `<RichTextEditor>`
+```tsx
+import { RichTextEditor, type RichTextEditorHandle } from '@dashway/rich-text/editor'
+import type { MentionTarget } from '@dashway/rich-text'
+
+const ref = useRef<RichTextEditorHandle>(null)
+
+<RichTextEditor
+  ref={ref}
+  namespace="doc-editor"
+  placeholder={<div className="...">내용을 입력하세요</div>}   // ReactElement
+  mentionSearch={async ({ query, limit }) => search(query, limit)}  // 함수 주입(아래 7)
+  onChange={(state) => saveDraft(state)}                       // 선택
+  onSubmit={(content, plainText) => send(content, plainText)}  // Enter 전송(선택)
+  onFilesPasted={(files) => attach(files)}                     // 선택
+  theme={appTheme}                                             // 다른 팔레트면(선택)
+/>
+
+// ref로 제어:
+const content = ref.current?.getSerializedState()
+const text = ref.current?.getPlainText()
+ref.current?.clear()
+```
+LexicalComposer + 플러그인 스택(history/list/link/markdown/IME/emoji/paste/mention)이
+이미 묶여 있다.
+
+### 6. 읽기 — `renderLexical`
+```tsx
+import { renderLexical, CodeBlockRender } from '@dashway/rich-text/render'
+
+renderLexical(message.content, {
+  components: { code: CodeBlockRender },  // shiki 코드블록(미주입 시 plain <pre>)
+  membersById,                            // person 멘션 이름 해석(선택)
+  classes: { quote: '...' },              // 노드별 클래스 오버라이드(선택)
+})
+```
+
+### 7. 멘션 검색 주입 (P3)
+`mentionSearch`는 함수다 — 앱이 자기 데이터 소스를 연결:
+```ts
+async function search(query: string, limit: number): Promise<MentionTarget[]> {
+  const rows = await directory.search(query, limit)
+  return rows.map((r) => ({ type: 'person', id: r.id, label: r.name, source: 'People' }))
+}
+```
+결과 목록 UI를 바꾸려면 `<RichTextEditor mentionResultRenderer={MyList} />`.
+
+### 통합 체크리스트
+- [ ] `@dashway/rich-text` + `@dashway/ui` 의존성 + `pnpm install`
+- [ ] vite/vitest `resolve.dedupe`에 lexical·@lexical/*·react·react-dom (**가장 흔한 함정**)
+- [ ] tsconfig `paths`(+ vitest alias) 4개 서브패스
+- [ ] Tailwind `@source` 2줄(render·editor)
+- [ ] 디자인토큰 미사용 시 `theme`/`classes` 오버라이드
+
 ---
 
 ## 설계 철학 (3 Principles)
@@ -55,32 +178,35 @@ Lexical 위에 올린 **헤드리스(UI 없음) 리치텍스트 핵심 로직** 
 
 ## Public API
 
+진입점별로 정리한다.
+
 ```ts
-// 직렬화 봉투 (버전 스탬프/검사)
+// ── @dashway/rich-text (core, 런타임 클린) ───────────────────────────
+extract(doc, opts?): ExtractedRichText           // plain/excerpt/mentions/highlight
+validate(doc): ValidationResult                  // size/depth/node 화이트리스트
+fromSearchFn(fn): MentionSearchProvider          // 검색 주입 seam (P3)
+CURRENT_SCHEMA_VERSION, EXCERPT_LIMIT, MAX_DOCUMENT_BYTES,
+MAX_DOCUMENT_DEPTH, NODE_WHITELIST
+// 타입: MentionTarget, MentionTargetType, MentionRef, RichTextDocument,
+//      ExtractedRichText, 직렬화 AST 노드 타입(SerializedMentionNode 등)
+
+// ── @dashway/rich-text/react (직렬화·노드·추적) ──────────────────────
 serialize(editor): RichTextDocument
 deserialize(editor, doc): EditorState            // 버전 불일치 시 throw
 SchemaVersionUnsupportedError
-
-// 멘션 노드 (Lexical DecoratorNode)
 MentionNode, $createMentionNode, $isMentionNode
-
-// 편집 경로: 증분 멘션 추적
-createMentionTracker(editor): MentionTracker
+createMentionTracker(editor): MentionTracker     // 증분 추적 (P1)
 useMentionTracker(editor): MentionRef[]          // React hook
 
-// 파생 뷰
-extract(doc, opts?): ExtractedRichText           // plain/excerpt/mentions/highlight
+// ── @dashway/rich-text/render (읽기 렌더) ────────────────────────────
+renderLexical(state, opts?): ReactNode           // AST → React (classes/components 주입)
+MentionRender, CodeBlockRender(opt-in, shiki), MENTION_TYPE_CLASSES
 
-// 검증 (load/save 경로)
-validate(doc): ValidationResult                  // size/depth/node 화이트리스트
-
-// 검색 주입 시점(seam)
-fromSearchFn(fn): MentionSearchProvider
-
-// 상수 / 타입
-CURRENT_SCHEMA_VERSION, EXCERPT_LIMIT, MAX_DOCUMENT_BYTES,
-MAX_DOCUMENT_DEPTH, NODE_WHITELIST
-MentionTarget, MentionRef, RichTextDocument, ...
+// ── @dashway/rich-text/editor (편집 UI) ──────────────────────────────
+RichTextEditor(props), RichTextEditorHandle      // 조립형 에디터 컴포넌트
+createEditorConfig(opts), DEFAULT_EDITOR_THEME
+MentionTypeaheadPlugin, EmojiReplacePlugin, ImeGuardPlugin, PasteSanitizerPlugin
+insertMentionAtCapturedRange, insertMentionAtCurrentSelection, MentionResultList
 ```
 
 ---
@@ -282,7 +408,7 @@ const provider = fromSearchFn(({ query, limit }) =>
 | `validate/accept-*` | 통과해야 하는 문서 | 30개 |
 | `validate/reject-*` | 거부해야 하는 문서 | `table` 노드, 한글 초과 크기 … |
 | `extract/` | plain/하이라이트 추출 | `highlight-basic`, `long-excerpt` |
-| `parity/` | chat-ui 멘션 형식 호환 | `chat-ui-mention.json` |
+| `parity/` | 과거 chat-ui wire 멘션 형식과의 호환(회귀 가드) | `chat-ui-mention.json` |
 
 ```bash
 pnpm --filter @dashway/rich-text test
@@ -292,5 +418,8 @@ pnpm --filter @dashway/rich-text test
 
 ## 로드맵
 
-- **Phase 2 (T7)**: chat-ui의 중복 타입(`MentionTarget` 등)을 이 패키지 re-export로 통합.
+- ✅ **완료**: 도메인 타입 단일화(구 chat-ui 중복 제거), 읽기 렌더러(`/render`) 및
+  에디터 UI(`/editor`, `<RichTextEditor>`)를 패키지로 승격 — chat이 첫 소비자.
+- **다음 소비자 연결**: issue_tracker · document 앱에서 `<RichTextEditor>`/`renderLexical`
+  채택 (각 앱에 dedupe + `@source` + 팔레트 `theme` 오버라이드 적용 — [통합](#다른-앱에서-사용하기-integration) 참고).
 - context-api 기반 `MentionSearchProvider` 구현체 추가 (mock 대체, P3 한 줄 스왑).
