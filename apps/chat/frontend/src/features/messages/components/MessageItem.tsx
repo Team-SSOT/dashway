@@ -1,17 +1,17 @@
+import { CodeBlockRender, renderLexical } from '@dashway/rich-text/render'
+import { MessageSquare } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MessageSquare } from 'lucide-react'
-import type { ChatMessage, ChatMember, RoomId } from '@/types/chat'
 import { currentUserId } from '@/data/mockData'
+import { useRoomMemberships } from '@/features/rooms/hooks/useRoomMemberships'
+import { canDeleteMessage } from '@/features/rooms/permissions'
+import { cn } from '@/shared/lib/cn'
 import { formatMessageTimestamp } from '@/shared/lib/date'
-import { renderLexical } from '@/features/renderer/renderLexical'
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar'
 import { Button } from '@/shared/ui/button'
-import { cn } from '@/shared/lib/cn'
-import { canDeleteMessage } from '@/features/rooms/permissions'
-import { useRoomMemberships } from '@/features/rooms/hooks/useRoomMemberships'
-import { useToggleReaction } from '../hooks/useToggleReaction'
+import type { ChatMember, ChatMessage, RoomId } from '@/types/chat'
 import { useDeleteMessage } from '../hooks/useDeleteMessage'
+import { useToggleReaction } from '../hooks/useToggleReaction'
 import { MessageAttachments } from './MessageAttachments'
 import { MessageHoverToolbar } from './MessageHoverToolbar'
 import { MoreMenu } from './MoreMenu'
@@ -109,7 +109,10 @@ export function MessageItem({ message, author, compact, membersById, roomId }: P
           <>
             {message.plainText.trim().length > 0 ? (
               <div className="text-sm leading-relaxed" dir="auto">
-                {renderLexical(message.content, { membersById })}
+                {renderLexical(message.content, {
+                  membersById,
+                  components: { code: CodeBlockRender },
+                })}
               </div>
             ) : null}
             {message.attachments && message.attachments.length > 0 ? (

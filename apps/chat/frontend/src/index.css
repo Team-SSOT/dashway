@@ -3,6 +3,11 @@
 @import "@dashway/design-tokens/css/shadcn-bridge.css";
 @import "@dashway/design-tokens/css/tailwind-theme.css";
 
+/* Scan the shared rich-text renderer source so Tailwind keeps the utility
+   classes it emits (mention chip colors, semantic block classes). */
+@source "../../../../packages/rich-text/src/render";
+@source "../../../../packages/rich-text/src/editor";
+
 @layer base {
   html, body, #root {
     @apply h-full;

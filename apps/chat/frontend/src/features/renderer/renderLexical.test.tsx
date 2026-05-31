@@ -1,46 +1,33 @@
-import { describe, it, expect } from 'vitest'
+import { CodeBlockRender, renderLexical } from '@dashway/rich-text/render'
 import { render } from '@testing-library/react'
 import type { SerializedEditorState } from 'lexical'
-import { renderLexical } from './renderLexical'
-
-import boldJson from './__fixtures__/bold.json'
+import { describe, expect, it } from 'vitest'
 import boldExpected from './__fixtures__/bold.expected.txt?raw'
-
-import italicJson from './__fixtures__/italic.json'
-import italicExpected from './__fixtures__/italic.expected.txt?raw'
-
-import codeInlineJson from './__fixtures__/code-inline.json'
-import codeInlineExpected from './__fixtures__/code-inline.expected.txt?raw'
-
-import codeBlockJson from './__fixtures__/code-block.json'
-import codeBlockExpected from './__fixtures__/code-block.expected.txt?raw'
-
-import linkJson from './__fixtures__/link.json'
-import linkExpected from './__fixtures__/link.expected.txt?raw'
-
-import bulletListJson from './__fixtures__/bullet-list.json'
+import boldJson from './__fixtures__/bold.json'
 import bulletListExpected from './__fixtures__/bullet-list.expected.txt?raw'
-
-import orderedListJson from './__fixtures__/ordered-list.json'
-import orderedListExpected from './__fixtures__/ordered-list.expected.txt?raw'
-
-import headingJson from './__fixtures__/heading.json'
-import headingExpected from './__fixtures__/heading.expected.txt?raw'
-
-import emojiJson from './__fixtures__/emoji.json'
+import bulletListJson from './__fixtures__/bullet-list.json'
+import codeBlockExpected from './__fixtures__/code-block.expected.txt?raw'
+import codeBlockJson from './__fixtures__/code-block.json'
+import codeInlineExpected from './__fixtures__/code-inline.expected.txt?raw'
+import codeInlineJson from './__fixtures__/code-inline.json'
 import emojiExpected from './__fixtures__/emoji.expected.txt?raw'
-
-import mentionReadJson from './__fixtures__/mention-read.json'
-import mentionReadExpected from './__fixtures__/mention-read.expected.txt?raw'
-
-import emptyJson from './__fixtures__/empty.json'
+import emojiJson from './__fixtures__/emoji.json'
 import emptyExpected from './__fixtures__/empty.expected.txt?raw'
-
-import nestedJson from './__fixtures__/nested.json'
-import nestedExpected from './__fixtures__/nested.expected.txt?raw'
-
-import maxLengthJson from './__fixtures__/max-length.json'
+import emptyJson from './__fixtures__/empty.json'
+import headingExpected from './__fixtures__/heading.expected.txt?raw'
+import headingJson from './__fixtures__/heading.json'
+import italicExpected from './__fixtures__/italic.expected.txt?raw'
+import italicJson from './__fixtures__/italic.json'
+import linkExpected from './__fixtures__/link.expected.txt?raw'
+import linkJson from './__fixtures__/link.json'
 import maxLengthExpected from './__fixtures__/max-length.expected.txt?raw'
+import maxLengthJson from './__fixtures__/max-length.json'
+import mentionReadExpected from './__fixtures__/mention-read.expected.txt?raw'
+import mentionReadJson from './__fixtures__/mention-read.json'
+import nestedExpected from './__fixtures__/nested.expected.txt?raw'
+import nestedJson from './__fixtures__/nested.json'
+import orderedListExpected from './__fixtures__/ordered-list.expected.txt?raw'
+import orderedListJson from './__fixtures__/ordered-list.json'
 
 function normalize(s: string): string {
   return s.replace(/\s+/g, ' ').trim()
@@ -136,8 +123,13 @@ describe('renderLexical', () => {
 
   for (const c of cases) {
     it(`renders ${c.name}`, () => {
+      // Inject the package code-block renderer, mirroring production (MessageItem).
       const { container } = render(
-        <>{renderLexical(c.fixture as SerializedEditorState)}</>,
+        <>
+          {renderLexical(c.fixture as SerializedEditorState, {
+            components: { code: CodeBlockRender },
+          })}
+        </>,
       )
       expect(normalize(container.textContent ?? '')).toBe(normalize(c.expected))
       c.extra?.(container as HTMLElement)

@@ -1,12 +1,12 @@
+import { fromSearchFn, type MentionSearchProvider } from '@dashway/rich-text'
+import type { SerializedEditorState } from 'lexical'
+import { useCallback, useMemo, useRef } from 'react'
+import { useDirectory } from '@/app/providers/DataSourceProvider'
 import {
   type ComposerSendPayload,
   type MentionQuery,
   UniversalMessageComposer,
 } from '@/features/composer/ui'
-import { fromSearchFn, type MentionSearchProvider } from '@dashway/rich-text'
-import type { SerializedEditorState } from 'lexical'
-import { useCallback, useMemo, useRef } from 'react'
-import { useDirectory } from '@/app/providers/DataSourceProvider'
 import type { MessageAttachment, RoomId } from '@/types/chat'
 import { useDraft } from '../hooks/useDraft'
 import { buildMentionTargets } from '../mock/mockMentionTargets'
@@ -21,8 +21,8 @@ interface Props {
   placeholder?: string
 }
 
-// chat-ui composer revokes its preview blob URLs right after onSend, so we keep
-// the source File around and mint message-owned blob URLs at send time.
+// The composer-UI module revokes its preview blob URLs right after onSend, so we
+// keep the source File around and mint message-owned blob URLs at send time.
 const fileKey = (name: string, size: number) => `${name}|${size}`
 
 export function MessageComposer({

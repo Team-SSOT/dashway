@@ -1,51 +1,10 @@
+import { RichTextEditor, type RichTextEditorHandle } from '@dashway/rich-text/editor'
 import { Button, cn } from '@dashway/ui'
-import type { LinkMatcher } from '@lexical/link'
-import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin'
-import { AutoLinkPlugin } from '@lexical/react/LexicalAutoLinkPlugin'
-import { LexicalComposer as LexicalComposerProvider } from '@lexical/react/LexicalComposer'
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { ContentEditable } from '@lexical/react/LexicalContentEditable'
-import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary'
-import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
-import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin'
-import { ListPlugin } from '@lexical/react/LexicalListPlugin'
-import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin'
-import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
-import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
-import {
-  $getRoot,
-  CLEAR_HISTORY_COMMAND,
-  COMMAND_PRIORITY_HIGH,
-  type EditorState,
-  KEY_ENTER_COMMAND,
-  type SerializedEditorState,
-} from 'lexical'
+import type { EditorState, SerializedEditorState } from 'lexical'
+import { $getRoot } from 'lexical'
 import { File as FileIcon, FileText, Image, Paperclip, Plus, Send, X } from 'lucide-react'
-import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { createEditorConfig } from './lexical/editorConfig'
-import { CHAT_TRANSFORMERS } from './lexical/markdownTransformers'
-import { EmojiReplacePlugin } from './lexical/plugins/EmojiReplacePlugin'
-import { ImeGuardPlugin } from './lexical/plugins/ImeGuardPlugin'
-import { MentionTypeaheadPlugin } from './lexical/plugins/MentionTypeaheadPlugin'
-import { PasteSanitizerPlugin } from './lexical/plugins/PasteSanitizerPlugin'
+import { type DragEvent, useCallback, useEffect, useRef, useState } from 'react'
 import type { ComposerAttachment, ComposerSendPayload, MentionQuery, MentionTarget } from './types'
-
-const URL_REGEX = /((?:https?:\/\/)[^\s]+)/
-
-const AUTO_LINK_MATCHERS: LinkMatcher[] = [
-  (text: string) => {
-    const match = URL_REGEX.exec(text)
-    if (!match) return null
-    const full = match[0]
-    return {
-      index: match.index,
-      length: full.length,
-      text: full,
-      url: full,
-      attributes: { rel: 'noopener noreferrer', target: '_blank' },
-    }
-  },
-]
 
 export interface UniversalMessageComposerProps {
   composerId: string
@@ -58,6 +17,11 @@ export interface UniversalMessageComposerProps {
   onSend: (payload: ComposerSendPayload) => void | Promise<void>
 }
 
+/**
+ * Chat composer shell. The rich-text editing surface is the shared
+ * `@dashway/rich-text/editor` `<RichTextEditor>`; this component owns only the
+ * chat-specific chrome: attachments, drag-drop, toasts, and the send controls.
+ */
 export function UniversalMessageComposer({
   composerId,
   initialState,
@@ -68,53 +32,13 @@ export function UniversalMessageComposer({
   onFilesSelected,
   onSend,
 }: UniversalMessageComposerProps) {
-  const initialConfig = useMemo(() => createEditorConfig(composerId), [composerId])
-
-  return (
-    <LexicalComposerProvider key={composerId} initialConfig={initialConfig}>
-      <InnerComposer
-        composerId={composerId}
-        initialState={initialState}
-        placeholder={placeholder}
-        autoFocus={autoFocus}
-        mentionSearch={mentionSearch}
-        onDraftChange={onDraftChange}
-        onFilesSelected={onFilesSelected}
-        onSend={onSend}
-      />
-    </LexicalComposerProvider>
-  )
-}
-
-function InnerComposer({
-  composerId,
-  initialState,
-  placeholder,
-  autoFocus,
-  mentionSearch,
-  onDraftChange,
-  onFilesSelected,
-  onSend,
-}: UniversalMessageComposerProps) {
-  const [editor] = useLexicalComposerContext()
-  const composingRef = useRef(false)
+  const editorRef = useRef<RichTextEditorHandle>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const attachmentsRef = useRef<ComposerAttachment[]>([])
   const dragDepthRef = useRef(0)
-  const initialStateRef = useRef(initialState)
   const [toastMsg, setToastMsg] = useState<string | null>(null)
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([])
   const [isDraggingFiles, setIsDraggingFiles] = useState(false)
-
-  useEffect(() => {
-    const state = initialStateRef.current
-    if (!state) return
-    try {
-      editor.setEditorState(editor.parseEditorState(state))
-    } catch (err) {
-      console.warn('[UniversalMessageComposer] draft restore failed', err)
-    }
-  }, [composerId, editor])
 
   useEffect(() => {
     attachmentsRef.current = attachments
@@ -154,28 +78,8 @@ function InnerComposer({
     })
   }, [])
 
-  const buildPayload = useCallback((): ComposerSendPayload | null => {
-    let plainText = ''
-    let content: SerializedEditorState | null = null
-    editor.getEditorState().read(() => {
-      plainText = $getRoot().getTextContent()
-      content = editor.getEditorState().toJSON()
-    })
-    if (content == null) return null
-    if (plainText.trim().length === 0 && attachments.length === 0) return null
-    return {
-      content,
-      plainText,
-      mentions: extractMentions(content),
-      attachments,
-    }
-  }, [attachments, editor])
-
   const clearComposer = useCallback(() => {
-    editor.update(() => {
-      $getRoot().clear()
-    })
-    editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined)
+    editorRef.current?.clear()
     onDraftChange?.(null)
     setAttachments((current) => {
       current.forEach((attachment) => {
@@ -183,37 +87,22 @@ function InnerComposer({
       })
       return []
     })
-  }, [editor, onDraftChange])
+  }, [onDraftChange])
+
+  const submit = useCallback(
+    (content: SerializedEditorState, plainText: string) => {
+      if (plainText.trim().length === 0 && attachments.length === 0) return
+      void onSend({ content, plainText, mentions: extractMentions(content), attachments })
+      clearComposer()
+    },
+    [attachments, clearComposer, onSend],
+  )
 
   const sendCurrentMessage = useCallback(() => {
-    const payload = buildPayload()
-    if (!payload) return
-    void onSend(payload)
-    clearComposer()
-  }, [buildPayload, clearComposer, onSend])
-
-  useEffect(() => {
-    return editor.registerCommand(
-      KEY_ENTER_COMMAND,
-      (event) => {
-        if (!(event instanceof KeyboardEvent)) return false
-        if (event.shiftKey) return false
-        if (composingRef.current) return true
-
-        const payload = buildPayload()
-        if (!payload) {
-          event.preventDefault()
-          return true
-        }
-
-        event.preventDefault()
-        void onSend(payload)
-        clearComposer()
-        return true
-      },
-      COMMAND_PRIORITY_HIGH,
-    )
-  }, [buildPayload, clearComposer, editor, onSend])
+    const handle = editorRef.current
+    if (!handle) return
+    submit(handle.getSerializedState(), handle.getPlainText())
+  }, [submit])
 
   const handleChange = useCallback(
     (state: EditorState) => {
@@ -288,43 +177,27 @@ function InnerComposer({
         </div>
       ) : null}
       <AttachmentTray attachments={attachments} onRemove={removeAttachment} />
-      {/* py-1.5 (6px) + 44px controls (h-11 buttons / min-h-44 editor) = 56px
-          resting height, matching the chat sidebar's Settings footer so the
-          bottom borders line up across the divider. */}
+      {/* py-1.5 (6px) + 44px controls = 56px resting height, matching the chat
+          sidebar's Settings footer so the bottom borders line up. */}
       <div className="relative flex items-end gap-2 px-3 py-1.5">
-        <div className="relative flex-1">
-          <MentionTypeaheadPlugin mentionSearch={mentionSearch} />
-          <RichTextPlugin
-            contentEditable={
-              <ContentEditable
-                className={cn(
-                  'max-h-[40vh] min-h-[44px] overflow-y-auto rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring',
-                )}
-                aria-label="Message composer"
-              />
-            }
-            placeholder={
-              <div className="pointer-events-none absolute left-3 top-[10px] text-sm text-muted-foreground">
-                {placeholder}
-              </div>
-            }
-            ErrorBoundary={LexicalErrorBoundary}
-          />
-          <HistoryPlugin />
-          <OnChangePlugin onChange={handleChange} ignoreSelectionChange />
-          {autoFocus ? <AutoFocusPlugin /> : null}
-          <LinkPlugin />
-          <AutoLinkPlugin matchers={AUTO_LINK_MATCHERS} />
-          <ListPlugin />
-          <MarkdownShortcutPlugin transformers={CHAT_TRANSFORMERS} />
-          <ImeGuardPlugin composingRef={composingRef} />
-          <EmojiReplacePlugin />
-          <PasteSanitizerPlugin
-            onFilesPasted={addFiles}
-            onImagePasteBlocked={() => setToastMsg('Image paste is shown as a mock attachment')}
-            onCharLimitExceeded={() => setToastMsg('Message too long (max 50,000 chars)')}
-          />
-        </div>
+        <RichTextEditor
+          ref={editorRef}
+          namespace={composerId}
+          initialState={initialState}
+          autoFocus={autoFocus}
+          ariaLabel="Message composer"
+          mentionSearch={mentionSearch}
+          onChange={handleChange}
+          onSubmit={submit}
+          onFilesPasted={addFiles}
+          onImagePasteBlocked={() => setToastMsg('Image paste is shown as a mock attachment')}
+          onCharLimitExceeded={() => setToastMsg('Message too long (max 50,000 chars)')}
+          placeholder={
+            <div className="pointer-events-none absolute left-3 top-[10px] text-sm text-muted-foreground">
+              {placeholder}
+            </div>
+          }
+        />
         <input
           ref={fileInputRef}
           className="hidden"
@@ -420,8 +293,6 @@ function extractMentions(state: SerializedEditorState): MentionTarget[] {
       type?: string
       targetType?: MentionTarget['type']
       targetId?: string
-      memberId?: string
-      id?: string
       label?: string
       source?: string
       iconUrl?: string
@@ -429,8 +300,10 @@ function extractMentions(state: SerializedEditorState): MentionTarget[] {
       children?: unknown[]
     }
     if (value.type === 'mention') {
+      // Operates on the editor's own serialized output, which is always the
+      // canonical @dashway/rich-text MentionNode shape (targetType/targetId).
       const type = value.targetType ?? 'person'
-      const id = value.targetId ?? value.memberId ?? value.id
+      const id = value.targetId
       const label = value.label ?? id
       if (id && label) {
         mentions.set(`${type}:${id}`, {

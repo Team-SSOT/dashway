@@ -1,4 +1,5 @@
-import { type MentionQuery, type MentionTarget, UniversalMessageComposer } from '@/features/composer/ui'
+import { MentionTypeaheadPlugin } from '@dashway/rich-text/editor'
+import { MentionNode } from '@dashway/rich-text/react'
 import { LexicalComposer as LexicalComposerProvider } from '@lexical/react/LexicalComposer'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
@@ -9,8 +10,11 @@ import userEvent from '@testing-library/user-event'
 import { $createParagraphNode, $createTextNode, $getRoot } from 'lexical'
 import { useEffect } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import { MentionNode } from '@dashway/rich-text'
-import { MentionTypeaheadPlugin } from '../ui/composer/lexical/plugins/MentionTypeaheadPlugin'
+import {
+  type MentionQuery,
+  type MentionTarget,
+  UniversalMessageComposer,
+} from '@/features/composer/ui'
 
 const ALICE: MentionTarget = {
   type: 'person',
