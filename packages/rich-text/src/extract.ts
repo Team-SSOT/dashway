@@ -1,12 +1,13 @@
 import { EXCERPT_LIMIT } from './constants'
+import type { MentionTracker } from './tracker'
 import type {
   ExtractedRichText,
   HighlightSpan,
   MentionRef,
+  MentionTarget,
   RichTextDocument,
   SerializedRichTextRoot,
 } from './types'
-import type { MentionTracker } from './tracker'
 
 export interface ExtractOptions {
   /**
@@ -124,6 +125,47 @@ function collectMentionsByWalk(root: SerializedRichTextRoot): MentionRef[] {
   }
 
   return mentions
+}
+
+/**
+ * Collect FULL mention targets (incl. `source`/`iconUrl`/`url`) from a serialized
+ * document, de-duplicated by `type:id`. Use this when you need the rich
+ * `MentionTarget` — e.g. building a send payload — whereas `extract().mentions`
+ * returns the lightweight `MentionRef`. Pure data: operates on the serialized tree,
+ * no editor/runtime needed. Reads the canonical MentionNode shape (`targetType`/
+ * `targetId`/`label`/`source`/`iconUrl`/`url`).
+ */
+export function extractMentionTargets(root: SerializedRichTextRoot): MentionTarget[] {
+  const out = new Map<string, MentionTarget>()
+
+  const visit = (node: SerializedNodeLike): void => {
+    if (String(node.type) === 'mention') {
+      const n = node as Record<string, unknown>
+      const type = (n.targetType as MentionTarget['type']) ?? 'person'
+      const id = typeof n.targetId === 'string' ? n.targetId : undefined
+      const label = typeof n.label === 'string' ? n.label : id
+      if (id && label) {
+        out.set(`${type}:${id}`, {
+          type,
+          id,
+          label,
+          source: typeof n.source === 'string' ? n.source : undefined,
+          iconUrl: typeof n.iconUrl === 'string' ? n.iconUrl : undefined,
+          url: typeof n.url === 'string' ? n.url : undefined,
+        })
+      }
+      return
+    }
+    for (const child of childrenOf(node)) {
+      visit(child)
+    }
+  }
+
+  for (const child of childrenOf(asNode(root) ?? {})) {
+    visit(child)
+  }
+
+  return [...out.values()]
 }
 
 /**

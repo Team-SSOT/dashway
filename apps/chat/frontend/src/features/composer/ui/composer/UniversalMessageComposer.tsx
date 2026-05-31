@@ -1,3 +1,4 @@
+import { extractMentionTargets } from '@dashway/rich-text'
 import { RichTextEditor, type RichTextEditorHandle } from '@dashway/rich-text/editor'
 import { Button, cn } from '@dashway/ui'
 import type { EditorState, SerializedEditorState } from 'lexical'
@@ -92,7 +93,12 @@ export function UniversalMessageComposer({
   const submit = useCallback(
     (content: SerializedEditorState, plainText: string) => {
       if (plainText.trim().length === 0 && attachments.length === 0) return
-      void onSend({ content, plainText, mentions: extractMentions(content), attachments })
+      void onSend({
+        content,
+        plainText,
+        mentions: extractMentionTargets(content.root),
+        attachments,
+      })
       clearComposer()
     },
     [attachments, clearComposer, onSend],
@@ -283,44 +289,6 @@ function AttachmentTray({
       })}
     </div>
   )
-}
-
-function extractMentions(state: SerializedEditorState): MentionTarget[] {
-  const mentions = new Map<string, MentionTarget>()
-  const visit = (node: unknown) => {
-    if (!node || typeof node !== 'object') return
-    const value = node as {
-      type?: string
-      targetType?: MentionTarget['type']
-      targetId?: string
-      label?: string
-      source?: string
-      iconUrl?: string
-      url?: string
-      children?: unknown[]
-    }
-    if (value.type === 'mention') {
-      // Operates on the editor's own serialized output, which is always the
-      // canonical @dashway/rich-text MentionNode shape (targetType/targetId).
-      const type = value.targetType ?? 'person'
-      const id = value.targetId
-      const label = value.label ?? id
-      if (id && label) {
-        mentions.set(`${type}:${id}`, {
-          type,
-          id,
-          label,
-          source: value.source,
-          iconUrl: value.iconUrl,
-          url: value.url,
-        })
-      }
-    }
-    value.children?.forEach(visit)
-  }
-
-  visit(state.root)
-  return [...mentions.values()]
 }
 
 function makeId(prefix: string): string {

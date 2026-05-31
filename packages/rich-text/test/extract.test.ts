@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { extract } from '../src/extract'
+import { fileURLToPath } from 'node:url'
+import { describe, expect, it } from 'vitest'
 import { EXCERPT_LIMIT } from '../src/constants'
-import type { RichTextDocument } from '../src/types'
+import { extract, extractMentionTargets } from '../src/extract'
+import type { RichTextDocument, SerializedRichTextRoot } from '../src/types'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const extractDir = join(__dirname, 'fixtures/extract')
@@ -98,5 +98,92 @@ describe('extract — highlightSlice offset determinism (AC4b)', () => {
     const result = extract(doc)
     expect(result.highlightSlice).toEqual([])
     expect(result.mentions).toEqual([])
+  })
+})
+
+describe('extractMentionTargets — full targets for send payloads', () => {
+  const root = {
+    type: 'root',
+    version: 1,
+    direction: 'ltr',
+    format: '',
+    indent: 0,
+    children: [
+      {
+        type: 'paragraph',
+        version: 1,
+        direction: 'ltr',
+        format: '',
+        indent: 0,
+        children: [
+          {
+            type: 'text',
+            text: 'hi ',
+            version: 1,
+            detail: 0,
+            format: 0,
+            mode: 'normal',
+            style: '',
+          },
+          {
+            type: 'mention',
+            version: 1,
+            targetType: 'document',
+            targetId: 'doc-1',
+            label: 'Spec',
+            source: 'Docs',
+            iconUrl: 'https://x/i.png',
+            url: 'https://x/doc-1',
+            text: '@Spec',
+          },
+          {
+            // duplicate of the same target (collapsed by type:id dedup)
+            type: 'mention',
+            version: 1,
+            targetType: 'document',
+            targetId: 'doc-1',
+            label: 'Spec',
+            source: 'Docs',
+            iconUrl: 'https://x/i.png',
+            url: 'https://x/doc-1',
+            text: '@Spec',
+          },
+          {
+            type: 'mention',
+            version: 1,
+            targetType: 'person',
+            targetId: 'alice',
+            label: 'Alice',
+            text: '@Alice',
+          },
+        ],
+      },
+    ],
+  } as unknown as SerializedRichTextRoot
+
+  it('returns full MentionTarget incl. source/iconUrl/url, de-duplicated by type:id', () => {
+    expect(extractMentionTargets(root)).toEqual([
+      {
+        type: 'document',
+        id: 'doc-1',
+        label: 'Spec',
+        source: 'Docs',
+        iconUrl: 'https://x/i.png',
+        url: 'https://x/doc-1',
+      },
+      {
+        type: 'person',
+        id: 'alice',
+        label: 'Alice',
+        source: undefined,
+        iconUrl: undefined,
+        url: undefined,
+      },
+    ])
+  })
+
+  it('returns [] for a mention-free document', () => {
+    const doc = load(roundtripDir, '002-plain.json')
+    expect(extractMentionTargets(doc.root)).toEqual([])
   })
 })

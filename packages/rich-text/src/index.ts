@@ -24,7 +24,7 @@ export {
   type WhitelistedNodeType,
 } from './constants'
 export type { ExtractOptions } from './extract'
-export { extract } from './extract'
+export { extract, extractMentionTargets } from './extract'
 export type { MentionSearchInput, MentionSearchProvider } from './search/MentionSearchProvider'
 export { fromSearchFn } from './search/MentionSearchProvider'
 export type {
