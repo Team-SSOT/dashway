@@ -54,7 +54,7 @@ data class ChatMessageCreatedPayload(
 data class ChatMessagePayload(
     val id: String,
     val roomId: String,
-    val senderMemberId: Long,
+    val memberId: Long,
     val clientMessageId: String,
     val content: String?,
     val isDeleted: Boolean,
@@ -75,7 +75,7 @@ fun ChatMessageDto.toCreatedPayload(): ChatMessageCreatedPayload =
         message = ChatMessagePayload(
             id = id.toString(),
             roomId = roomId.toString(),
-            senderMemberId = senderMemberId,
+            memberId = memberId,
             clientMessageId = clientMessageId,
             content = content,
             isDeleted = isDeleted,

@@ -15,7 +15,7 @@ type PageInfo {
 
 type Query {
     chatRooms(input: ChatRoomsInput!): ChatRoomPage!
-    chatMessages(input: ChatMessagesInput!): ChatMessageSlice!
+    chatMessages(input: ChatMessagesInput!): ChatMessageCursor!
 }
 
 type Mutation {
@@ -59,9 +59,9 @@ type ChatRoomPage {
 }
 
 type ChatMessage {
-    id: String!
+    id: Long!
     roomId: String!
-    senderMemberId: Long!
+    memberId: Long!
     clientMessageId: String!
     content: String
     mentions: [ContentMention!]!
@@ -85,15 +85,10 @@ type FileContentMention implements ContentMention {
     fileId: String!
 }
 
-type ChatMessageSlice {
+type ChatMessageCursor {
     messages: [ChatMessage!]!
     hasNext: Boolean!
-    nextCursor: ChatMessageCursor
-}
-
-type ChatMessageCursor {
-    createdDatetime: DateTime!
-    messageId: String!
+    nextCursor: Long
 }
 
 input ChatRoomsInput {
@@ -104,13 +99,8 @@ input ChatRoomsInput {
 
 input ChatMessagesInput {
     roomId: String!
-    cursor: ChatMessageCursorInput
     size: Int!
-}
-
-input ChatMessageCursorInput {
-    createdDatetime: DateTime!
-    messageId: String!
+    cursor: Long
 }
 
 input CreateChatRoomInput {

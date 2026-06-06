@@ -1,9 +1,9 @@
 package ai.ssot.chat.domain.chat.repository
 
-import ai.ssot.chat.domain.chat.dto.ChatMessageCursorDto
+import ai.ssot.chat.domain.chat.dto.ChatMessageCursorResult
+import ai.ssot.chat.domain.chat.dto.QChatMessageDto
 import ai.ssot.chat.domain.chat.entity.ChatMessage
 import ai.ssot.chat.domain.chat.entity.QChatMessage.Companion.chatMessage
-import com.querydsl.core.types.dsl.BooleanExpression
 import com.querydsl.jpa.impl.JPAQueryFactory
 import jakarta.persistence.EntityManager
 import org.springframework.data.jpa.repository.JpaRepository
@@ -13,13 +13,17 @@ import java.util.*
 
 interface ChatMessageRepository :
     JpaRepository<ChatMessage, Long>,
-    ChatMessageCommandRepository,
-    QChatMessageRepository
+    QChatMessageRepository,
+    ChatMessageCommandRepository
 
 data class ChatMessageInsertResult(
     val message: ChatMessage,
     val created: Boolean,
 )
+
+interface QChatMessageRepository {
+    fun findCursorResultByRoomId(roomId: UUID, size: Int, cursor: Long?): ChatMessageCursorResult
+}
 
 interface ChatMessageCommandRepository {
     fun insertIfAbsent(
@@ -31,12 +35,41 @@ interface ChatMessageCommandRepository {
     ): ChatMessageInsertResult
 }
 
-interface QChatMessageRepository {
-    fun findMessages(
-        roomId: UUID,
-        cursor: ChatMessageCursorDto?,
-        limit: Int,
-    ): List<ChatMessage>
+class QChatMessageRepositoryImpl(
+    private val queryFactory: JPAQueryFactory,
+) : QChatMessageRepository {
+
+    override fun findCursorResultByRoomId(roomId: UUID, size: Int, cursor: Long?): ChatMessageCursorResult {
+        val fetchedMessages = queryFactory.select(
+            QChatMessageDto(
+                chatMessage.id,
+                chatMessage.roomId,
+                chatMessage.memberId,
+                chatMessage.clientMessageId,
+                chatMessage.content,
+                chatMessage.isDeleted,
+                chatMessage.createdDatetime,
+                chatMessage.editedDatetime,
+                chatMessage.deletedDatetime,
+            )
+        ).from(chatMessage)
+            .where(
+                chatMessage.roomId.eq(roomId),
+                chatMessage.isEnabled.isTrue,
+                cursor?.let { chatMessage.id.lt(cursor) },
+            )
+            .orderBy(chatMessage.id.desc())
+            .limit((size + 1).toLong())
+            .fetch()
+        val hasNext = fetchedMessages.size > size
+        val returnedMessages = fetchedMessages.take(size)
+
+        return ChatMessageCursorResult(
+            messages = returnedMessages,
+            hasNext = hasNext,
+            nextCursor = if (hasNext) returnedMessages.lastOrNull()?.id else null,
+        )
+    }
 }
 
 @Repository
@@ -50,42 +83,7 @@ class ChatMessageCommandRepositoryImpl(
         content: String,
         createdDatetime: OffsetDateTime,
     ): ChatMessageInsertResult {
-        val insertedId = insertMessage(
-            roomId = roomId,
-            memberId = memberId,
-            clientMessageId = clientMessageId,
-            content = content,
-            createdDatetime = createdDatetime,
-        )
-
-        if (insertedId != null) {
-            return ChatMessageInsertResult(
-                message = findMessageById(insertedId),
-                created = true,
-            )
-        }
-
-        val existingId = findExistingMessageId(
-            roomId = roomId,
-            memberId = memberId,
-            clientMessageId = clientMessageId,
-        )
-            ?: throw IllegalStateException("Idempotent chat message insert did not return an existing message.")
-
-        return ChatMessageInsertResult(
-            message = findMessageById(existingId),
-            created = false,
-        )
-    }
-
-    private fun insertMessage(
-        roomId: UUID,
-        memberId: Long,
-        clientMessageId: String,
-        content: String,
-        createdDatetime: OffsetDateTime,
-    ): Long? {
-        val results = entityManager.createNativeQuery(
+        val insertedId = entityManager.createNativeQuery(
             """
             INSERT INTO chat.chat_message (
                 room_id,
@@ -105,68 +103,34 @@ class ChatMessageCommandRepositoryImpl(
             .setParameter("content", content)
             .setParameter("createdDatetime", createdDatetime)
             .resultList
+            .firstOrNull()
+            ?.let { (it as Number).toLong() }
 
-        return results.firstOrNull()?.toLongId()
-    }
+        if (insertedId != null) {
+            return ChatMessageInsertResult(
+                message = requireNotNull(entityManager.find(ChatMessage::class.java, insertedId)),
+                created = true,
+            )
+        }
 
-    private fun findExistingMessageId(
-        roomId: UUID,
-        memberId: Long,
-        clientMessageId: String,
-    ): Long? {
-        val results = entityManager.createNativeQuery(
+        val existingMessage = entityManager.createQuery(
             """
-            SELECT id
-            FROM chat.chat_message
-            WHERE room_id = :roomId
-              AND member_id = :memberId
-              AND client_message_id = :clientMessageId
+            SELECT message
+            FROM ChatMessage message
+            WHERE message.roomId = :roomId
+              AND message.memberId = :memberId
+              AND message.clientMessageId = :clientMessageId
             """.trimIndent(),
+            ChatMessage::class.java,
         )
             .setParameter("roomId", roomId)
             .setParameter("memberId", memberId)
             .setParameter("clientMessageId", clientMessageId)
-            .resultList
+            .singleResult
 
-        return results.firstOrNull()?.toLongId()
-    }
-
-    private fun findMessageById(id: Long): ChatMessage =
-        entityManager.find(ChatMessage::class.java, id)
-            ?: throw IllegalStateException("Chat message $id was not found after idempotent insert.")
-
-    private fun Any.toLongId(): Long =
-        when (this) {
-            is Number -> toLong()
-            else -> error("Expected chat message id to be numeric but was ${this::class.simpleName}.")
-        }
-}
-
-@Repository
-class QChatMessageRepositoryImpl(
-    private val queryFactory: JPAQueryFactory,
-) : QChatMessageRepository {
-    override fun findMessages(
-        roomId: UUID,
-        cursor: ChatMessageCursorDto?,
-        limit: Int,
-    ): List<ChatMessage> {
-        val predicates = mutableListOf<BooleanExpression>(
-            chatMessage.roomId.eq(roomId),
+        return ChatMessageInsertResult(
+            message = existingMessage,
+            created = false,
         )
-
-        if (cursor != null) {
-            predicates += chatMessage.createdDatetime.lt(cursor.createdDatetime)
-                .or(
-                    chatMessage.createdDatetime.eq(cursor.createdDatetime)
-                        .and(chatMessage.id.lt(cursor.messageId)),
-                )
-        }
-
-        return queryFactory.selectFrom(chatMessage)
-            .where(*predicates.toTypedArray())
-            .orderBy(chatMessage.createdDatetime.desc(), chatMessage.id.desc())
-            .limit(limit.toLong())
-            .fetch()
     }
 }

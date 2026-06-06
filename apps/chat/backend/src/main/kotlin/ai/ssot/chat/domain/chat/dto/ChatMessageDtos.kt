@@ -1,6 +1,7 @@
 package ai.ssot.chat.domain.chat.dto
 
 import ai.ssot.chat.domain.chat.entity.ChatMessage
+import com.querydsl.core.annotations.QueryProjection
 import java.time.OffsetDateTime
 import java.util.*
 
@@ -11,45 +12,40 @@ data class CreateChatMessageDto(
 
 data class ChatMessageSearchDto(
     val roomId: String,
-    val cursor: ChatMessageCursorInputDto?,
     val size: Int,
+    val cursor: Long?,
 )
 
-data class ChatMessageCursorInputDto(
-    val createdDatetime: OffsetDateTime,
-    val messageId: String,
+data class ChatMessageCursorResult(
+    val messages: List<ChatMessageDto>,
+    val hasNext: Boolean,
+    val nextCursor: Long?,
 )
 
-data class ChatMessageDto(
+data class ChatMessageCreateResult(
+    val message: ChatMessageDto,
+    val created: Boolean,
+)
+
+data class ChatMessageDto @QueryProjection constructor(
     val id: Long,
     val roomId: UUID,
-    val senderMemberId: Long,
+    val memberId: Long,
     val clientMessageId: String,
     val content: String?,
     val isDeleted: Boolean,
     val createdDatetime: OffsetDateTime,
-    val editedDatetime: OffsetDateTime?,
-    val deletedDatetime: OffsetDateTime?,
-)
-
-data class ChatMessageCursorDto(
-    val createdDatetime: OffsetDateTime,
-    val messageId: Long,
-)
-
-data class ChatMessageSearchResult(
-    val messages: List<ChatMessageDto>,
-    val hasNext: Boolean,
-    val nextCursor: ChatMessageCursorDto?,
+    val editedDatetime: OffsetDateTime? = null,
+    val deletedDatetime: OffsetDateTime? = null,
 )
 
 fun ChatMessage.toDto(): ChatMessageDto =
     ChatMessageDto(
         id = requireNotNull(id),
         roomId = roomId,
-        senderMemberId = memberId,
+        memberId = memberId,
         clientMessageId = clientMessageId,
-        content = content.takeUnless { isDeleted },
+        content = content,
         isDeleted = isDeleted,
         createdDatetime = createdDatetime,
         editedDatetime = editedDatetime,
