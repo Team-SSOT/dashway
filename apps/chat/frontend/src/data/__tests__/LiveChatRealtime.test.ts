@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest'
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 
 // Mock @stomp/stompjs before importing LiveChatRealtime
 const mockUnsubscribe = vi.fn()
@@ -22,7 +22,10 @@ let mockClientInstance: {
 }
 
 vi.mock('@stomp/stompjs', () => ({
-  Client: vi.fn().mockImplementation(function (this: typeof mockClientInstance, config: Record<string, unknown>) {
+  Client: vi.fn().mockImplementation(function (
+    this: typeof mockClientInstance,
+    config: Record<string, unknown>,
+  ) {
     capturedConfig = config
     this.connectHeaders = {}
     this.connected = true
@@ -32,20 +35,20 @@ vi.mock('@stomp/stompjs', () => ({
     this.publish = mockPublish
     this._simulateConnect = function () {
       if (typeof capturedConfig.beforeConnect === 'function') {
-        (capturedConfig.beforeConnect as () => void).call(this)
+        ;(capturedConfig.beforeConnect as () => void).call(this)
       }
       if (typeof capturedConfig.onConnect === 'function') {
-        (capturedConfig.onConnect as () => void)()
+        ;(capturedConfig.onConnect as () => void)()
       }
     }
-    this._simulateStompError = function (message: string) {
+    this._simulateStompError = (message: string) => {
       if (typeof capturedConfig.onStompError === 'function') {
-        (capturedConfig.onStompError as (f: unknown) => void)({ headers: { message } })
+        ;(capturedConfig.onStompError as (f: unknown) => void)({ headers: { message } })
       }
     }
-    this._simulateWsClose = function (code: number) {
+    this._simulateWsClose = (code: number) => {
       if (typeof capturedConfig.onWebSocketClose === 'function') {
-        (capturedConfig.onWebSocketClose as (e: unknown) => void)({ code })
+        ;(capturedConfig.onWebSocketClose as (e: unknown) => void)({ code })
       }
     }
     mockClientInstance = this
@@ -78,8 +81,93 @@ describe('LiveChatRealtime', () => {
     instance.watchRoom(roomId, handler)
     expect(mockSubscribe).toHaveBeenCalledWith(
       expect.stringMatching(/^\/topic\/chat\/rooms\/[0-9a-f-]+\/messages$/),
-      expect.any(Function)
+      expect.any(Function),
     )
+  })
+
+  it('maps MESSAGE_SEND envelopes from STOMP into MESSAGE_CREATED events', () => {
+    const handler = vi.fn()
+    instance.watchRoom('room-abc', handler)
+    const frameHandler = mockSubscribe.mock.calls.at(-1)?.[1]
+    expect(typeof frameHandler).toBe('function')
+
+    frameHandler({
+      body: JSON.stringify({
+        type: 'MESSAGE_SEND',
+        payload: {
+          id: 123,
+          roomId: 'room-abc',
+          memberId: 456,
+          clientMessageId: 'client-1',
+          content: 'hello',
+          mentions: [{ appId: 'context', memberId: '456' }],
+          isDeleted: false,
+          createdDatetime: '2026-06-13T10:00:00+09:00',
+          editedDatetime: null,
+          deletedDatetime: null,
+        },
+      }),
+    })
+
+    expect(handler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'MESSAGE_CREATED',
+        message: expect.objectContaining({
+          id: '123',
+          roomId: 'room-abc',
+          authorId: '456',
+          clientMsgId: 'client-1',
+          plainText: 'hello',
+          mentions: [{ appId: 'context', memberId: '456' }],
+        }),
+      }),
+    )
+  })
+
+  it('publishes send/update/delete envelopes with clientMessageId and mentions', () => {
+    instance.sendMessageOverSocket('room-abc', {
+      clientMessageId: 'client-send',
+      content: 'hello',
+      mentions: [{ appId: 'context', memberId: '456' }],
+    })
+    instance.updateMessageOverSocket('room-abc', {
+      messageId: 123,
+      clientMessageId: 'client-update',
+      content: 'edited',
+      mentions: [],
+    })
+    instance.deleteMessageOverSocket('room-abc', {
+      messageId: 123,
+      clientMessageId: 'client-delete',
+    })
+
+    const bodies = mockPublish.mock.calls.map(([arg]) => JSON.parse(arg.body))
+    expect(bodies).toEqual([
+      {
+        type: 'MESSAGE_SEND',
+        payload: {
+          clientMessageId: 'client-send',
+          content: 'hello',
+          mentions: [{ appId: 'context', memberId: '456' }],
+        },
+      },
+      {
+        type: 'MESSAGE_UPDATE',
+        payload: {
+          messageId: 123,
+          clientMessageId: 'client-update',
+          content: 'edited',
+          mentions: [],
+        },
+      },
+      {
+        type: 'MESSAGE_DELETE',
+        payload: {
+          messageId: 123,
+          clientMessageId: 'client-delete',
+        },
+      },
+    ])
   })
 
   it('disposer calls subscription.unsubscribe() but NOT Client.deactivate()', () => {

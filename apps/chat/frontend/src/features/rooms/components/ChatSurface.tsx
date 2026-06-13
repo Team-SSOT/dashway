@@ -1,12 +1,19 @@
 import type { SerializedEditorState } from 'lexical'
 import type { ReactNode } from 'react'
-import { RoomHeader } from './RoomHeader'
-import { MessageList } from '@/features/messages/components/MessageList'
 import { MessageComposer } from '@/features/composer/components/MessageComposer'
-import { LoadingSpinner } from '@/features/messages/components/LoadingSpinner'
 import { EmptyMessages } from '@/features/messages/components/EmptyMessages'
 import { ErrorMessage } from '@/features/messages/components/ErrorMessage'
-import type { ChatMember, ChatMessage, MessageAttachment, RoomId, RoomType } from '@/types/chat'
+import { LoadingSpinner } from '@/features/messages/components/LoadingSpinner'
+import { MessageList } from '@/features/messages/components/MessageList'
+import type {
+  ChatMember,
+  ChatMessage,
+  ContentMention,
+  MessageAttachment,
+  RoomId,
+  RoomType,
+} from '@/types/chat'
+import { RoomHeader } from './RoomHeader'
 
 interface ChatSurfaceProps {
   roomId: RoomId
@@ -23,7 +30,12 @@ interface ChatSurfaceProps {
   isFetchingNextPage?: boolean
   fetchNextPage?: () => void
   threadPanel?: ReactNode
-  onSend: (content: SerializedEditorState, plainText: string, attachments?: MessageAttachment[]) => void
+  onSend: (
+    content: SerializedEditorState,
+    plainText: string,
+    mentions: ContentMention[],
+    attachments?: MessageAttachment[],
+  ) => void
   onMembersToggle?: () => void
   membersOpen?: boolean
   /** Optional message id from `?m=` query param — MessageList scrolls + flashes on mount. */
@@ -53,7 +65,14 @@ export function ChatSurface({
   return (
     <div className="flex h-full min-h-0">
       <div className="flex min-h-0 flex-1 flex-col">
-        <RoomHeader roomName={roomName} roomType={roomType} peerMember={peerMember} topic={topic} onMembersToggle={onMembersToggle} membersOpen={membersOpen} />
+        <RoomHeader
+          roomName={roomName}
+          roomType={roomType}
+          peerMember={peerMember}
+          topic={topic}
+          onMembersToggle={onMembersToggle}
+          membersOpen={membersOpen}
+        />
         <div className="flex min-h-0 flex-1 flex-col">
           {messagesLoading ? (
             <LoadingSpinner label="Loading messages" className="flex-1" />

@@ -1,4 +1,13 @@
-import type { ChatRoom, ChatError, RoomMembership, Page } from '@/types/chat'
+import type { MentionTarget } from '@dashway/rich-text'
+import type { SerializedEditorState } from 'lexical'
+import type {
+  ChatError,
+  ChatMessage,
+  ChatRoom,
+  ContentMention,
+  Page,
+  RoomMembership,
+} from '@/types/chat'
 
 // Wire types from BE (mirrors chat.graphqls). Long fields are string (codegen scalars config).
 export interface WireRoomMember {
@@ -32,6 +41,19 @@ export interface WireChatRoomsResponse {
   pageInfo: WirePageInfo
 }
 
+export interface WireMessage {
+  id: string | number
+  roomId: string
+  memberId: string | number
+  clientMessageId: string
+  content: string | null
+  mentions: ContentMention[]
+  isDeleted: boolean
+  createdDatetime: string
+  editedDatetime: string | null
+  deletedDatetime: string | null
+}
+
 function makeChatError(code: ChatError['code'], message: string, retriable: boolean): ChatError {
   return { code, message, retriable }
 }
@@ -39,7 +61,11 @@ function makeChatError(code: ChatError['code'], message: string, retriable: bool
 /** Asserts wire memberId is a string. BE maps Long → String via codegen scalar. */
 export function assertWireMemberId(x: unknown): asserts x is string {
   if (typeof x !== 'string') {
-    throw makeChatError('VALIDATION', `assertWireMemberId: expected string, got ${typeof x} (${String(x)})`, false)
+    throw makeChatError(
+      'VALIDATION',
+      `assertWireMemberId: expected string, got ${typeof x} (${String(x)})`,
+      false,
+    )
   }
 }
 
@@ -59,14 +85,14 @@ export function adaptChatRoomMember(wire: WireRoomMember): RoomMembership & { _r
 export function adaptChatRoom(wire: WireRoom, currentMemberId?: string): ChatRoom {
   const isDirect = wire.type === 'DIRECT'
   const peerMember = isDirect
-    ? wire.members.find((m) => m.memberId !== currentMemberId) ?? wire.members[0]
+    ? (wire.members.find((m) => m.memberId !== currentMemberId) ?? wire.members[0])
     : undefined
 
   return {
     id: wire.id,
     // BE enum: DIRECT→DM, GROUP→CHANNEL
     type: isDirect ? 'DM' : 'CHANNEL',
-    name: wire.title ?? (peerMember?.memberId ?? ''),
+    name: wire.title ?? peerMember?.memberId ?? '',
     description: undefined,
     topic: undefined,
     memberCount: wire.memberCount,
@@ -82,7 +108,7 @@ export function adaptChatRoom(wire: WireRoom, currentMemberId?: string): ChatRoo
 
 export function adaptChatRoomPage(
   wire: WireChatRoomsResponse,
-  currentMemberId?: string
+  currentMemberId?: string,
 ): Page<ChatRoom> {
   return {
     items: wire.rooms.map((r) => adaptChatRoom(r, currentMemberId)),
@@ -96,4 +122,62 @@ export function adaptMemberships(wire: WireRoom): RoomMembership[] {
     ...adaptChatRoomMember(m),
     roomId: wire.id,
   }))
+}
+
+export function plainTextToLexicalContent(text: string): SerializedEditorState {
+  return {
+    root: {
+      children: [
+        {
+          children: [
+            { detail: 0, format: 0, mode: 'normal', style: '', text, type: 'text', version: 1 },
+          ],
+          direction: 'ltr',
+          format: '',
+          indent: 0,
+          type: 'paragraph',
+          version: 1,
+        },
+      ],
+      direction: 'ltr',
+      format: '',
+      indent: 0,
+      type: 'root',
+      version: 1,
+    },
+  } as unknown as SerializedEditorState
+}
+
+export function adaptChatMessage(wire: WireMessage): ChatMessage {
+  const plainText = wire.isDeleted ? '' : (wire.content ?? '')
+  return {
+    id: String(wire.id),
+    roomId: wire.roomId,
+    authorId: String(wire.memberId),
+    content: plainTextToLexicalContent(plainText),
+    plainText,
+    clientCreatedAt: wire.createdDatetime,
+    serverCreatedAt: wire.createdDatetime,
+    editedAt: wire.editedDatetime,
+    deletedAt: wire.isDeleted
+      ? (wire.deletedDatetime ?? wire.editedDatetime ?? wire.createdDatetime)
+      : null,
+    threadParentId: null,
+    replyCount: 0,
+    clientMsgId: wire.clientMessageId,
+    contentVersion: 1,
+    version: 1,
+    mentions: wire.mentions,
+  }
+}
+
+const PERSON_MENTION_APP_ID = 'context'
+
+export function toContentMentions(targets: MentionTarget[]): ContentMention[] {
+  return targets.flatMap((target) => {
+    if (target.type === 'person') {
+      return [{ appId: PERSON_MENTION_APP_ID, memberId: target.id }]
+    }
+    return []
+  })
 }

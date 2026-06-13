@@ -2,12 +2,13 @@ import { fromSearchFn, type MentionSearchProvider } from '@dashway/rich-text'
 import type { SerializedEditorState } from 'lexical'
 import { useCallback, useMemo, useRef } from 'react'
 import { useDirectory } from '@/app/providers/DataSourceProvider'
+import { toContentMentions } from '@/data/wire/adapters'
 import {
   type ComposerSendPayload,
   type MentionQuery,
   UniversalMessageComposer,
 } from '@/features/composer/ui'
-import type { MessageAttachment, RoomId } from '@/types/chat'
+import type { ContentMention, MessageAttachment, RoomId } from '@/types/chat'
 import { useDraft } from '../hooks/useDraft'
 import { buildMentionTargets } from '../mock/mockMentionTargets'
 
@@ -16,6 +17,7 @@ interface Props {
   onSend: (
     content: SerializedEditorState,
     plainText: string,
+    mentions: ContentMention[],
     attachments?: MessageAttachment[],
   ) => void | Promise<void>
   placeholder?: string
@@ -73,6 +75,7 @@ export function MessageComposer({
       return onSend(
         payload.content,
         payload.plainText,
+        toContentMentions(payload.mentions),
         attachments.length > 0 ? attachments : undefined,
       )
     },

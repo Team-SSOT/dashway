@@ -1,37 +1,30 @@
-import type {
-  ChatRepository,
-  ChatMember,
-  ChatRoom,
-  ChatMessage,
-  RoomMembership,
-  Page,
-  ChatError,
-  ListMessagesInput,
-  SendMessageInput,
-  CreateRoomInput,
-  RoomId,
-  MemberId,
-  MessageId,
-} from '@/types/chat'
-import type { MockEventBus } from '@/data/mockEventBus'
 import {
+  currentUserId,
   MOCK_MEMBERS,
-  MOCK_ROOMS,
   MOCK_MEMBERSHIPS,
   MOCK_MESSAGES,
-  currentUserId,
+  MOCK_ROOMS,
 } from '@/data/mockData'
-import {
-  HEAVY_ROOM_ID,
-  MOCK_ROOMS_HEAVY,
-  generateHeavyMessages,
-} from '@/data/mockData.heavy'
+import { generateHeavyMessages, HEAVY_ROOM_ID, MOCK_ROOMS_HEAVY } from '@/data/mockData.heavy'
+import type { MockEventBus } from '@/data/mockEventBus'
+import type {
+  ChatError,
+  ChatMember,
+  ChatMessage,
+  ChatRepository,
+  ChatRoom,
+  CreateRoomInput,
+  DeleteMessageInput,
+  ListMessagesInput,
+  MemberId,
+  MessageId,
+  Page,
+  RoomId,
+  RoomMembership,
+  SendMessageInput,
+} from '@/types/chat'
 
-function makeChatError(
-  code: ChatError['code'],
-  message: string,
-  retriable: boolean
-): ChatError {
+function makeChatError(code: ChatError['code'], message: string, retriable: boolean): ChatError {
   return { code, message, retriable }
 }
 
@@ -82,12 +75,11 @@ export class MockChatRepository implements ChatRepository {
   private paginateMessages(
     candidates: ChatMessage[],
     cursor: string | undefined,
-    limit: number
+    limit: number,
   ): Page<ChatMessage> {
     // Sort DESC by serverCreatedAt for cursor application
     const sorted = [...candidates].sort(
-      (a, b) =>
-        new Date(b.serverCreatedAt).getTime() - new Date(a.serverCreatedAt).getTime()
+      (a, b) => new Date(b.serverCreatedAt).getTime() - new Date(a.serverCreatedAt).getTime(),
     )
 
     let startIndex = 0
@@ -95,7 +87,7 @@ export class MockChatRepository implements ChatRepository {
       const { serverCreatedAt: cursorTs } = this.decodeCursor(cursor)
       // "before this serverCreatedAt" — find first item strictly older than cursor
       startIndex = sorted.findIndex(
-        (m) => new Date(m.serverCreatedAt).getTime() < new Date(cursorTs).getTime()
+        (m) => new Date(m.serverCreatedAt).getTime() < new Date(cursorTs).getTime(),
       )
       if (startIndex === -1) {
         // No messages older than cursor
@@ -111,10 +103,7 @@ export class MockChatRepository implements ChatRepository {
     const chronological = [...pageItems].reverse()
 
     const nextCursor = hasMore
-      ? this.encodeCursor(
-          chronological[0].id,
-          chronological[0].serverCreatedAt
-        )
+      ? this.encodeCursor(chronological[0].id, chronological[0].serverCreatedAt)
       : null
 
     return { items: chronological, nextCursor, prevCursor: null }
@@ -149,31 +138,25 @@ export class MockChatRepository implements ChatRepository {
   async listMemberships(roomId: RoomId): Promise<RoomMembership[]> {
     const err = this.checkOneShot('listMemberships')
     if (err) return err
-    return this.memberships
-      .filter((ms) => ms.roomId === roomId)
-      .map((ms) => ({ ...ms }))
+    return this.memberships.filter((ms) => ms.roomId === roomId).map((ms) => ({ ...ms }))
   }
 
   async listMessages(input: ListMessagesInput): Promise<Page<ChatMessage>> {
     const err = this.checkOneShot('listMessages')
     if (err) return err
     const { roomId, cursor, limit = 50 } = input
-    const candidates = this.messages.filter(
-      (m) => m.roomId === roomId && m.threadParentId === null
-    )
+    const candidates = this.messages.filter((m) => m.roomId === roomId && m.threadParentId === null)
     return this.paginateMessages(candidates, cursor, limit)
   }
 
   async listThreadReplies(
     parentId: MessageId,
-    input?: { cursor?: string; limit?: number }
+    input?: { cursor?: string; limit?: number },
   ): Promise<Page<ChatMessage>> {
     const err = this.checkOneShot('listThreadReplies')
     if (err) return err
     const { cursor, limit = 50 } = input ?? {}
-    const candidates = this.messages.filter(
-      (m) => m.threadParentId === parentId
-    )
+    const candidates = this.messages.filter((m) => m.threadParentId === parentId)
     return this.paginateMessages(candidates, cursor, limit)
   }
 
@@ -187,16 +170,8 @@ export class MockChatRepository implements ChatRepository {
     if (err) return err
     const sinceMs = new Date(since).getTime()
     return this.messages
-      .filter(
-        (m) =>
-          m.roomId === roomId &&
-          new Date(m.serverCreatedAt).getTime() > sinceMs
-      )
-      .sort(
-        (a, b) =>
-          new Date(a.serverCreatedAt).getTime() -
-          new Date(b.serverCreatedAt).getTime()
-      )
+      .filter((m) => m.roomId === roomId && new Date(m.serverCreatedAt).getTime() > sinceMs)
+      .sort((a, b) => new Date(a.serverCreatedAt).getTime() - new Date(b.serverCreatedAt).getTime())
       .map((m) => ({ ...m }))
   }
 
@@ -226,7 +201,9 @@ export class MockChatRepository implements ChatRepository {
       clientMsgId: input.clientMsgId,
       contentVersion: 1,
       version: 1,
-      attachments: input.attachments && input.attachments.length > 0 ? input.attachments : undefined,
+      mentions: input.mentions,
+      attachments:
+        input.attachments && input.attachments.length > 0 ? input.attachments : undefined,
     }
 
     this.messages.push(created)
@@ -308,7 +285,7 @@ export class MockChatRepository implements ChatRepository {
     const err = this.checkOneShot('markRead')
     if (err) return err
     const membership = this.memberships.find(
-      (ms) => ms.roomId === roomId && ms.memberId === currentUserId
+      (ms) => ms.roomId === roomId && ms.memberId === currentUserId,
     )
     if (membership) {
       membership.lastReadAt = lastReadAt
@@ -327,10 +304,12 @@ export class MockChatRepository implements ChatRepository {
     if (err) return err
 
     const callerMs = this.memberships.find(
-      (ms) => ms.roomId === roomId && ms.memberId === currentUserId
+      (ms) => ms.roomId === roomId && ms.memberId === currentUserId,
     )
     if (!callerMs || (callerMs.role !== 'OWNER' && callerMs.role !== 'ADMIN')) {
-      return Promise.reject(makeChatError('FORBIDDEN', 'Only OWNER or ADMIN can add members', false))
+      return Promise.reject(
+        makeChatError('FORBIDDEN', 'Only OWNER or ADMIN can add members', false),
+      )
     }
 
     const now = new Date().toISOString()
@@ -338,7 +317,7 @@ export class MockChatRepository implements ChatRepository {
 
     for (const memberId of memberIds) {
       const alreadyMember = this.memberships.some(
-        (ms) => ms.roomId === roomId && ms.memberId === memberId
+        (ms) => ms.roomId === roomId && ms.memberId === memberId,
       )
       if (alreadyMember) continue
 
@@ -367,10 +346,11 @@ export class MockChatRepository implements ChatRepository {
     return added.map((ms) => ({ ...ms }))
   }
 
-  async deleteMessage(messageId: MessageId): Promise<void> {
+  async deleteMessage(input: DeleteMessageInput): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 0))
     const err = this.checkOneShot('deleteMessage')
     if (err) return err
+    const { messageId } = input
     const msg = this.messages.find((m) => m.id === messageId)
     if (!msg) {
       throw makeChatError('MESSAGE_NOT_FOUND', `Message ${messageId} not found`, false)
@@ -412,11 +392,7 @@ export class MockChatRepository implements ChatRepository {
     return this.toggleReaction(messageId, emoji, 'remove')
   }
 
-  private toggleReaction(
-    messageId: MessageId,
-    emoji: string,
-    op: 'add' | 'remove',
-  ): ChatMessage {
+  private toggleReaction(messageId: MessageId, emoji: string, op: 'add' | 'remove'): ChatMessage {
     const msg = this.messages.find((m) => m.id === messageId)
     if (!msg) throw makeChatError('MESSAGE_NOT_FOUND', `Message ${messageId} not found`, false)
     const current = msg.reactions ?? []
@@ -442,15 +418,18 @@ export class MockChatRepository implements ChatRepository {
         if (filtered.length === 0) {
           next = current.filter((r) => r.emoji !== emoji)
         } else {
-          next = current.map((r) =>
-            r.emoji === emoji ? { ...r, userIds: filtered } : r,
-          )
+          next = current.map((r) => (r.emoji === emoji ? { ...r, userIds: filtered } : r))
         }
       }
     }
     msg.reactions = next.length > 0 ? next : undefined
     msg.version += 1
-    const updated = { ...msg, reactions: msg.reactions ? msg.reactions.map((r) => ({ ...r, userIds: [...r.userIds] })) : undefined }
+    const updated = {
+      ...msg,
+      reactions: msg.reactions
+        ? msg.reactions.map((r) => ({ ...r, userIds: [...r.userIds] }))
+        : undefined,
+    }
     setTimeout(() => {
       this.bus.publish({ type: 'MESSAGE_UPDATED', message: { ...updated } })
     }, 100)
@@ -462,15 +441,15 @@ export class MockChatRepository implements ChatRepository {
     if (err) return err
 
     const callerMs = this.memberships.find(
-      (ms) => ms.roomId === roomId && ms.memberId === currentUserId
+      (ms) => ms.roomId === roomId && ms.memberId === currentUserId,
     )
     if (!callerMs || (callerMs.role !== 'OWNER' && callerMs.role !== 'ADMIN')) {
-      return Promise.reject(makeChatError('FORBIDDEN', 'Only OWNER or ADMIN can remove members', false))
+      return Promise.reject(
+        makeChatError('FORBIDDEN', 'Only OWNER or ADMIN can remove members', false),
+      )
     }
 
-    const idx = this.memberships.findIndex(
-      (ms) => ms.roomId === roomId && ms.memberId === memberId
-    )
+    const idx = this.memberships.findIndex((ms) => ms.roomId === roomId && ms.memberId === memberId)
     if (idx === -1) return
 
     const [removed] = this.memberships.splice(idx, 1)
@@ -491,10 +470,7 @@ export class MockChatRepository implements ChatRepository {
    * Next call to `methodName` will reject with a UNKNOWN ChatError.
    */
   __mockError(methodName: keyof ChatRepository): void {
-    this.oneShot.set(
-      methodName,
-      makeChatError('UNKNOWN', `Mocked error on ${methodName}`, true)
-    )
+    this.oneShot.set(methodName, makeChatError('UNKNOWN', `Mocked error on ${methodName}`, true))
   }
 
   /**

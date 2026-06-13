@@ -1,6 +1,7 @@
-import { useMutation, useQueryClient, type InfiniteData } from '@tanstack/react-query'
+import { type InfiniteData, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useDataSource } from '@/app/providers/DataSourceProvider'
 import type { ChatMessage, MessageId, Page, RoomId } from '@/types/chat'
+import { makeClientMessageId } from '../model/clientMessageId'
 import { roomMessagesQueryKey } from './useRoomMessages'
 
 export function useDeleteMessage(roomId: RoomId | undefined) {
@@ -13,7 +14,14 @@ export function useDeleteMessage(roomId: RoomId | undefined) {
     { messageId: MessageId },
     { previous?: InfiniteData<Page<ChatMessage>> }
   >({
-    mutationFn: ({ messageId }) => repo.deleteMessage(messageId),
+    mutationFn: ({ messageId }) => {
+      if (!roomId) throw new Error('No active room')
+      return repo.deleteMessage({
+        roomId,
+        messageId,
+        clientMessageId: makeClientMessageId(),
+      })
+    },
     onMutate: async ({ messageId }) => {
       if (!roomId) return {}
       const key = roomMessagesQueryKey(roomId)
@@ -24,9 +32,7 @@ export function useDeleteMessage(roomId: RoomId | undefined) {
         if (!old) return old
         const pages = old.pages.map((page) => ({
           ...page,
-          items: page.items.map((m) =>
-            m.id === messageId ? { ...m, deletedAt: now } : m,
-          ),
+          items: page.items.map((m) => (m.id === messageId ? { ...m, deletedAt: now } : m)),
         }))
         return { ...old, pages }
       })

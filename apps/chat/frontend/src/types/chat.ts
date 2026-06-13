@@ -8,8 +8,8 @@ import type { SerializedEditorState } from 'lexical'
 export type MemberId = string
 export type RoomId = string
 export type MessageId = string
-export type ClientMsgId = string  // client-generated (uuid v7)
-export type Cursor = string       // opaque, server-encoded (base64(lastId+ts))
+export type ClientMsgId = string // client-generated (uuid v7)
+export type Cursor = string // opaque, server-encoded (base64(lastId+ts))
 
 // 사용자
 export interface ChatMember {
@@ -25,7 +25,7 @@ export interface RoomMembership {
   roomId: RoomId
   memberId: MemberId
   role: RoomRole
-  joinedAt: string          // ISO
+  joinedAt: string // ISO
   lastReadAt: string | null // ISO, null이면 전체 언리드
   muted: boolean
 }
@@ -39,15 +39,15 @@ export interface ChatRoom {
   name: string
   description?: string
   topic?: string
-  memberCount: number       // 서버 제공 (멤버십 조회 분리)
-  unreadCount: number       // 현재 사용자 기준 (서버 계산)
-  isFavorite: boolean       // BE chatRooms 응답에서 전달, setChatRoomFavorite mutation으로 토글 (V1.2 BE 작업)
+  memberCount: number // 서버 제공 (멤버십 조회 분리)
+  unreadCount: number // 현재 사용자 기준 (서버 계산)
+  isFavorite: boolean // BE chatRooms 응답에서 전달, setChatRoomFavorite mutation으로 토글 (V1.2 BE 작업)
   lastMessageAt?: string
   // FE-only metadata; populated by adapter for DIRECT rooms (first non-self member).
-  peerMemberId?: MemberId   // For DM rooms — references the other party's MemberId. FE-only field; BE notification when DM protocol lands.
+  peerMemberId?: MemberId // For DM rooms — references the other party's MemberId. FE-only field; BE notification when DM protocol lands.
   createdAt: string
   updatedAt: string
-  version: number           // optimistic concurrency (v2 edit용)
+  version: number // optimistic concurrency (v2 edit용)
 }
 
 // 첨부 파일 — mock에서는 blob: URL을 url로 사용 (세션 한정 수명)
@@ -56,7 +56,7 @@ export interface MessageAttachment {
   name: string
   size: number
   mimeType: string
-  url?: string  // image/* 외에는 미리보기 URL 없을 수 있음
+  url?: string // image/* 외에는 미리보기 URL 없을 수 있음
 }
 
 // 리액션 — viewer-agnostic. Per-viewer count/reactedByMe는 selector에서 파생.
@@ -67,22 +67,26 @@ export interface Reaction {
   userIds: MemberId[]
 }
 
+// 메시지 content mention wire shape. BE currently supports person/file mentions.
+export type ContentMention = { appId: string; memberId: string } | { appId: string; fileId: string }
+
 // 메시지 — server/client 타임스탬프 분리
 export interface ChatMessage {
   id: MessageId
   roomId: RoomId
   authorId: MemberId
-  content: SerializedEditorState  // Lexical JSON, contentVersion=1
-  plainText: string                // 서버 파생 (검색·프리뷰용)
-  clientCreatedAt: string          // 클라이언트 전송 시각 (낙관적 UI 정렬용)
-  serverCreatedAt: string          // 서버 확정 시각 (정식 순서)
+  content: SerializedEditorState // Lexical JSON, contentVersion=1
+  plainText: string // 서버 파생 (검색·프리뷰용)
+  clientCreatedAt: string // 클라이언트 전송 시각 (낙관적 UI 정렬용)
+  serverCreatedAt: string // 서버 확정 시각 (정식 순서)
   editedAt: string | null
-  deletedAt: string | null         // soft delete
+  deletedAt: string | null // soft delete
   threadParentId: MessageId | null
   replyCount: number
-  clientMsgId: ClientMsgId         // 송신 dedup 키, UNIQUE(roomId, clientMsgId)
-  contentVersion: 1                // 포맷 버전 (드리프트 대비)
-  version: number                  // optimistic concurrency
+  clientMsgId: ClientMsgId // 송신 dedup 키, UNIQUE(roomId, clientMsgId)
+  contentVersion: 1 // 포맷 버전 (드리프트 대비)
+  version: number // optimistic concurrency
+  mentions?: ContentMention[]
   attachments?: MessageAttachment[]
   reactions?: Reaction[]
 }
@@ -90,8 +94,8 @@ export interface ChatMessage {
 // 페이징 — 불투명 cursor (ID/시간 노출 금지)
 export interface Page<T> {
   items: T[]
-  nextCursor: Cursor | null  // null이면 더 없음
-  prevCursor: Cursor | null  // prepend용
+  nextCursor: Cursor | null // null이면 더 없음
+  prevCursor: Cursor | null // prepend용
 }
 
 // 도메인 에러 타입 (typed, throw/return 전부 이걸로 통일)
@@ -102,8 +106,8 @@ export type ChatErrorCode =
   | 'MESSAGE_NOT_FOUND'
   | 'RATE_LIMITED'
   | 'VALIDATION'
-  | 'CONFLICT'        // version mismatch
-  | 'NETWORK'         // transport failure
+  | 'CONFLICT' // version mismatch
+  | 'NETWORK' // transport failure
   | 'UNKNOWN'
 
 export interface ChatError {
@@ -116,24 +120,31 @@ export interface ChatError {
 // §6.2 ChatRepository — REST 상응 (요청/응답)
 export interface ListMessagesInput {
   roomId: RoomId
-  cursor?: Cursor          // before-cursor (오래된 방향 페이징)
-  limit?: number           // default 50, max 200
+  cursor?: Cursor // before-cursor (오래된 방향 페이징)
+  limit?: number // default 50, max 200
 }
 
 export interface SendMessageInput {
   roomId: RoomId
   content: SerializedEditorState
-  plainText: string        // 클라가 walker로 파생
+  plainText: string // 클라가 walker로 파생
   clientMsgId: ClientMsgId
+  mentions: ContentMention[]
   threadParentId?: MessageId
-  clientCreatedAt: string  // ISO, 클라 시계
+  clientCreatedAt: string // ISO, 클라 시계
   attachments?: MessageAttachment[]
+}
+
+export interface DeleteMessageInput {
+  roomId: RoomId
+  messageId: MessageId
+  clientMessageId: ClientMsgId
 }
 
 // §6.2 Create-room input (addchannel scope extension)
 // BE: POST /api/rooms  — see .omc/handoff/chat-frontend-ui-v1-be-spec.md §3
 export interface CreateRoomInput {
-  name: string         // raw user input; server normalizes
+  name: string // raw user input; server normalizes
   description?: string // reserved — v1 FE omits, but type accepts
 }
 
@@ -142,11 +153,14 @@ export interface ChatRepository {
 
   listRooms(): Promise<ChatRoom[]>
   getRoom(roomId: RoomId): Promise<ChatRoom>
-  listMemberships(roomId: RoomId): Promise<RoomMembership[]>  // 멤버 패널용
+  listMemberships(roomId: RoomId): Promise<RoomMembership[]> // 멤버 패널용
 
   listMessages(input: ListMessagesInput): Promise<Page<ChatMessage>>
-  listThreadReplies(parentId: MessageId, input?: { cursor?: Cursor; limit?: number }): Promise<Page<ChatMessage>>
-  listMessagesSince(roomId: RoomId, since: string): Promise<ChatMessage[]>  // 재연결 catch-up
+  listThreadReplies(
+    parentId: MessageId,
+    input?: { cursor?: Cursor; limit?: number },
+  ): Promise<Page<ChatMessage>>
+  listMessagesSince(roomId: RoomId, since: string): Promise<ChatMessage[]> // 재연결 catch-up
 
   sendMessage(input: SendMessageInput): Promise<ChatMessage>
   markRead(roomId: RoomId, lastReadAt: string): Promise<void>
@@ -164,7 +178,7 @@ export interface ChatRepository {
 
   // Soft delete: deletedAt 설정. authorId !== currentUser AND role ∉ {OWNER, ADMIN}이면 FORBIDDEN.
   // BE notification required when implementing real transport.
-  deleteMessage(messageId: MessageId): Promise<void>
+  deleteMessage(input: DeleteMessageInput): Promise<void>
 
   // BE notification required when implementing real transport
   addMembers(roomId: RoomId, memberIds: MemberId[]): Promise<RoomMembership[]>

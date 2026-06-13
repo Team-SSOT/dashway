@@ -1,19 +1,19 @@
+import type { SerializedEditorState } from 'lexical'
+import { X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { X } from 'lucide-react'
-import type { SerializedEditorState } from 'lexical'
-import { Button } from '@/shared/ui/button'
-import { Separator } from '@/shared/ui/separator'
+import { MOCK_MEMBERS } from '@/data/mockData'
+import { MessageComposer } from '@/features/composer/components/MessageComposer'
+import { MessageItem } from '@/features/messages/components/MessageItem'
 import { useRoomMessages } from '@/features/messages/hooks/useRoomMessages'
 import { useSendMessage } from '@/features/messages/hooks/useSendMessage'
-import { useRoomMemberships } from '@/features/rooms/hooks/useRoomMemberships'
-import { MOCK_MEMBERS } from '@/data/mockData'
-import { MessageItem } from '@/features/messages/components/MessageItem'
-import { MessageComposer } from '@/features/composer/components/MessageComposer'
 import { AvatarStack } from '@/features/rooms/components/AvatarStack'
-import type { MessageAttachment, RoomId } from '@/types/chat'
-import { useThreadReplies } from '../hooks/useThreadReplies'
+import { useRoomMemberships } from '@/features/rooms/hooks/useRoomMemberships'
+import { Button } from '@/shared/ui/button'
+import { Separator } from '@/shared/ui/separator'
+import type { ContentMention, MessageAttachment, RoomId } from '@/types/chat'
 import { useRealtimeThread } from '../hooks/useRealtimeThread'
+import { useThreadReplies } from '../hooks/useThreadReplies'
 import { ThreadReplyList } from './ThreadReplyList'
 
 const THREAD_PANEL_ANIMATION_MS = 300
@@ -56,19 +56,14 @@ export function ThreadPanel() {
     return filtered.length > 0 ? filtered : MOCK_MEMBERS
   }, [memberships])
 
-  const membersById = useMemo(
-    () => Object.fromEntries(members.map((m) => [m.id, m])),
-    [members],
-  )
+  const membersById = useMemo(() => Object.fromEntries(members.map((m) => [m.id, m])), [members])
 
   // Participants = parent author + unique reply authors, in first-appearance order
   const participants = useMemo(() => {
     const ids = new Set<string>()
     if (parentMessage) ids.add(parentMessage.authorId)
     for (const r of replies) ids.add(r.authorId)
-    return [...ids]
-      .map((id) => membersById[id])
-      .filter((x): x is NonNullable<typeof x> => !!x)
+    return [...ids].map((id) => membersById[id]).filter((x): x is NonNullable<typeof x> => !!x)
   }, [parentMessage, replies, membersById])
 
   useEffect(() => {
@@ -113,9 +108,14 @@ export function ThreadPanel() {
   }, [closeThread])
 
   const handleSend = useCallback(
-    (content: SerializedEditorState, plainText: string, attachments?: MessageAttachment[]) => {
+    (
+      content: SerializedEditorState,
+      plainText: string,
+      mentions: ContentMention[],
+      attachments?: MessageAttachment[],
+    ) => {
       if (!msgId) return
-      sendReply.mutate({ content, plainText, threadParentId: msgId, attachments })
+      sendReply.mutate({ content, plainText, mentions, threadParentId: msgId, attachments })
     },
     [sendReply, msgId],
   )
@@ -123,8 +123,7 @@ export function ThreadPanel() {
   // TODO(drafts): composite draft key `${roomId}::thread::${msgId}` collides
   // with RoomId type shape but is tolerated since useDraft keys a Record<string, ...>.
   // Future refactor: introduce `DraftKey = RoomId | { kind: 'thread'; ... }`.
-  const composerDraftKey =
-    roomId && msgId ? (`${roomId}::thread::${msgId}` as RoomId) : undefined
+  const composerDraftKey = roomId && msgId ? (`${roomId}::thread::${msgId}` as RoomId) : undefined
 
   return (
     <aside
