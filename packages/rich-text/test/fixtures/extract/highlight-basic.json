@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": "cc ",
+            "type": "text",
+            "version": 1
+          },
+          {
+            "type": "mention",
+            "version": 1,
+            "targetType": "person",
+            "targetId": "a",
+            "label": "Ada",
+            "text": "@Ada"
+          },
+          {
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": " and ",
+            "type": "text",
+            "version": 1
+          },
+          {
+            "type": "mention",
+            "version": 1,
+            "targetType": "person",
+            "targetId": "b",
+            "label": "Lin",
+            "text": "@Lin"
+          }
+        ],
+        "direction": null,
+        "format": "",
+        "indent": 0,
+        "type": "paragraph",
+        "version": 1,
+        "textFormat": 0,
+        "textStyle": ""
+      }
+    ],
+    "direction": null,
+    "format": "",
+    "indent": 0,
+    "type": "root",
+    "version": 1
+  }
+}

@@ -2,7 +2,11 @@
 @import "@dashway/design-tokens/css/tokens.css";
 @import "@dashway/design-tokens/css/shadcn-bridge.css";
 @import "@dashway/design-tokens/css/tailwind-theme.css";
-@source "../../../../packages/chat-ui/src/**/*.{ts,tsx}";
+
+/* Scan the shared rich-text renderer source so Tailwind keeps the utility
+   classes it emits (mention chip colors, semantic block classes). */
+@source "../../../../packages/rich-text/src/render";
+@source "../../../../packages/rich-text/src/editor";
 
 @layer base {
   html, body, #root {

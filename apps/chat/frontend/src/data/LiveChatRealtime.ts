@@ -1,5 +1,6 @@
 import { Client, type StompSubscription } from '@stomp/stompjs'
 import type { ChatRealtime, ChatRealtimeEvent, ConnectionState, MessageId, RoomId } from '@/types/chat'
+import { toAuthorizationHeader } from '@/data/authHeader'
 
 // Wire shape from BE: /topic/chat/rooms/{roomId}/messages
 // BE wraps in { eventType: "MESSAGE_CREATED", message: { ... } }
@@ -35,7 +36,7 @@ export class LiveChatRealtime implements ChatRealtime {
       // Fresh token on every (re)connect via beforeConnect
       beforeConnect: () => {
         this.client.connectHeaders = {
-          Authorization: this.getToken() ?? '',
+          Authorization: toAuthorizationHeader(this.getToken()),
         }
       },
 

@@ -232,7 +232,7 @@ function mentionText(text: string, targetId: string, targetLabel: string): Seria
         {
           children: [
             { detail: 0, format: 0, mode: 'normal', style: '', text, type: 'text', version: 1 },
-            { type: 'mention', memberId: targetId, label: targetLabel, version: 1 },
+            { type: 'mention', targetType: 'person', targetId, label: targetLabel, text: `@${targetLabel}`, version: 1 },
           ],
           direction: 'ltr',
           format: '',

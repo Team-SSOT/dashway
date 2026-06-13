@@ -62,5 +62,27 @@
       "!**/node_modules",
       "!**/pnpm-lock.yaml"
     ]
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["apps/chat/frontend/src/features/composer/ui/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@/**"],
+                    "message": "App-private composer-UI module: do not import app internals (@/* — e.g. @/app, @/data, @/shared/store). Allowed: relative imports + @dashway/rich-text + @dashway/ui. This keeps the module re-extractable (replaces the lost package layering wall)."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

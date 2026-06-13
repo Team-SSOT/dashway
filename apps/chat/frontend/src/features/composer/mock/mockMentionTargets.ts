@@ -1,4 +1,4 @@
-import type { MentionQuery, MentionTarget } from '@dashway/chat-ui'
+import type { MentionQuery, MentionTarget } from '@/features/composer/ui'
 import type { DirectoryRepository } from '@/data/DirectoryRepository'
 import { MockDirectoryRepository } from '@/data/MockDirectoryRepository'
 

@@ -1,16 +1,16 @@
-import { useState } from 'react'
-import { Plus, Settings } from 'lucide-react'
-import { ScrollArea } from '@/shared/ui/scroll-area'
-import { Button } from '@/shared/ui/button'
-import { CreateChannelDialog } from '@/features/rooms/components/CreateChannelDialog'
-import { useChannels } from '@/features/rooms/hooks/useChannels'
-import { ChannelsSection } from '@/features/rooms/components/sidebar/ChannelsSection'
-import { DMsSection } from '@/features/rooms/components/sidebar/DMsSection'
+import { useState } from "react";
+import { Plus, Settings } from "lucide-react";
+import { ScrollArea } from "@/shared/ui/scroll-area";
+import { Button } from "@/shared/ui/button";
+import { CreateChannelDialog } from "@/features/rooms/components/CreateChannelDialog";
+import { useChannels } from "@/features/rooms/hooks/useChannels";
+import { ChannelsSection } from "@/features/rooms/components/sidebar/ChannelsSection";
+import { DMsSection } from "@/features/rooms/components/sidebar/DMsSection";
 
 export function AppSidebar() {
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const { data: channels = [] } = useChannels()
-  const existingNames = channels.map((r) => r.name)
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { data: channels = [] } = useChannels();
+  const existingNames = channels.map((r) => r.name);
 
   return (
     <aside className="flex h-full w-[260px] shrink-0 flex-col border-r border-border bg-bg-1/80 backdrop-blur">
@@ -20,12 +20,18 @@ export function AppSidebar() {
         </div>
         <div className="flex flex-col leading-tight">
           <span className="text-sm font-semibold text-t1">dashway</span>
-          <span className="text-[10px] uppercase tracking-wider text-t3">chat</span>
+          <span className="text-[10px] uppercase tracking-wider text-t3">
+            chat
+          </span>
         </div>
       </div>
 
       <div className="p-3">
-        <Button size="sm" className="w-full justify-center" onClick={() => setDialogOpen(true)}>
+        <Button
+          size="sm"
+          className="w-full justify-center"
+          onClick={() => setDialogOpen(true)}
+        >
           <Plus className="h-3.5 w-3.5" />
           New channel
         </Button>
@@ -49,5 +55,5 @@ export function AppSidebar() {
         existingNames={existingNames}
       />
     </aside>
-  )
+  );
 }

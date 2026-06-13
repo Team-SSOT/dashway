@@ -1,11 +1,12 @@
+import { fromSearchFn, type MentionSearchProvider } from '@dashway/rich-text'
+import type { SerializedEditorState } from 'lexical'
+import { useCallback, useMemo, useRef } from 'react'
+import { useDirectory } from '@/app/providers/DataSourceProvider'
 import {
   type ComposerSendPayload,
   type MentionQuery,
   UniversalMessageComposer,
-} from '@dashway/chat-ui'
-import type { SerializedEditorState } from 'lexical'
-import { useCallback, useRef } from 'react'
-import { useDirectory } from '@/app/providers/DataSourceProvider'
+} from '@/features/composer/ui'
 import type { MessageAttachment, RoomId } from '@/types/chat'
 import { useDraft } from '../hooks/useDraft'
 import { buildMentionTargets } from '../mock/mockMentionTargets'
@@ -20,8 +21,8 @@ interface Props {
   placeholder?: string
 }
 
-// chat-ui composer revokes its preview blob URLs right after onSend, so we keep
-// the source File around and mint message-owned blob URLs at send time.
+// The composer-UI module revokes its preview blob URLs right after onSend, so we
+// keep the source File around and mint message-owned blob URLs at send time.
 const fileKey = (name: string, size: number) => `${name}|${size}`
 
 export function MessageComposer({
@@ -33,9 +34,20 @@ export function MessageComposer({
   const { savedDraft, debouncedSave } = useDraft(roomId)
   const fileCacheRef = useRef<Map<string, File>>(new Map())
 
-  const mentionSearch = useCallback(
-    (query: MentionQuery) => buildMentionTargets(directory, query),
+  // Canonical mention-search injection seam (Principle 3): the provider is the
+  // single swap-point. Swapping to a future ContextApiMentionSearchProvider is a
+  // one-line change here; the composer's `mentionSearch` prop stays a function.
+  const mentionProvider: MentionSearchProvider = useMemo(
+    () =>
+      fromSearchFn(({ query, limit }) =>
+        buildMentionTargets(directory, { query, limit: limit ?? 8 }),
+      ),
     [directory],
+  )
+
+  const mentionSearch = useCallback(
+    (query: MentionQuery) => mentionProvider.search(query),
+    [mentionProvider],
   )
 
   const handleFilesSelected = useCallback((files: File[]) => {
