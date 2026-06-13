@@ -1,19 +1,19 @@
 import type { SerializedEditorState } from 'lexical'
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
-import type { MessageAttachment } from '@/types/chat'
-import { ChatSurface } from './ChatSurface'
-import { LoadingSpinner } from '@/features/messages/components/LoadingSpinner'
-import { ThreadPanel } from '@/features/threads/components/ThreadPanel'
-import { useActiveRoom } from '../hooks/useActiveRoom'
-import { useRoomMessages } from '@/features/messages/hooks/useRoomMessages'
-import { useRoomMemberships } from '../hooks/useRoomMemberships'
-import { useSendMessage } from '@/features/messages/hooks/useSendMessage'
-import { useRealtimeMessages } from '@/features/messages/hooks/useRealtimeMessages'
-import { useUiStore } from '@/shared/store/uiStore'
-import { MembersPanel } from './MembersPanel'
 // TODO(M2): Replace with useMembersByIds hook backed by ChatRepository
-import { MOCK_MEMBERS, currentUserId } from '@/data/mockData'
+import { currentUserId, MOCK_MEMBERS } from '@/data/mockData'
+import { LoadingSpinner } from '@/features/messages/components/LoadingSpinner'
+import { useRealtimeMessages } from '@/features/messages/hooks/useRealtimeMessages'
+import { useRoomMessages } from '@/features/messages/hooks/useRoomMessages'
+import { useSendMessage } from '@/features/messages/hooks/useSendMessage'
+import { ThreadPanel } from '@/features/threads/components/ThreadPanel'
+import { useUiStore } from '@/shared/store/uiStore'
+import type { ContentMention, MessageAttachment } from '@/types/chat'
+import { useActiveRoom } from '../hooks/useActiveRoom'
+import { useRoomMemberships } from '../hooks/useRoomMemberships'
+import { ChatSurface } from './ChatSurface'
+import { MembersPanel } from './MembersPanel'
 
 export function RoomView() {
   const { roomId, room, isLoading: roomsLoading, isNotFound } = useActiveRoom()
@@ -48,9 +48,10 @@ export function RoomView() {
   const handleSend = (
     content: SerializedEditorState,
     plainText: string,
+    mentions: ContentMention[],
     attachments?: MessageAttachment[],
   ) => {
-    sendMessage.mutate({ content, plainText, attachments })
+    sendMessage.mutate({ content, plainText, mentions, attachments })
   }
 
   if (roomsLoading) {
@@ -79,19 +80,20 @@ export function RoomView() {
   const roomMemberIds = new Set((memberships ?? []).map((m) => m.memberId))
   const roomMembers = MOCK_MEMBERS.filter((m) => roomMemberIds.has(m.id))
   const membersForRender = roomMembers.length > 0 ? roomMembers : MOCK_MEMBERS
-  const peerMember = room.type === 'DM' && room.peerMemberId
-    ? MOCK_MEMBERS.find((m) => m.id === room.peerMemberId)
-    : undefined
+  const peerMember =
+    room.type === 'DM' && room.peerMemberId
+      ? MOCK_MEMBERS.find((m) => m.id === room.peerMemberId)
+      : undefined
 
   const messages = messagesQuery?.flat ?? []
   const currentMembership = (memberships ?? []).find((m) => m.memberId === currentUserId)
   const lastReadAt = currentMembership?.lastReadAt ?? null
 
-  const rightPanel = msgId
-    ? <ThreadPanel />
-    : membersOpen
-      ? <MembersPanel roomId={roomId} onClose={() => setMembersOpen(false)} />
-      : null
+  const rightPanel = msgId ? (
+    <ThreadPanel />
+  ) : membersOpen ? (
+    <MembersPanel roomId={roomId} onClose={() => setMembersOpen(false)} />
+  ) : null
 
   return (
     <ChatSurface

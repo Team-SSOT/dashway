@@ -1,20 +1,34 @@
 import { Client, type StompSubscription } from '@stomp/stompjs'
-import type { ChatRealtime, ChatRealtimeEvent, ConnectionState, MessageId, RoomId } from '@/types/chat'
 import { toAuthorizationHeader } from '@/data/authHeader'
+import { adaptChatMessage, type WireMessage } from '@/data/wire/adapters'
+import type {
+  ChatRealtime,
+  ChatRealtimeEvent,
+  ConnectionState,
+  ContentMention,
+  MessageId,
+  RoomId,
+} from '@/types/chat'
 
 // Wire shape from BE: /topic/chat/rooms/{roomId}/messages
-// BE wraps in { eventType: "MESSAGE_CREATED", message: { ... } }
-interface WireMessagePayload {
-  id: string
-  roomId: string
-  senderMemberId: number | string
-  content: string
-  createdDatetime: string
+interface WireMessageFrame {
+  type: 'MESSAGE_SEND' | 'MESSAGE_UPDATE' | 'MESSAGE_DELETE'
+  payload: WireMessage
 }
 
-interface WireMessageFrame {
-  eventType: string
-  message: WireMessagePayload
+interface SendMessageSocketPayload {
+  clientMessageId: string
+  content: string
+  mentions: ContentMention[]
+}
+
+interface UpdateMessageSocketPayload extends SendMessageSocketPayload {
+  messageId: number | string
+}
+
+interface DeleteMessageSocketPayload {
+  messageId: number | string
+  clientMessageId: string
 }
 
 export class LiveChatRealtime implements ChatRealtime {
@@ -52,7 +66,7 @@ export class LiveChatRealtime implements ChatRealtime {
       },
 
       onStompError: (frame) => {
-        const msg = frame.headers['message'] ?? ''
+        const msg = frame.headers.message ?? ''
         if (msg.includes('Unauthorized')) {
           this.lastStompError = 'Unauthorized'
           this.setState('disconnected')
@@ -104,48 +118,19 @@ export class LiveChatRealtime implements ChatRealtime {
     const frameHandler = (frame: { body: string }) => {
       try {
         const parsed = JSON.parse(frame.body) as WireMessageFrame
-        if (parsed.eventType !== 'MESSAGE_CREATED') return
-        const wire = parsed.message
-        // Minimal ChatMessage shape for realtime echo; full history via ChatRepository
-        const event: ChatRealtimeEvent = {
-          type: 'MESSAGE_CREATED',
-          message: {
-            id: wire.id,
-            roomId: wire.roomId,
-            authorId: String(wire.senderMemberId),
-            plainText: wire.content,
-            // Lexical content: cast to avoid strict SerializedLexicalNode type (element vs leaf node split)
-            content: {
-              root: {
-                children: [
-                  {
-                    children: [{ detail: 0, format: 0, mode: 'normal', style: '', text: wire.content, type: 'text', version: 1 }],
-                    direction: 'ltr',
-                    format: '',
-                    indent: 0,
-                    type: 'paragraph',
-                    version: 1,
-                  },
-                ],
-                direction: 'ltr',
-                format: '',
-                indent: 0,
-                type: 'root',
-                version: 1,
-              },
-            } as unknown as import('lexical').SerializedEditorState,
-            clientCreatedAt: wire.createdDatetime,
-            serverCreatedAt: wire.createdDatetime,
-            editedAt: null,
-            deletedAt: null,
-            threadParentId: null,
-            replyCount: 0,
-            clientMsgId: '',
-            contentVersion: 1,
-            version: 1,
-          },
+        const message = adaptChatMessage(parsed.payload)
+        if (parsed.type === 'MESSAGE_SEND') {
+          handler({ type: 'MESSAGE_CREATED', message })
+        } else if (parsed.type === 'MESSAGE_UPDATE') {
+          handler({ type: 'MESSAGE_UPDATED', message })
+        } else if (parsed.type === 'MESSAGE_DELETE') {
+          handler({
+            type: 'MESSAGE_DELETED',
+            messageId: message.id,
+            roomId: message.roomId,
+            deletedAt: message.deletedAt ?? new Date().toISOString(),
+          })
         }
-        handler(event)
       } catch (err) {
         console.error('[LiveChatRealtime] failed to parse frame', err)
       }
@@ -153,10 +138,7 @@ export class LiveChatRealtime implements ChatRealtime {
 
     const doSubscribe = () => {
       if (this.client.connected && !subscription) {
-        subscription = this.client.subscribe(
-          `/topic/chat/rooms/${roomId}/messages`,
-          frameHandler
-        )
+        subscription = this.client.subscribe(`/topic/chat/rooms/${roomId}/messages`, frameHandler)
       }
     }
 
@@ -203,10 +185,22 @@ export class LiveChatRealtime implements ChatRealtime {
   }
 
   /** Private helper used by LiveChatRepository.sendMessage delegation */
-  sendMessageOverSocket(roomId: RoomId, content: string): void {
+  sendMessageOverSocket(roomId: RoomId, payload: SendMessageSocketPayload): void {
+    this.publishMessage(roomId, 'MESSAGE_SEND', payload)
+  }
+
+  updateMessageOverSocket(roomId: RoomId, payload: UpdateMessageSocketPayload): void {
+    this.publishMessage(roomId, 'MESSAGE_UPDATE', payload)
+  }
+
+  deleteMessageOverSocket(roomId: RoomId, payload: DeleteMessageSocketPayload): void {
+    this.publishMessage(roomId, 'MESSAGE_DELETE', payload)
+  }
+
+  private publishMessage(roomId: RoomId, type: WireMessageFrame['type'], payload: object): void {
     this.client.publish({
       destination: `/app/chat/rooms/${roomId}/messages`,
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ type, payload }),
       headers: { 'content-type': 'application/json' },
     })
   }

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 
 // Live harness skeleton — only runs when RUN_LIVE=1 is set.
 // Requires a running BE at :12001 with STOMP WS endpoint at /ws/chat.
@@ -36,7 +36,11 @@ describe.skipIf(!RUN_LIVE)('LiveChatRealtime [LIVE]', () => {
     const { LiveChatRealtime } = await import('@/data/LiveChatRealtime')
     const { LiveChatRepository } = await import('@/data/LiveChatRepository')
     const realtime = new LiveChatRealtime(() => token)
-    const repo = new LiveChatRepository(realtime, () => token, () => null)
+    const repo = new LiveChatRepository(
+      realtime,
+      () => token,
+      () => null,
+    )
     const rooms = await repo.listRooms()
     expect(rooms.length).toBeGreaterThan(0)
     const roomId = rooms[0].id
@@ -50,7 +54,11 @@ describe.skipIf(!RUN_LIVE)('LiveChatRealtime [LIVE]', () => {
           resolve()
         }
       })
-      realtime.sendMessageOverSocket(roomId, `live-test-${Date.now()}`)
+      realtime.sendMessageOverSocket(roomId, {
+        clientMessageId: `live-test-${Date.now()}`,
+        content: `live-test-${Date.now()}`,
+        mentions: [],
+      })
     })
   }, 15_000)
 })

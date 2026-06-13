@@ -1,7 +1,7 @@
+import { type InfiniteData, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import { useQueryClient, type InfiniteData } from '@tanstack/react-query'
-import { useDataSource } from '@/app/providers/DataSourceProvider'
 import { useIsLive } from '@/app/featureFlags'
+import { useDataSource } from '@/app/providers/DataSourceProvider'
 import type { ChatMessage, Page, RoomId } from '@/types/chat'
 import { roomMessagesQueryKey } from './useRoomMessages'
 
@@ -70,9 +70,7 @@ export function useRealtimeMessages(roomId: RoomId | undefined) {
           const replaced = firstPage.items.map((m) =>
             m.clientMsgId === event.message.clientMsgId ? event.message : m,
           )
-          const existed = firstPage.items.some(
-            (m) => m.clientMsgId === event.message.clientMsgId,
-          )
+          const existed = firstPage.items.some((m) => m.clientMsgId === event.message.clientMsgId)
           const nextItems = existed ? replaced : [...firstPage.items, event.message]
           return {
             ...old,
@@ -80,19 +78,15 @@ export function useRealtimeMessages(roomId: RoomId | undefined) {
           }
         })
       } else if (event.type === 'MESSAGE_UPDATED') {
-        if (isLive) return // V1.1: message edit not supported in live mode
         qc.setQueryData<InfiniteData<Page<ChatMessage>>>(key, (old) => {
           if (!old) return old
           const pages = old.pages.map((page) => ({
             ...page,
-            items: page.items.map((m) =>
-              m.id === event.message.id ? event.message : m,
-            ),
+            items: page.items.map((m) => (m.id === event.message.id ? event.message : m)),
           }))
           return { ...old, pages }
         })
       } else if (event.type === 'MESSAGE_DELETED') {
-        if (isLive) return // V1.1: message delete not supported in live mode
         qc.setQueryData<InfiniteData<Page<ChatMessage>>>(key, (old) => {
           if (!old) return old
           const pages = old.pages.map((page) => ({

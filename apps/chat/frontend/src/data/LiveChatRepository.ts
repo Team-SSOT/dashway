@@ -1,21 +1,6 @@
 import { GraphQLClient } from 'graphql-request'
-import type {
-  ChatRepository,
-  ChatMember,
-  ChatRoom,
-  ChatMessage,
-  RoomMembership,
-  Page,
-  ChatError,
-  ListMessagesInput,
-  SendMessageInput,
-  CreateRoomInput,
-  RoomId,
-  MemberId,
-  MessageId,
-} from '@/types/chat'
-import type { LiveChatRealtime } from '@/data/LiveChatRealtime'
 import { toAuthorizationHeader } from '@/data/authHeader'
+import type { LiveChatRealtime } from '@/data/LiveChatRealtime'
 import {
   adaptChatRoom,
   adaptChatRoomPage,
@@ -23,6 +8,22 @@ import {
   type WireChatRoomsResponse,
   type WireRoom,
 } from '@/data/wire/adapters'
+import type {
+  ChatError,
+  ChatMember,
+  ChatMessage,
+  ChatRepository,
+  ChatRoom,
+  CreateRoomInput,
+  DeleteMessageInput,
+  ListMessagesInput,
+  MemberId,
+  MessageId,
+  Page,
+  RoomId,
+  RoomMembership,
+  SendMessageInput,
+} from '@/types/chat'
 
 function makeChatError(code: ChatError['code'], message: string, retriable: boolean): ChatError {
   return { code, message, retriable }
@@ -78,31 +79,34 @@ export class LiveChatRepository implements ChatRepository {
     private readonly realtime: LiveChatRealtime,
     private readonly getToken: () => string | null,
     private readonly getMemberId: () => string | null,
-    private readonly onSessionInvalid?: () => void
+    private readonly onSessionInvalid?: () => void,
   ) {
     // BE exposes GraphQL under the app-name prefix (application.yaml:
     // `spring.graphql.http.path: /${DASHWAY_APP_NAME:chat}/graphql`), so the
     // default must be `/chat/graphql`, not `/graphql` (which 404s). Mirrors the
     // WS path convention in LiveChatRealtime ('/ws/chat').
-    const endpoint = import.meta.env.VITE_CHAT_GRAPHQL_URL ?? new URL('/chat/graphql', window.location.origin).toString()
-    this.gql = new GraphQLClient(
-      endpoint,
-      {
-        requestMiddleware: (req) => ({
-          ...req,
-          headers: {
-            ...req.headers,
-            'Content-Type': 'application/json',
-            Authorization: toAuthorizationHeader(this.getToken()),
-          },
-        }),
-      }
-    )
+    const endpoint =
+      import.meta.env.VITE_CHAT_GRAPHQL_URL ??
+      new URL('/chat/graphql', window.location.origin).toString()
+    this.gql = new GraphQLClient(endpoint, {
+      requestMiddleware: (req) => ({
+        ...req,
+        headers: {
+          ...req.headers,
+          'Content-Type': 'application/json',
+          Authorization: toAuthorizationHeader(this.getToken()),
+        },
+      }),
+    })
   }
 
   private async mapGraphQLError(err: unknown): Promise<never> {
     const message = err instanceof Error ? err.message : String(err)
-    if (message.includes('401') || message.includes('Unauthorized') || message.includes('UNAUTHENTICATED')) {
+    if (
+      message.includes('401') ||
+      message.includes('Unauthorized') ||
+      message.includes('UNAUTHENTICATED')
+    ) {
       this.onSessionInvalid?.()
       return rejectChatError(makeChatError('UNAUTHENTICATED', message, false))
     }
@@ -123,10 +127,9 @@ export class LiveChatRepository implements ChatRepository {
 
   async listRooms(): Promise<ChatRoom[]> {
     try {
-      const data = await this.gql.request<{ chatRooms: WireChatRoomsResponse }>(
-        CHAT_ROOMS_QUERY,
-        { input: { page: 0, size: 100, favoriteOnly: null } }
-      )
+      const data = await this.gql.request<{ chatRooms: WireChatRoomsResponse }>(CHAT_ROOMS_QUERY, {
+        input: { page: 0, size: 100, favoriteOnly: null },
+      })
       this.roomsCache = data.chatRooms.rooms
       const page = adaptChatRoomPage(data.chatRooms)
       return page.items
@@ -168,23 +171,18 @@ export class LiveChatRepository implements ChatRepository {
     const creatorId = Number(this.getMemberId())
     const participantMemberIds = Array.from(
       new Set(
-        [creatorId, TEMP_PARTICIPANT_MEMBER_ID].filter(
-          (id) => Number.isInteger(id) && id > 0,
-        ),
+        [creatorId, TEMP_PARTICIPANT_MEMBER_ID].filter((id) => Number.isInteger(id) && id > 0),
       ),
     )
     try {
-      const data = await this.gql.request<{ createChatRoom: WireRoom }>(
-        CREATE_CHAT_ROOM_MUTATION,
-        {
-          input: {
-            type: 'GROUP',
-            isPublic: false,
-            title: input.name,
-            participantMemberIds,
-          },
-        }
-      )
+      const data = await this.gql.request<{ createChatRoom: WireRoom }>(CREATE_CHAT_ROOM_MUTATION, {
+        input: {
+          type: 'GROUP',
+          isPublic: false,
+          title: input.name,
+          participantMemberIds,
+        },
+      })
       const room = adaptChatRoom(data.createChatRoom)
       // Invalidate cache so next listRooms() fetches fresh
       this.roomsCache = null
@@ -196,7 +194,11 @@ export class LiveChatRepository implements ChatRepository {
 
   sendMessage(input: SendMessageInput): Promise<ChatMessage> {
     // Delegates to STOMP; optimistic row built here
-    this.realtime.sendMessageOverSocket(input.roomId, input.plainText)
+    this.realtime.sendMessageOverSocket(input.roomId, {
+      clientMessageId: input.clientMsgId,
+      content: input.plainText,
+      mentions: input.mentions,
+    })
     const optimistic: ChatMessage = {
       id: input.clientMsgId,
       roomId: input.roomId,
@@ -212,6 +214,7 @@ export class LiveChatRepository implements ChatRepository {
       clientMsgId: input.clientMsgId,
       contentVersion: 1,
       version: 1,
+      mentions: input.mentions,
       attachments: input.attachments,
     }
     return Promise.resolve(optimistic)
@@ -221,7 +224,7 @@ export class LiveChatRepository implements ChatRepository {
     try {
       const data = await this.gql.request<{ setChatRoomFavorite: WireRoom }>(
         SET_CHAT_ROOM_FAVORITE_MUTATION,
-        { input: { roomId, isFavorite } }
+        { input: { roomId, isFavorite } },
       )
       const room = adaptChatRoom(data.setChatRoomFavorite)
       this.roomsCache = null
@@ -255,8 +258,12 @@ export class LiveChatRepository implements ChatRepository {
     return notSupported('removeReaction')
   }
 
-  deleteMessage(_messageId: MessageId): Promise<void> {
-    return notSupported('deleteMessage')
+  deleteMessage(input: DeleteMessageInput): Promise<void> {
+    this.realtime.deleteMessageOverSocket(input.roomId, {
+      messageId: toWireMessageId(input.messageId),
+      clientMessageId: input.clientMessageId,
+    })
+    return Promise.resolve()
   }
 
   addMembers(_roomId: RoomId, _memberIds: MemberId[]): Promise<RoomMembership[]> {
@@ -266,4 +273,9 @@ export class LiveChatRepository implements ChatRepository {
   removeMember(_roomId: RoomId, _memberId: MemberId): Promise<void> {
     return notSupported('removeMember')
   }
+}
+
+function toWireMessageId(messageId: MessageId): number | string {
+  const numeric = Number(messageId)
+  return Number.isSafeInteger(numeric) ? numeric : messageId
 }

@@ -1,10 +1,13 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
+  adaptChatMessage,
   adaptChatRoom,
   adaptChatRoomPage,
   assertWireMemberId,
-  type WireRoom,
+  toContentMentions,
   type WireChatRoomsResponse,
+  type WireMessage,
+  type WireRoom,
 } from './adapters'
 
 const baseRoom: WireRoom = {
@@ -90,5 +93,60 @@ describe('assertWireMemberId', () => {
 
   it('returns void for string input', () => {
     expect(() => assertWireMemberId('123')).not.toThrow()
+  })
+})
+
+describe('adaptChatMessage', () => {
+  const baseMessage: WireMessage = {
+    id: 123,
+    roomId: 'room-1',
+    memberId: 456,
+    clientMessageId: 'client-1',
+    content: 'Hello world',
+    mentions: [{ appId: 'context', memberId: '456' }],
+    isDeleted: false,
+    createdDatetime: '2026-06-13T10:00:00+09:00',
+    editedDatetime: null,
+    deletedDatetime: null,
+  }
+
+  it('maps MESSAGE payload fields to the internal ChatMessage viewmodel', () => {
+    const result = adaptChatMessage(baseMessage)
+
+    expect(result).toMatchObject({
+      id: '123',
+      roomId: 'room-1',
+      authorId: '456',
+      plainText: 'Hello world',
+      clientCreatedAt: '2026-06-13T10:00:00+09:00',
+      serverCreatedAt: '2026-06-13T10:00:00+09:00',
+      editedAt: null,
+      deletedAt: null,
+      clientMsgId: 'client-1',
+      mentions: [{ appId: 'context', memberId: '456' }],
+    })
+  })
+
+  it('turns isDeleted payloads into soft-deleted messages', () => {
+    const result = adaptChatMessage({
+      ...baseMessage,
+      content: null,
+      isDeleted: true,
+      deletedDatetime: '2026-06-13T10:05:00+09:00',
+    })
+
+    expect(result.plainText).toBe('')
+    expect(result.deletedAt).toBe('2026-06-13T10:05:00+09:00')
+  })
+})
+
+describe('toContentMentions', () => {
+  it('maps person mention targets and drops unsupported target types until BE supports them', () => {
+    expect(
+      toContentMentions([
+        { type: 'person', id: '1001', label: 'Alice' },
+        { type: 'document', id: 'doc-1', label: 'Spec' },
+      ]),
+    ).toEqual([{ appId: 'context', memberId: '1001' }])
   })
 })
