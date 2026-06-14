@@ -1,3 +1,30 @@
+server.port: ${ISSUE_TRACKER_SERVER_PORT:12000}
+
 spring:
   application:
-    name: issue-tracker
+    name: ${DASHWAY_APP_NAME:issue-tracker}
+
+  graphql:
+    http:
+      path: ${ISSUE_TRACKER_GRAPHQL_PATH:/graphql}
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    username: ${SPRING_DATASOURCE_USERNAME:context_api}
+    password: ${SPRING_DATASOURCE_PASSWORD:context_api}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/dashway}
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+
+issue-tracker:
+  context-api:
+    base-url: ${ISSUE_TRACKER_CONTEXT_API_BASE_URL:http://localhost:8080}
+
+logging:
+  level:
+    web: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG

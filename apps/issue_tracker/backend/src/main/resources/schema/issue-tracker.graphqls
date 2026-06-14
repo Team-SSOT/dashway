@@ -1,0 +1,240 @@
+schema {
+    query: Query
+    mutation: Mutation
+}
+
+scalar Long
+scalar DateTime
+
+type PageInfo {
+    page: Int!
+    size: Int!
+    totalElements: Int!
+    totalPages: Int!
+}
+
+type Query {
+    projects(input: ProjectsInput!): ProjectPage!
+    project(id: Long!): Project
+    issues(input: IssuesInput!): IssuePage!
+    issue(id: Long!): Issue
+    labels(projectId: Long!): [Label!]!
+}
+
+type Mutation {
+    createProject(input: CreateProjectInput!): Project!
+    updateProject(input: UpdateProjectInput!): Project!
+    archiveProject(input: ArchiveProjectInput!): Boolean!
+    addProjectMember(input: ProjectMemberInput!): ProjectMember!
+    removeProjectMember(input: ProjectMemberInput!): Boolean!
+    createIssue(input: CreateIssueInput!): Issue!
+    updateIssue(input: UpdateIssueInput!): Issue!
+    archiveIssue(input: ArchiveIssueInput!): Boolean!
+    createIssueComment(input: CreateIssueCommentInput!): IssueComment!
+    updateIssueComment(input: UpdateIssueCommentInput!): IssueComment!
+    deleteIssueComment(input: DeleteIssueCommentInput!): Boolean!
+    createLabel(input: CreateLabelInput!): Label!
+    updateLabel(input: UpdateLabelInput!): Label!
+    deleteLabel(input: DeleteLabelInput!): Boolean!
+    attachIssueFiles(input: AttachIssueFilesInput!): Issue!
+    detachIssueFile(input: DetachIssueFileInput!): Issue!
+}
+
+enum ProjectRole {
+    OWNER
+    MEMBER
+}
+
+enum IssueStatus {
+    BACKLOG
+    TODO
+    IN_PROGRESS
+    IN_REVIEW
+    DONE
+    CANCELLED
+}
+
+enum IssuePriority {
+    NO_PRIORITY
+    LOW
+    MEDIUM
+    HIGH
+    URGENT
+}
+
+type Project {
+    id: Long!
+    key: String!
+    name: String!
+    description: String
+    memberCount: Int!
+    createdDatetime: DateTime!
+    updatedDatetime: DateTime!
+}
+
+type ProjectMember {
+    projectId: Long!
+    memberId: Long!
+    role: ProjectRole!
+    joinedDatetime: DateTime!
+}
+
+type ProjectPage {
+    projects: [Project!]!
+    pageInfo: PageInfo!
+}
+
+type Issue {
+    id: Long!
+    key: String!
+    projectId: Long!
+    title: String!
+    content: String
+    status: IssueStatus!
+    priority: IssuePriority!
+    reporterMemberId: Long!
+    creatorMemberId: Long!
+    assigneeMemberIds: [Long!]!
+    labels: [Label!]!
+    comments: [IssueComment!]!
+    fileIds: [String!]!
+    dueDatetime: DateTime
+    createdDatetime: DateTime!
+    updatedDatetime: DateTime!
+}
+
+type IssuePage {
+    issues: [Issue!]!
+    pageInfo: PageInfo!
+}
+
+type Label {
+    id: Long!
+    projectId: Long!
+    name: String!
+    color: String!
+    createdDatetime: DateTime!
+    updatedDatetime: DateTime!
+}
+
+type IssueComment {
+    id: Long!
+    issueId: Long!
+    authorMemberId: Long!
+    content: String
+    isDeleted: Boolean!
+    fileIds: [String!]!
+    createdDatetime: DateTime!
+    updatedDatetime: DateTime!
+    deletedDatetime: DateTime
+}
+
+input ProjectsInput {
+    page: Int!
+    size: Int!
+}
+
+input IssuesInput {
+    projectIds: [Long!]
+    statuses: [IssueStatus!]
+    priorities: [IssuePriority!]
+    assigneeMemberIds: [Long!]
+    labelIds: [Long!]
+    dueFrom: DateTime
+    dueTo: DateTime
+    query: String
+    page: Int!
+    size: Int!
+}
+
+input CreateProjectInput {
+    key: String!
+    name: String!
+    description: String
+}
+
+input UpdateProjectInput {
+    projectId: Long!
+    name: String
+    description: String
+}
+
+input ArchiveProjectInput {
+    projectId: Long!
+}
+
+input ProjectMemberInput {
+    projectId: Long!
+    memberId: Long!
+    role: ProjectRole
+}
+
+input CreateIssueInput {
+    projectId: Long!
+    title: String!
+    content: String
+    status: IssueStatus
+    priority: IssuePriority
+    reporterMemberId: Long
+    assigneeMemberIds: [Long!]
+    labelIds: [Long!]
+    fileIds: [String!]
+    dueDatetime: DateTime
+}
+
+input UpdateIssueInput {
+    issueId: Long!
+    title: String
+    content: String
+    status: IssueStatus
+    priority: IssuePriority
+    reporterMemberId: Long
+    assigneeMemberIds: [Long!]
+    labelIds: [Long!]
+    dueDatetime: DateTime
+}
+
+input ArchiveIssueInput {
+    issueId: Long!
+}
+
+input CreateIssueCommentInput {
+    issueId: Long!
+    content: String!
+    fileIds: [String!]
+}
+
+input UpdateIssueCommentInput {
+    commentId: Long!
+    content: String!
+}
+
+input DeleteIssueCommentInput {
+    commentId: Long!
+}
+
+input CreateLabelInput {
+    projectId: Long!
+    name: String!
+    color: String!
+}
+
+input UpdateLabelInput {
+    labelId: Long!
+    name: String
+    color: String
+}
+
+input DeleteLabelInput {
+    labelId: Long!
+}
+
+input AttachIssueFilesInput {
+    issueId: Long!
+    fileIds: [String!]!
+}
+
+input DetachIssueFileInput {
+    issueId: Long!
+    fileId: String!
+}

@@ -1,4 +1,4 @@
-package com.example.issuetracker
+package ai.ssot.issuetracker
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

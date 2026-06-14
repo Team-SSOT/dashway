@@ -14,6 +14,7 @@ services:
       # Postgres runs init scripts only when the data directory is created from an empty volume.
       - ./context-api/src/main/resources/db/ddl/ddl.sql:/docker-entrypoint-initdb.d/ddl.sql:ro
       - ./apps/chat/backend/src/main/resources/db/ddl/chat-schema.sql:/docker-entrypoint-initdb.d/chat-schema.sql:ro
+      - ./apps/issue_tracker/backend/src/main/resources/db/ddl/issue-tracker-schema.sql:/docker-entrypoint-initdb.d/issue-tracker-schema.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
