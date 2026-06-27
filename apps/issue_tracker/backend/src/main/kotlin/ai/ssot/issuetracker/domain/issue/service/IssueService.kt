@@ -4,7 +4,6 @@ import ai.ssot.issuetracker.domain.issue.dto.ArchiveIssueDto
 import ai.ssot.issuetracker.domain.issue.dto.AttachIssueFilesDto
 import ai.ssot.issuetracker.domain.issue.dto.CreateIssueDto
 import ai.ssot.issuetracker.domain.issue.dto.DetachIssueFileDto
-import ai.ssot.issuetracker.domain.issue.dto.IssueBaseDto
 import ai.ssot.issuetracker.domain.issue.dto.IssueDto
 import ai.ssot.issuetracker.domain.issue.dto.IssueSearchDto
 import ai.ssot.issuetracker.domain.issue.dto.IssueSearchResult
@@ -29,7 +28,6 @@ class IssueService(
     private val issueRepository: IssueRepository,
     private val issueAssigneeRepository: IssueAssigneeRepository,
     private val issueLabelService: IssueLabelService,
-    private val issueCommentService: IssueCommentService,
     private val issueFileService: IssueFileService,
     private val projectMemberService: ProjectMemberService,
 ) {
@@ -38,7 +36,7 @@ class IssueService(
         val pageable = PageRequest.of(validatePage(dto.page), validateSize(dto.size))
         val issues = issueRepository.findIssuesForMember(memberId, dto, pageable)
         return IssueSearchResult(
-            issues = enrichIssues(issues.content),
+            issues = issues.content.map { it.toIssueDto() },
             page = dto.page,
             size = pageable.pageSize,
             totalElements = issues.totalElements,
@@ -49,7 +47,7 @@ class IssueService(
     @Transactional(readOnly = true)
     fun getIssue(memberId: Long, issueId: Long): IssueDto? {
         val issue = issueRepository.findIssueForMember(memberId, issueId) ?: return null
-        return enrichIssues(listOf(issue)).first()
+        return issue.toIssueDto()
     }
 
     @Transactional
@@ -138,27 +136,15 @@ class IssueService(
         return requireNotNull(getIssue(memberId, dto.issueId))
     }
 
-    private fun enrichIssues(baseIssues: List<IssueBaseDto>): List<IssueDto> {
-        if (baseIssues.isEmpty()) {
-            return emptyList()
+    @Transactional(readOnly = true)
+    fun getAssigneeMemberIdsByIssueIds(issueIds: Collection<Long>): Map<Long, List<Long>> {
+        if (issueIds.isEmpty()) {
+            return emptyMap()
         }
 
-        val issueIds = baseIssues.map { it.id }
-        val assigneesByIssueId = issueAssigneeRepository.findAllByIdIssueIdIn(issueIds)
+        return issueAssigneeRepository.findAllByIdIssueIdIn(issueIds)
             .groupBy({ it.id.issueId }, { it.id.memberId })
             .mapValues { (_, memberIds) -> memberIds.sorted() }
-        val labelsByIssueId = issueLabelService.getLabelsByIssueIds(issueIds)
-        val commentsByIssueId = issueCommentService.getCommentsByIssueIds(issueIds)
-        val fileIdsByIssueId = issueFileService.getIssueFileIdsByIssueIds(issueIds)
-
-        return baseIssues.map { issue ->
-            issue.toIssueDto(
-                assigneeMemberIds = assigneesByIssueId[issue.id].orEmpty(),
-                labels = labelsByIssueId[issue.id].orEmpty(),
-                comments = commentsByIssueId[issue.id].orEmpty(),
-                fileIds = fileIdsByIssueId[issue.id].orEmpty(),
-            )
-        }
     }
 
     private fun replaceAssignees(issueId: Long, assigneeMemberIds: Collection<Long>) {
