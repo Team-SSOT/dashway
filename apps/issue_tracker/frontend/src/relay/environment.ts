@@ -1,6 +1,6 @@
 import { Environment, type FetchFunction, Network, RecordSource, Store } from 'relay-runtime'
 
-const DEFAULT_ENDPOINT = 'http://localhost:8080/graphql'
+const DEFAULT_ENDPOINT = new URL('/graphql', window.location.origin).toString()
 
 const resolveEndpoint = (): string => {
   const fromEnv = import.meta.env.VITE_GRAPHQL_ENDPOINT
